@@ -2,6 +2,12 @@
 
 React + Node.js simulator that generates weekly timetables for school classes and teachers from a description of teachers, classes, subjects, and constraints.
 
+## Screenshots
+
+| Input editor | Generated timetable |
+| --- | --- |
+| ![Input editor](docs/screenshots/01-input.png) | ![Generated timetable](docs/screenshots/02-timetable.png) |
+
 ## Features
 
 - Input model: teachers (availability, subjects, classes), classes (default teacher, default room, subjects with weekly hours), and rooms.
