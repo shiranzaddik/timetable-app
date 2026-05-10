@@ -1,0 +1,451 @@
+// Timetable solver using backtracking constraint satisfaction.
+//
+// Hard constraints:
+//   - Teacher availability (dayOff + unavailable windows compiled into a matrix).
+//   - A teacher cannot be in two places at once.
+//   - A class cannot have two lessons at the same slot.
+//   - Sport requires the sport hall; computer requires the computer lab.
+//     Each special room can host only one class per slot.
+//   - Each subject is delivered in 2-hour blocks except sport and music (1-hour).
+//   - A class's default teacher must teach that class for any subject they can teach.
+//   - Teacher eligibility for a class is by grade letter (Teacher.grades vs SchoolClass.grade).
+//   - Per-day hour quota per class — sums to total weekly hours, all days > 0
+//     so every class has at least one lesson every day.
+//   - Within a day, a class's lessons form a contiguous block (no gaps).
+
+import {
+  RoomType,
+  Subject,
+  type ClassId,
+  type Config,
+  type Grid,
+  type Room,
+  type SchoolClass,
+  type SchoolInput,
+  type SolveResult,
+  type Teacher,
+  type TimetableCell,
+  type Timetables,
+  type UnavailabilityWindow,
+} from "./types.js";
+
+const SPECIAL_ROOM_BY_SUBJECT: Partial<Record<Subject, RoomType>> = {
+  [Subject.Sport]: RoomType.Sport,
+  [Subject.Computer]: RoomType.Computer,
+};
+
+const ONE_HOUR_SUBJECTS = new Set<Subject>([Subject.Sport, Subject.Music]);
+
+interface Block {
+  id: string;
+  classId: ClassId;
+  subject: Subject;
+  duration: number;
+  requiredRoomType: RoomType | null;
+}
+
+interface Assignment {
+  blockId: string;
+  classId: ClassId;
+  subject: Subject;
+  teacherId: string;
+  day: number;
+  slot: number;
+  roomId: string;
+}
+
+interface SolveState {
+  teacherBusy: Record<string, boolean[][]>;
+  classBusy: Record<string, boolean[][]>;
+  specialRoomBusy: Set<string>;
+  assignments: Assignment[];
+  classesById: Record<string, SchoolClass>;
+  rooms: Room[];
+  teacherAvail: Record<string, boolean[][]>;
+  /** [classId][day] → hours still allowed on this day for this class. */
+  classDayHoursLeft: Record<string, number[]>;
+  /** [classId][day] → first/last slot used so far on this day, or -1 if empty. */
+  classDayMin: Record<string, number[]>;
+  classDayMax: Record<string, number[]>;
+}
+
+interface SolveContext {
+  config: Config;
+  teachers: Teacher[];
+  classesById: Record<string, SchoolClass>;
+  teacherAvail: Record<string, boolean[][]>;
+}
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function buildAvailability(teacher: Teacher, config: Config): boolean[][] {
+  const matrix = config.days.map(() => config.slotLabels.map(() => true));
+  const dayOffIdx = config.days.indexOf(teacher.dayOff);
+  if (dayOffIdx >= 0) matrix[dayOffIdx] = matrix[dayOffIdx].map(() => false);
+  for (const w of teacher.unavailable) applyUnavailability(matrix, w, config);
+  return matrix;
+}
+
+function applyUnavailability(
+  matrix: boolean[][],
+  window: UnavailabilityWindow,
+  config: Config
+): void {
+  const dIdx = config.days.indexOf(window.day);
+  if (dIdx < 0) return;
+  if (!window.fromTime && !window.toTime) {
+    matrix[dIdx] = matrix[dIdx].map(() => false);
+    return;
+  }
+  const from = window.fromTime ? timeToMinutes(window.fromTime) : -Infinity;
+  const to = window.toTime ? timeToMinutes(window.toTime) : Infinity;
+  config.slotLabels.forEach((label, sIdx) => {
+    const slotStart = timeToMinutes(label);
+    if (slotStart >= from && slotStart < to) matrix[dIdx][sIdx] = false;
+  });
+}
+
+function buildBlocks(classes: SchoolClass[]): Block[] {
+  const blocks: Block[] = [];
+  let blockId = 0;
+  for (const cls of classes) {
+    for (const { subject, hoursPerWeek } of cls.subjects) {
+      const isOneHour = ONE_HOUR_SUBJECTS.has(subject);
+      const blockDuration = isOneHour ? 1 : 2;
+      let remaining = hoursPerWeek;
+      while (remaining > 0) {
+        const duration = Math.min(blockDuration, remaining);
+        blocks.push({
+          id: `b${blockId++}`,
+          classId: cls.id,
+          subject,
+          duration,
+          requiredRoomType: SPECIAL_ROOM_BY_SUBJECT[subject] ?? null,
+        });
+        remaining -= duration;
+      }
+    }
+  }
+  return blocks;
+}
+
+function candidateTeachers(
+  block: Block,
+  cls: SchoolClass,
+  teachers: Teacher[]
+): Teacher[] {
+  const defaultTeacher = teachers.find((t) => t.id === cls.defaultTeacherId);
+  const defaultCanTeach =
+    !!defaultTeacher &&
+    defaultTeacher.subjects.includes(block.subject) &&
+    defaultTeacher.grades.includes(cls.grade);
+
+  if (defaultCanTeach && defaultTeacher) return [defaultTeacher];
+
+  return teachers.filter(
+    (t) => t.subjects.includes(block.subject) && t.grades.includes(cls.grade)
+  );
+}
+
+// Schedule one class fully before moving to the next. Within a class,
+// schedule special-room blocks first, then longer blocks. This produces a
+// much smaller search tree than interleaving classes.
+function orderBlocks(
+  blocks: Block[],
+  classesById: Record<string, SchoolClass>,
+  teachers: Teacher[]
+): Block[] {
+  const innerScore = (block: Block): number => {
+    const cls = classesById[block.classId];
+    const ts = candidateTeachers(block, cls, teachers);
+    let s = 0;
+    if (block.requiredRoomType) s -= 1000;
+    s -= block.duration * 100;
+    s += ts.length * 10;
+    return s;
+  };
+  return [...blocks].sort((a, b) => {
+    if (a.classId !== b.classId) return a.classId.localeCompare(b.classId);
+    return innerScore(a) - innerScore(b);
+  });
+}
+
+/** Distribute total weekly hours across days, biggest-first, each day ≥ 1. */
+function buildDayQuotas(totalHours: number, dayCount: number): number[] {
+  if (dayCount === 0) return [];
+  const base = Math.floor(totalHours / dayCount);
+  const extra = totalHours % dayCount;
+  // Days with the extra hour come first so totals like 19 over 5 days → [4,4,4,4,3].
+  return Array.from({ length: dayCount }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+/** True if placing `[start, start+duration)` keeps the class's day contiguous. */
+function keepsDayContiguous(
+  state: SolveState,
+  classId: ClassId,
+  day: number,
+  start: number,
+  duration: number
+): boolean {
+  const min = state.classDayMin[classId][day];
+  const max = state.classDayMax[classId][day];
+  if (min === -1) return true;
+  const newEnd = start + duration - 1;
+  const mergedMin = Math.min(min, start);
+  const mergedMax = Math.max(max, newEnd);
+  const existingSize = max - min + 1;
+  const mergedSize = mergedMax - mergedMin + 1;
+  // No overlap is already guaranteed by classBusy. Adjacency means
+  // mergedSize === existingSize + duration (i.e., no gap introduced).
+  return mergedSize === existingSize + duration;
+}
+
+function canPlace(
+  block: Block,
+  teacher: Teacher,
+  day: number,
+  startSlot: number,
+  state: SolveState
+): boolean {
+  if (state.classDayHoursLeft[block.classId][day] < block.duration) return false;
+  if (!keepsDayContiguous(state, block.classId, day, startSlot, block.duration))
+    return false;
+
+  for (let i = 0; i < block.duration; i++) {
+    const slot = startSlot + i;
+    if (!state.teacherAvail[teacher.id][day][slot]) return false;
+    if (state.teacherBusy[teacher.id][day][slot]) return false;
+    if (state.classBusy[block.classId][day][slot]) return false;
+    if (block.requiredRoomType) {
+      const key = `${block.requiredRoomType}:${day}:${slot}`;
+      if (state.specialRoomBusy.has(key)) return false;
+    }
+  }
+  return true;
+}
+
+function roomForBlock(block: Block, cls: SchoolClass, rooms: Room[]): Room {
+  if (block.requiredRoomType) {
+    const room = rooms.find((r) => r.type === block.requiredRoomType);
+    if (!room)
+      throw new Error(
+        `No room of type "${block.requiredRoomType}" exists for subject "${block.subject}".`
+      );
+    return room;
+  }
+  const room = rooms.find((r) => r.id === cls.defaultRoomId);
+  if (!room) throw new Error(`Class "${cls.id}" has no default room.`);
+  return room;
+}
+
+function place(
+  block: Block,
+  teacher: Teacher,
+  day: number,
+  startSlot: number,
+  state: SolveState
+): { prevMin: number; prevMax: number } {
+  const room = roomForBlock(block, state.classesById[block.classId], state.rooms);
+  const prevMin = state.classDayMin[block.classId][day];
+  const prevMax = state.classDayMax[block.classId][day];
+
+  for (let i = 0; i < block.duration; i++) {
+    const slot = startSlot + i;
+    state.teacherBusy[teacher.id][day][slot] = true;
+    state.classBusy[block.classId][day][slot] = true;
+    if (block.requiredRoomType) {
+      state.specialRoomBusy.add(`${block.requiredRoomType}:${day}:${slot}`);
+    }
+    state.assignments.push({
+      blockId: block.id,
+      classId: block.classId,
+      subject: block.subject,
+      teacherId: teacher.id,
+      day,
+      slot,
+      roomId: room.id,
+    });
+  }
+
+  state.classDayHoursLeft[block.classId][day] -= block.duration;
+
+  const newEnd = startSlot + block.duration - 1;
+  state.classDayMin[block.classId][day] =
+    prevMin === -1 ? startSlot : Math.min(prevMin, startSlot);
+  state.classDayMax[block.classId][day] =
+    prevMax === -1 ? newEnd : Math.max(prevMax, newEnd);
+
+  return { prevMin, prevMax };
+}
+
+function unplace(
+  block: Block,
+  teacher: Teacher,
+  day: number,
+  startSlot: number,
+  state: SolveState,
+  prev: { prevMin: number; prevMax: number }
+): void {
+  for (let i = 0; i < block.duration; i++) {
+    const slot = startSlot + i;
+    state.teacherBusy[teacher.id][day][slot] = false;
+    state.classBusy[block.classId][day][slot] = false;
+    if (block.requiredRoomType) {
+      state.specialRoomBusy.delete(`${block.requiredRoomType}:${day}:${slot}`);
+    }
+  }
+  state.assignments.splice(state.assignments.length - block.duration, block.duration);
+  state.classDayHoursLeft[block.classId][day] += block.duration;
+  state.classDayMin[block.classId][day] = prev.prevMin;
+  state.classDayMax[block.classId][day] = prev.prevMax;
+}
+
+function search(
+  blocks: Block[],
+  idx: number,
+  state: SolveState,
+  ctx: SolveContext
+): boolean {
+  if (idx === blocks.length) return true;
+
+  const block = blocks[idx];
+  const cls = ctx.classesById[block.classId];
+  const teachers_ = candidateTeachers(block, cls, ctx.teachers);
+
+  // Try days in order of remaining quota descending, then current usage descending
+  // (continue an in-progress day before opening a new one). This drastically reduces
+  // backtracking under the contiguity + per-day-quota constraints.
+  const dayOrder = Array.from({ length: ctx.config.days.length }, (_, d) => d).sort(
+    (a, b) => {
+      const usedA = state.classDayMax[block.classId][a] === -1 ? 0 : 1;
+      const usedB = state.classDayMax[block.classId][b] === -1 ? 0 : 1;
+      if (usedA !== usedB) return usedB - usedA; // started days first
+      return (
+        state.classDayHoursLeft[block.classId][b] -
+        state.classDayHoursLeft[block.classId][a]
+      );
+    }
+  );
+
+  for (const teacher of teachers_) {
+    for (const d of dayOrder) {
+      for (let s = 0; s + block.duration <= ctx.config.slotLabels.length; s++) {
+        if (canPlace(block, teacher, d, s, state)) {
+          const prev = place(block, teacher, d, s, state);
+          if (search(blocks, idx + 1, state, ctx)) return true;
+          unplace(block, teacher, d, s, state, prev);
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function buildEmptyMatrix(days: number, slots: number): boolean[][] {
+  return Array.from({ length: days }, () =>
+    Array.from({ length: slots }, () => false)
+  );
+}
+
+function emptyGrid(days: number, slots: number): Grid {
+  return Array.from({ length: days }, () =>
+    Array.from({ length: slots }, () => null)
+  );
+}
+
+function buildOutput(input: SchoolInput, assignments: Assignment[]): Timetables {
+  const { config, classes, teachers, rooms } = input;
+  const teachersById = Object.fromEntries(teachers.map((t) => [t.id, t]));
+  const roomsById = Object.fromEntries(rooms.map((r) => [r.id, r]));
+  const classesById = Object.fromEntries(classes.map((c) => [c.id, c]));
+
+  const slots = config.slotLabels.length;
+  const days = config.days.length;
+
+  const byClass: Record<string, Grid> = Object.fromEntries(
+    classes.map((c) => [c.id, emptyGrid(days, slots)])
+  );
+  const byTeacher: Record<string, Grid> = Object.fromEntries(
+    teachers.map((t) => [t.id, emptyGrid(days, slots)])
+  );
+
+  for (const a of assignments) {
+    const cell: TimetableCell = {
+      subject: a.subject,
+      classId: a.classId,
+      className: classesById[a.classId].name,
+      teacherId: a.teacherId,
+      teacherName: teachersById[a.teacherId].name,
+      roomId: a.roomId,
+      roomName: roomsById[a.roomId].name,
+    };
+    byClass[a.classId][a.day][a.slot] = cell;
+    byTeacher[a.teacherId][a.day][a.slot] = cell;
+  }
+
+  return { byClass, byTeacher };
+}
+
+export function solve(input: SchoolInput): SolveResult {
+  const { config, rooms, teachers, classes } = input;
+  const classesById = Object.fromEntries(classes.map((c) => [c.id, c]));
+
+  const slots = config.slotLabels.length;
+  const days = config.days.length;
+
+  const teacherAvail: Record<string, boolean[][]> = Object.fromEntries(
+    teachers.map((t) => [t.id, buildAvailability(t, config)])
+  );
+
+  const blocks = buildBlocks(classes);
+  const ordered = orderBlocks(blocks, classesById, teachers);
+
+  const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
+    classes.map((c) => {
+      const total = c.subjects.reduce((sum, s) => sum + s.hoursPerWeek, 0);
+      return [c.id, buildDayQuotas(total, days)];
+    })
+  );
+
+  const state: SolveState = {
+    teacherBusy: Object.fromEntries(
+      teachers.map((t) => [t.id, buildEmptyMatrix(days, slots)])
+    ),
+    classBusy: Object.fromEntries(
+      classes.map((c) => [c.id, buildEmptyMatrix(days, slots)])
+    ),
+    specialRoomBusy: new Set<string>(),
+    assignments: [],
+    classesById,
+    rooms,
+    teacherAvail,
+    classDayHoursLeft,
+    classDayMin: Object.fromEntries(
+      classes.map((c) => [c.id, Array.from({ length: days }, () => -1)])
+    ),
+    classDayMax: Object.fromEntries(
+      classes.map((c) => [c.id, Array.from({ length: days }, () => -1)])
+    ),
+  };
+
+  const ctx: SolveContext = { config, teachers, classesById, teacherAvail };
+
+  const ok = search(ordered, 0, state, ctx);
+  if (!ok) {
+    return {
+      success: false,
+      error:
+        "No valid timetable could be found with the given constraints. Try adding teachers, removing days off, relaxing unavailable windows, or adjusting class hour totals so every day can hold ≥1 lesson.",
+      timetables: buildOutput(input, state.assignments),
+    };
+  }
+
+  return {
+    success: true,
+    timetables: buildOutput(input, state.assignments),
+    blockCount: blocks.length,
+  };
+}

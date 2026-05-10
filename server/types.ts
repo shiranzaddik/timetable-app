@@ -1,0 +1,122 @@
+// Shared domain types used by the solver, server, and (mirrored in) the client.
+// Strings used by enums must match between server and client because they cross
+// the wire as JSON.
+
+export enum Day {
+  Sunday = "Sunday",
+  Monday = "Monday",
+  Tuesday = "Tuesday",
+  Wednesday = "Wednesday",
+  Thursday = "Thursday",
+}
+
+export enum RoomType {
+  Regular = "regular",
+  Sport = "sport",
+  Computer = "computer",
+  Music = "music",
+}
+
+export enum Grade {
+  A = "A",
+  B = "B",
+  C = "C",
+  D = "D",
+}
+
+/** A class id is a stable string like "A1", "A2", "B3". */
+export type ClassId = string;
+
+export enum Subject {
+  Math = "math",
+  Hebrew = "hebrew",
+  English = "english",
+  Science = "science",
+  Sport = "sport",
+  Music = "music",
+  Computer = "computer",
+}
+
+export interface Config {
+  days: Day[];
+  /** Hourly slot start times, e.g. ["08:00", "09:00", ...]. */
+  slotLabels: string[];
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  type: RoomType;
+}
+
+/** A window in which a teacher cannot teach.
+ *  Omit both fromTime and toTime → entire day is unavailable. */
+export interface UnavailabilityWindow {
+  day: Day;
+  /** "HH:MM" inclusive lower bound. Omitted → from start of day. */
+  fromTime?: string;
+  /** "HH:MM" exclusive upper bound. Omitted → to end of day. */
+  toTime?: string;
+}
+
+export interface Teacher {
+  id: string;
+  name: string;
+  subjects: Subject[];
+  /** Grade letters this teacher can teach (e.g., [A, B] means any A* or B* class). */
+  grades: Grade[];
+  /** Required default day off — the teacher does not work this day. */
+  dayOff: Day;
+  /** Additional unavailable windows on top of dayOff. */
+  unavailable: UnavailabilityWindow[];
+}
+
+export interface ClassSubject {
+  subject: Subject;
+  hoursPerWeek: number;
+}
+
+export interface SchoolClass {
+  id: ClassId;
+  /** Grade letter, e.g., Grade.A for class "A1" or "A2". */
+  grade: Grade;
+  /** Section number within the grade, e.g., 1 for "A1". */
+  section: number;
+  name: string;
+  defaultTeacherId: string;
+  defaultRoomId: string;
+  subjects: ClassSubject[];
+}
+
+export interface SchoolInput {
+  config: Config;
+  rooms: Room[];
+  teachers: Teacher[];
+  classes: SchoolClass[];
+}
+
+export interface TimetableCell {
+  subject: Subject;
+  classId: ClassId;
+  className: string;
+  teacherId: string;
+  teacherName: string;
+  roomId: string;
+  roomName: string;
+}
+
+/** [day][slot] grid of cells (or null if empty). */
+export type Grid = (TimetableCell | null)[][];
+
+export interface Timetables {
+  byClass: Record<string, Grid>;
+  byTeacher: Record<string, Grid>;
+}
+
+export interface SolveResult {
+  success: boolean;
+  error?: string;
+  timetables: Timetables;
+  blockCount?: number;
+  elapsedMs?: number;
+}
