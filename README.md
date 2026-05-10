@@ -4,9 +4,9 @@ React + Node.js simulator that generates weekly timetables for school classes an
 
 ## Screenshots
 
-| Input editor | Generated timetable |
-| --- | --- |
-| ![Input editor](docs/screenshots/01-input.png) | ![Generated timetable](docs/screenshots/02-timetable.png) |
+![Input editor](docs/screenshots/01-input.png)
+
+![Generated timetable](docs/screenshots/02-timetable.png)
 
 ## Features
 

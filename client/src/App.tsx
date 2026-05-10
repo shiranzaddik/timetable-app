@@ -41,16 +41,6 @@ export default function App() {
       );
   }, []);
 
-  // Run the solver automatically when the URL contains ?autorun (useful for
-  // shareable demo links and screenshots).
-  useEffect(() => {
-    if (!input) return;
-    if (!new URLSearchParams(window.location.search).has("autorun")) return;
-    if (result) return;
-    void runSolver();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input]);
-
   const runSolver = async (): Promise<void> => {
     if (!input) return;
     setLoading(true);
