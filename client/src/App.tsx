@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
 import InputView from "./components/InputView";
+import Login from "./components/Login";
 import TimetableView from "./components/TimetableView";
 import { Day, RoomType, type Room, type SchoolInput, type SolveResult } from "./types";
 
 type View = "byClass" | "byTeacher";
+
+interface User {
+  email: string;
+  name: string;
+}
+
+interface AuthState {
+  authEnabled: boolean;
+  user: User | null;
+}
 
 const SHARED_ROOMS: Room[] = [
   { id: "sport-hall", name: "Sport Hall", type: RoomType.Sport },
@@ -21,7 +32,17 @@ const EMPTY_INPUT: SchoolInput = {
   classes: [],
 };
 
+const GOOGLE_CLIENT_ID =
+  (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
+
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, { credentials: "include", ...init });
+  if (!res.ok) throw new Error(`${path} → ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
 export default function App() {
+  const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [demo, setDemo] = useState<SchoolInput | null>(null);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [result, setResult] = useState<SolveResult | null>(null);
@@ -29,9 +50,21 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>("byClass");
 
+  // 1) Auth check on mount
   useEffect(() => {
-    fetch("/api/demo")
-      .then((r) => r.json() as Promise<SchoolInput>)
+    api<AuthState>("/api/auth/me")
+      .then(setAuth)
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : String(e));
+        setAuth({ authEnabled: false, user: null });
+      });
+  }, []);
+
+  // 2) Fetch demo data once authenticated (or if auth disabled)
+  useEffect(() => {
+    if (!auth) return;
+    if (auth.authEnabled && !auth.user) return;
+    api<SchoolInput>("/api/demo")
       .then((d) => {
         setDemo(d);
         setInput(d);
@@ -39,19 +72,18 @@ export default function App() {
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : String(e))
       );
-  }, []);
+  }, [auth]);
 
   const runSolver = async (): Promise<void> => {
     if (!input) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/solve", {
+      const data = await api<SolveResult>("/api/solve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      const data = (await res.json()) as SolveResult;
       setResult(data);
       if (!data.success) setError(data.error ?? "Solver failed");
     } catch (e: unknown) {
@@ -72,6 +104,37 @@ export default function App() {
     setResult(null);
   };
 
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    setAuth({ authEnabled: true, user: null });
+    setDemo(null);
+    setInput(null);
+    setResult(null);
+  };
+
+  if (!auth) return <div className="app">Loading…</div>;
+
+  if (auth.authEnabled && !auth.user) {
+    if (!GOOGLE_CLIENT_ID) {
+      return (
+        <div className="app">
+          <div className="banner error">
+            Auth is enabled on the server but <code>VITE_GOOGLE_CLIENT_ID</code> is not
+            set in the client build.
+          </div>
+        </div>
+      );
+    }
+    return (
+      <Login
+        clientId={GOOGLE_CLIENT_ID}
+        onSuccess={() =>
+          api<AuthState>("/api/auth/me").then(setAuth).catch(() => {})
+        }
+      />
+    );
+  }
+
   if (!input) return <div className="app">Loading…</div>;
 
   const totalHours = input.classes.reduce(
@@ -82,10 +145,22 @@ export default function App() {
   return (
     <div className="app">
       <header className="page-header">
-        <h1>School Timetable Builder</h1>
-        <p className="subtitle">
-          Define teachers and classes, then generate a weekly timetable that satisfies all constraints.
-        </p>
+        <div className="header-row">
+          <div>
+            <h1>School Timetable Builder</h1>
+            <p className="subtitle">
+              Define teachers and classes, then generate a weekly timetable that satisfies all constraints.
+            </p>
+          </div>
+          {auth.user && (
+            <div className="user-menu">
+              <span className="user-name">{auth.user.name}</span>
+              <button className="secondary" onClick={logout}>
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="stats">

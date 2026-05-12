@@ -13,10 +13,16 @@ server/dist/
 # vite cache
 .vite/
 
-# env files (never commit secrets)
+# env files (never commit secrets — only .env.example is tracked)
 .env
 .env.local
 .env.*.local
+client/.env
+client/.env.local
+client/.env.*.local
+server/.env
+server/.env.local
+server/.env.*.local
 
 # logs
 *.log
