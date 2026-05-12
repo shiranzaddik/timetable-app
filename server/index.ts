@@ -1,5 +1,8 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { demoInput } from "./demoData.js";
 import { solve } from "./solver.js";
 import type { SchoolInput } from "./types.js";
@@ -25,6 +28,17 @@ app.post("/api/solve", (req: Request, res: Response) => {
     res.status(400).json({ success: false, error: message });
   }
 });
+
+// In production (deployed), serve the built React client from the same process.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const clientDist = join(__dirname, "..", "client", "dist");
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback for non-/api routes
+  app.get(/^\/(?!api).*/, (_req, res) => {
+    res.sendFile(join(clientDist, "index.html"));
+  });
+}
 
 const PORT = Number(process.env.PORT ?? 4000);
 app.listen(PORT, () => {

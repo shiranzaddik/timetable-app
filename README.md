@@ -47,3 +47,8 @@ Ports:
 API:
 - `GET  /api/demo`  → demo input data
 - `POST /api/solve` → run solver (body = input JSON, or empty to use demo)
+
+## Deploy
+
+See [DEPLOY.md](DEPLOY.md) for one-click deployment to Render. The repo's
+`build` and `start` scripts are already set up for it.
