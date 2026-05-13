@@ -12,7 +12,16 @@ import {
   setSessionCookie,
   signSession,
   verifyGoogleIdToken,
+  type SessionUser,
 } from "./auth.js";
+import {
+  dbEnabled,
+  deleteSchool,
+  getSchool,
+  initSchema,
+  saveSchool,
+  upsertUser,
+} from "./db.js";
 import { demoInput } from "./demoData.js";
 import { solve } from "./solver.js";
 import type { SchoolInput } from "./types.js";
@@ -22,7 +31,7 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: "2mb" }));
 
-// --- Auth endpoints ---
+// --- Auth ---
 
 app.get("/api/auth/me", (req: Request, res: Response) => {
   const user = authEnabled ? readSession(req) : null;
@@ -41,6 +50,7 @@ app.post("/api/auth/google", async (req: Request, res: Response) => {
   }
   try {
     const user = await verifyGoogleIdToken(idToken);
+    await upsertUser(user.email, user.name);
     setSessionCookie(res, signSession(user));
     res.json({ user });
   } catch (err) {
@@ -54,7 +64,60 @@ app.post("/api/auth/logout", (_req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
-// --- Data endpoints (gated by requireAuth when auth is enabled) ---
+// --- Saved school configuration (per signed-in user) ---
+
+function requireUser(req: Request): SessionUser | null {
+  return readSession(req);
+}
+
+app.get("/api/school", requireAuth, async (req: Request, res: Response) => {
+  if (!dbEnabled) {
+    res.json({ persisted: false, config: null });
+    return;
+  }
+  const user = requireUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const config = await getSchool(user.email);
+  res.json({ persisted: true, config });
+});
+
+app.put("/api/school", requireAuth, async (req: Request, res: Response) => {
+  if (!dbEnabled) {
+    res.status(503).json({ error: "Persistence is not configured on this server." });
+    return;
+  }
+  const user = requireUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  const config = req.body as SchoolInput | undefined;
+  if (!config || !config.classes || !config.teachers) {
+    res.status(400).json({ error: "Invalid school config." });
+    return;
+  }
+  await saveSchool(user.email, config);
+  res.json({ ok: true });
+});
+
+app.delete("/api/school", requireAuth, async (req: Request, res: Response) => {
+  if (!dbEnabled) {
+    res.status(503).json({ error: "Persistence is not configured on this server." });
+    return;
+  }
+  const user = requireUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+  await deleteSchool(user.email);
+  res.json({ ok: true });
+});
+
+// --- Solver / demo ---
 
 app.get("/api/demo", requireAuth, (_req: Request, res: Response) => {
   res.json(demoInput);
@@ -85,10 +148,18 @@ if (existsSync(clientDist)) {
 }
 
 const PORT = Number(process.env.PORT ?? 4000);
-app.listen(PORT, () => {
-  console.log(
-    `Timetable server listening on http://localhost:${PORT} (auth ${
-      authEnabled ? "enabled" : "disabled"
-    })`
-  );
-});
+
+// Initialize schema before accepting requests so the first call doesn't race.
+initSchema()
+  .catch((err) => {
+    console.error("Failed to initialize database schema:", err);
+  })
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(
+        `Timetable server listening on http://localhost:${PORT} (auth ${
+          authEnabled ? "on" : "off"
+        }, db ${dbEnabled ? "on" : "off"})`
+      );
+    });
+  });

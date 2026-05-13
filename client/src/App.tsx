@@ -16,6 +16,11 @@ interface AuthState {
   user: User | null;
 }
 
+interface SchoolState {
+  persisted: boolean;
+  config: SchoolInput | null;
+}
+
 const SHARED_ROOMS: Room[] = [
   { id: "sport-hall", name: "Sport Hall", type: RoomType.Sport },
   { id: "computer-lab", name: "Computer Lab", type: RoomType.Computer },
@@ -45,8 +50,10 @@ export default function App() {
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [demo, setDemo] = useState<SchoolInput | null>(null);
   const [input, setInput] = useState<SchoolInput | null>(null);
+  const [persisted, setPersisted] = useState(false);
   const [result, setResult] = useState<SolveResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>("byClass");
 
@@ -60,14 +67,16 @@ export default function App() {
       });
   }, []);
 
-  // 2) Fetch demo data once authenticated (or if auth disabled)
+  // 2) Once authenticated, load demo + the user's saved config (if any)
   useEffect(() => {
     if (!auth) return;
     if (auth.authEnabled && !auth.user) return;
-    api<SchoolInput>("/api/demo")
-      .then((d) => {
-        setDemo(d);
-        setInput(d);
+
+    Promise.all([api<SchoolInput>("/api/demo"), api<SchoolState>("/api/school")])
+      .then(([demoData, saved]) => {
+        setDemo(demoData);
+        setPersisted(saved.persisted);
+        setInput(saved.config ?? demoData);
       })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : String(e))
@@ -90,6 +99,36 @@ export default function App() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveConfig = async (): Promise<void> => {
+    if (!input || !persisted) return;
+    setSaving("saving");
+    try {
+      await api("/api/school", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      setSaving("saved");
+      window.setTimeout(() => setSaving("idle"), 2000);
+    } catch (e: unknown) {
+      setSaving("error");
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const deleteSavedConfig = async (): Promise<void> => {
+    if (!persisted) return;
+    if (!window.confirm("Delete your saved school data?")) return;
+    try {
+      await api("/api/school", { method: "DELETE" });
+      if (demo) setInput(demo);
+      setResult(null);
+      setSaving("idle");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -175,12 +214,30 @@ export default function App() {
         <button onClick={runSolver} disabled={loading || input.classes.length === 0}>
           {loading ? "Solving…" : "Generate Timetable"}
         </button>
+        {persisted && (
+          <button
+            className="secondary"
+            onClick={saveConfig}
+            disabled={saving === "saving"}
+          >
+            {saving === "saving"
+              ? "Saving…"
+              : saving === "saved"
+              ? "Saved ✓"
+              : "Save my data"}
+          </button>
+        )}
         <button className="secondary" onClick={loadDemo} disabled={!demo}>
           Load demo data
         </button>
         <button className="secondary" onClick={clearAll}>
           Clear all
         </button>
+        {persisted && (
+          <button className="secondary" onClick={deleteSavedConfig}>
+            Delete saved data
+          </button>
+        )}
         {result?.success && (
           <span className="banner success">
             Scheduled {result.blockCount} blocks in {result.elapsedMs} ms

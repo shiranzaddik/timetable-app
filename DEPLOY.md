@@ -55,3 +55,17 @@ The app supports "Sign in with Google" with a Gmail-address whitelist. Auth is *
 4. Click **Create**. Copy the **Client ID** — that's the value for both `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`.
 
 After setting the variables on Render, click **Manual Deploy → Deploy latest commit** so the new build picks up `VITE_GOOGLE_CLIENT_ID`. Users will see the *Sign in with Google* screen until they sign in with an email in `ALLOWED_EMAILS`.
+
+## Per-user persistence (optional)
+
+Adds the ability for each signed-in user to **save their school configuration**
+(teachers + classes) so it survives page reloads. Without it, the app falls
+back to the in-memory demo every refresh.
+
+| Key | Value |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string from Neon, Supabase, or any other Postgres host. Example: `postgresql://user:pass@host/db?sslmode=require` |
+
+The server bootstraps the schema (`users` + `schools` tables) on every boot
+— no migrations to run. When `DATABASE_URL` is empty, persistence silently
+turns off and the *Save my data* button is hidden.
