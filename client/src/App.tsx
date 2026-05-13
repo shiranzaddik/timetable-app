@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import InputView from "./components/InputView";
 import Login from "./components/Login";
 import TimetableView from "./components/TimetableView";
-import { Day, RoomType, type Room, type SchoolInput, type SolveResult } from "./types";
+import type { SchoolInput, SolveResult } from "./types";
 
 type View = "byClass" | "byTeacher";
 
@@ -21,22 +21,6 @@ interface SchoolState {
   config: SchoolInput | null;
 }
 
-const SHARED_ROOMS: Room[] = [
-  { id: "sport-hall", name: "Sport Hall", type: RoomType.Sport },
-  { id: "computer-lab", name: "Computer Lab", type: RoomType.Computer },
-  { id: "music-room", name: "Music Room", type: RoomType.Music },
-];
-
-const EMPTY_INPUT: SchoolInput = {
-  config: {
-    days: [Day.Sunday, Day.Monday, Day.Tuesday, Day.Wednesday, Day.Thursday],
-    slotLabels: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"],
-  },
-  rooms: SHARED_ROOMS,
-  teachers: [],
-  classes: [],
-};
-
 const GOOGLE_CLIENT_ID =
   (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
 
@@ -48,7 +32,6 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function App() {
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
-  const [demo, setDemo] = useState<SchoolInput | null>(null);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [persisted, setPersisted] = useState(false);
   const [result, setResult] = useState<SolveResult | null>(null);
@@ -76,7 +59,6 @@ export default function App() {
 
     Promise.all([api<SchoolInput>("/api/demo"), api<SchoolState>("/api/school")])
       .then(([demoData, saved]) => {
-        setDemo(demoData);
         setPersisted(saved.persisted);
         setInput(saved.config ?? demoData);
       })
@@ -135,37 +117,9 @@ export default function App() {
     setDirty(true);
   };
 
-  const deleteSavedConfig = async (): Promise<void> => {
-    if (!persisted) return;
-    if (!window.confirm("Delete your saved school data?")) return;
-    try {
-      await api("/api/school", { method: "DELETE" });
-      if (demo) setInput(demo);
-      setResult(null);
-      setDirty(false);
-      setSaving("idle");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  };
-
-  const loadDemo = () => {
-    if (demo) {
-      setInput(demo);
-      setResult(null);
-      setDirty(true);
-    }
-  };
-  const clearAll = () => {
-    setInput(EMPTY_INPUT);
-    setResult(null);
-    setDirty(true);
-  };
-
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setAuth({ authEnabled: true, user: null });
-    setDemo(null);
     setInput(null);
     setResult(null);
   };
@@ -244,17 +198,6 @@ export default function App() {
         <button onClick={runSolver} disabled={loading || input.classes.length === 0}>
           {loading ? "Solving…" : "Generate Timetable"}
         </button>
-        <button className="secondary" onClick={loadDemo} disabled={!demo}>
-          Load demo data
-        </button>
-        <button className="secondary" onClick={clearAll}>
-          Clear all
-        </button>
-        {persisted && (
-          <button className="secondary" onClick={deleteSavedConfig}>
-            Delete saved data
-          </button>
-        )}
         {result?.success && (
           <span className="banner success">
             Scheduled {result.blockCount} blocks in {result.elapsedMs} ms
