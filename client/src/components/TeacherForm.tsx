@@ -10,15 +10,21 @@ import {
 interface Props {
   onSave: (teacher: Teacher) => void;
   onCancel: () => void;
+  /** Existing ids — used for collision detection when adding a new teacher. */
   existingIds: string[];
+  /** When provided, the form edits this teacher instead of creating a new one. */
+  initial?: Teacher;
 }
 
-export default function TeacherForm({ onSave, onCancel, existingIds }: Props) {
-  const [name, setName] = useState("");
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [dayOff, setDayOff] = useState<Day>(Day.Sunday);
-  const [unavailable, setUnavailable] = useState<UnavailabilityWindow[]>([]);
+export default function TeacherForm({ onSave, onCancel, existingIds, initial }: Props) {
+  const isEdit = !!initial;
+  const [name, setName] = useState(initial?.name ?? "");
+  const [subjects, setSubjects] = useState<Subject[]>(initial?.subjects ?? []);
+  const [grades, setGrades] = useState<Grade[]>(initial?.grades ?? []);
+  const [dayOff, setDayOff] = useState<Day>(initial?.dayOff ?? Day.Sunday);
+  const [unavailable, setUnavailable] = useState<UnavailabilityWindow[]>(
+    initial?.unavailable ?? []
+  );
   const [error, setError] = useState<string | null>(null);
 
   const toggle = <T,>(arr: T[], value: T): T[] =>
@@ -28,13 +34,14 @@ export default function TeacherForm({ onSave, onCancel, existingIds }: Props) {
     if (!name.trim()) return setError("Name is required");
     if (subjects.length === 0) return setError("Pick at least one subject");
     if (grades.length === 0) return setError("Pick at least one grade");
-    const id = makeId(name, existingIds);
+    // Keep the existing id when editing — only mint a new one for additions.
+    const id = isEdit ? initial!.id : makeId(name, existingIds);
     onSave({ id, name: name.trim(), subjects, grades, dayOff, unavailable });
   };
 
   return (
     <div className="form-card">
-      <strong style={{ fontSize: 14 }}>New teacher</strong>
+      <strong style={{ fontSize: 14 }}>{isEdit ? `Edit teacher` : "New teacher"}</strong>
 
       <div className="form-row">
         <label>Name</label>
@@ -152,7 +159,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds }: Props) {
       {error && <div className="banner error">{error}</div>}
 
       <div className="form-actions">
-        <button onClick={submit}>Save teacher</button>
+        <button onClick={submit}>{isEdit ? "Save changes" : "Save teacher"}</button>
         <button className="secondary" onClick={onCancel}>
           Cancel
         </button>
