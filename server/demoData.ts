@@ -113,6 +113,30 @@ export const teachers: Teacher[] = [
     dayOff: Day.Thursday,
     unavailable: [],
   },
+  {
+    id: "t-sarah",
+    name: "Ms. Sarah",
+    subjects: [Subject.Math, Subject.Hebrew, Subject.Science],
+    grades: allGrades,
+    dayOff: Day.Sunday,
+    unavailable: [],
+  },
+  {
+    id: "t-beth",
+    name: "Ms. Beth",
+    subjects: [Subject.English],
+    grades: allGrades,
+    dayOff: Day.Tuesday,
+    unavailable: [],
+  },
+  {
+    id: "t-omer",
+    name: "Mr. Omer",
+    subjects: [Subject.Computer],
+    grades: allGrades,
+    dayOff: Day.Monday,
+    unavailable: [],
+  },
 ];
 
 // Subject hours per class per week.
