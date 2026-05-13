@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import InputView from "./components/InputView";
 import Login from "./components/Login";
 import TimetableView from "./components/TimetableView";
@@ -56,6 +56,8 @@ export default function App() {
   const [saving, setSaving] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>("byClass");
+  const [dirty, setDirty] = useState(false);
+  const saveTimerRef = useRef<number | null>(null);
 
   // 1) Auth check on mount
   useEffect(() => {
@@ -102,21 +104,35 @@ export default function App() {
     }
   };
 
-  const saveConfig = async (): Promise<void> => {
-    if (!input || !persisted) return;
-    setSaving("saving");
-    try {
-      await api("/api/school", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      setSaving("saved");
-      window.setTimeout(() => setSaving("idle"), 2000);
-    } catch (e: unknown) {
-      setSaving("error");
-      setError(e instanceof Error ? e.message : String(e));
-    }
+  // Auto-save: 1s after the user makes an edit, PUT the current input to /api/school.
+  useEffect(() => {
+    if (!dirty || !input || !persisted) return;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(async () => {
+      setSaving("saving");
+      try {
+        await api("/api/school", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
+        });
+        setSaving("saved");
+        setDirty(false);
+        window.setTimeout(() => setSaving("idle"), 1500);
+      } catch (e: unknown) {
+        setSaving("error");
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    }, 1000);
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [input, dirty, persisted]);
+
+  // Called by InputView when the user edits something — flags the change for auto-save.
+  const handleInputChange = (next: SchoolInput): void => {
+    setInput(next);
+    setDirty(true);
   };
 
   const deleteSavedConfig = async (): Promise<void> => {
@@ -126,6 +142,7 @@ export default function App() {
       await api("/api/school", { method: "DELETE" });
       if (demo) setInput(demo);
       setResult(null);
+      setDirty(false);
       setSaving("idle");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -136,11 +153,13 @@ export default function App() {
     if (demo) {
       setInput(demo);
       setResult(null);
+      setDirty(true);
     }
   };
   const clearAll = () => {
     setInput(EMPTY_INPUT);
     setResult(null);
+    setDirty(true);
   };
 
   const logout = async () => {
@@ -193,6 +212,17 @@ export default function App() {
           </div>
           {auth.user && (
             <div className="user-menu">
+              {persisted && (
+                <span className={`save-indicator save-${saving}`}>
+                  {saving === "saving"
+                    ? "Saving…"
+                    : saving === "saved"
+                    ? "Saved ✓"
+                    : saving === "error"
+                    ? "Save failed"
+                    : ""}
+                </span>
+              )}
               <span className="user-name">{auth.user.name}</span>
               <button className="secondary" onClick={logout}>
                 Sign out
@@ -214,19 +244,6 @@ export default function App() {
         <button onClick={runSolver} disabled={loading || input.classes.length === 0}>
           {loading ? "Solving…" : "Generate Timetable"}
         </button>
-        {persisted && (
-          <button
-            className="secondary"
-            onClick={saveConfig}
-            disabled={saving === "saving"}
-          >
-            {saving === "saving"
-              ? "Saving…"
-              : saving === "saved"
-              ? "Saved ✓"
-              : "Save my data"}
-          </button>
-        )}
         <button className="secondary" onClick={loadDemo} disabled={!demo}>
           Load demo data
         </button>
@@ -247,7 +264,7 @@ export default function App() {
 
       {error && <div className="banner error" style={{ marginBottom: 16 }}>{error}</div>}
 
-      <InputView input={input} onChange={setInput} />
+      <InputView input={input} onChange={handleInputChange} />
 
       {result?.success && (
         <div className="section">

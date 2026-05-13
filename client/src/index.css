@@ -71,6 +71,16 @@ body {
   color: var(--text-muted);
   font-weight: 500;
 }
+.save-indicator {
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 1em;
+  transition: opacity 0.2s;
+}
+.save-indicator.save-idle { opacity: 0; }
+.save-indicator.save-saving { color: var(--text-muted); }
+.save-indicator.save-saved { color: var(--success); }
+.save-indicator.save-error { color: var(--error); }
 
 /* --- Login screen --- */
 .login-screen {
