@@ -152,9 +152,10 @@ function candidateTeachers(
   );
 }
 
-// Schedule one class fully before moving to the next. Within a class,
-// schedule special-room blocks first, then longer blocks. This produces a
-// much smaller search tree than interleaving classes.
+// Schedule one class fully before moving to the next. Within a class, place
+// REGULAR-classroom blocks first (so the class claims slot 0 of each day in
+// its own classroom), then special-room blocks (sport, computer) slot in
+// wherever room and teacher availability allow.
 function orderBlocks(
   blocks: Block[],
   classesById: Record<string, SchoolClass>,
@@ -164,9 +165,9 @@ function orderBlocks(
     const cls = classesById[block.classId];
     const ts = candidateTeachers(block, cls, teachers);
     let s = 0;
-    if (block.requiredRoomType) s -= 1000;
-    s -= block.duration * 100;
-    s += ts.length * 10;
+    if (block.requiredRoomType) s += 1000; // specials last
+    s -= block.duration * 100; // longer first
+    s += ts.length * 10; // tight teacher options first
     return s;
   };
   return [...blocks].sort((a, b) => {
@@ -332,9 +333,12 @@ function search(
     }
   );
 
-  for (const teacher of teachers_) {
+  // Slot outer so slot 0 is tried across every (day, teacher) combo before
+  // moving on to slot 1, etc. This makes the solver strongly prefer
+  // morning starts for every class day.
+  for (let s = 0; s + block.duration <= ctx.config.slotLabels.length; s++) {
     for (const d of dayOrder) {
-      for (let s = 0; s + block.duration <= ctx.config.slotLabels.length; s++) {
+      for (const teacher of teachers_) {
         if (canPlace(block, teacher, d, s, state)) {
           const prev = place(block, teacher, d, s, state);
           if (search(blocks, idx + 1, state, ctx)) return true;

@@ -3,6 +3,10 @@ import { demoInput } from "./demoData.js";
 import { solve } from "./solver.js";
 import type { Grid, TimetableCell } from "./types.js";
 
+console.log(`Demo has ${demoInput.classes.length} classes, school day ${demoInput.config.startHour}-${demoInput.config.endHour}h (${demoInput.config.slotLabels.length} slots)`);
+console.log(
+  `Total weekly hours per class: ${demoInput.classes[0].subjects.reduce((s, x) => s + x.hoursPerWeek, 0)}`
+);
 const start = Date.now();
 const result = solve(demoInput);
 const ms = Date.now() - start;
@@ -10,6 +14,7 @@ const ms = Date.now() - start;
 console.log(`Solver finished in ${ms}ms — success=${result.success}`);
 if (!result.success) {
   console.log("Error:", result.error);
+  console.log("Partially placed:", result.timetables.byClass);
   process.exit(1);
 }
 

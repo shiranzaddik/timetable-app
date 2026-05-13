@@ -115,7 +115,7 @@ export const teachers: Teacher[] = [
   },
 ];
 
-// Subject hours sized for a 5-hour school day (08:00–13:00 = 25 slots/week per class).
+// Subject hours per class per week.
 const standardSubjects: ClassSubject[] = [
   { subject: Subject.Math, hoursPerWeek: 2 },
   { subject: Subject.Hebrew, hoursPerWeek: 2 },
