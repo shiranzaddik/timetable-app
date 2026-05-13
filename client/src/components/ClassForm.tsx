@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "../i18n";
 import {
   Grade,
   Subject,
@@ -33,6 +34,7 @@ export default function ClassForm({
   onCancel,
   initial,
 }: Props) {
+  const { t, tSubject } = useT();
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
@@ -53,18 +55,17 @@ export default function ClassForm({
     existingIds.includes(id) && (!isEdit || id !== initial?.id);
 
   const submit = () => {
-    if (!defaultTeacherId) return setError("Select a default teacher");
-    if (idCollides) return setError(`Class "${id}" already exists`);
+    if (!defaultTeacherId) return setError(t("errSelectTeacher"));
+    if (idCollides) return setError(t("errClassExists", { id }));
     const filtered = subjects.filter((s) => s.hoursPerWeek > 0);
-    if (filtered.length === 0)
-      return setError("Set hours/week for at least one subject");
+    if (filtered.length === 0) return setError(t("errSetHours"));
     onSave({
       id,
       grade,
       section,
       name: `Class ${id}`,
       defaultTeacherId,
-      defaultRoomId: `room-${id}`, // parent reconciles the rooms list
+      defaultRoomId: `room-${id}`,
       subjects: filtered,
     });
   };
@@ -72,12 +73,12 @@ export default function ClassForm({
   return (
     <div className="form-card">
       <strong style={{ fontSize: 14 }}>
-        {isEdit ? `Edit class ${initial!.id}` : "New class"}
+        {isEdit ? t("editClass", { id: initial!.id }) : t("newClass")}
       </strong>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         <div className="form-row">
-          <label>Grade</label>
+          <label>{t("fieldGrade")}</label>
           <select
             value={grade}
             onChange={(e) => setGrade(e.target.value as Grade)}
@@ -90,7 +91,7 @@ export default function ClassForm({
           </select>
         </div>
         <div className="form-row">
-          <label>Section</label>
+          <label>{t("fieldSection")}</label>
           <input
             type="number"
             min={1}
@@ -101,31 +102,31 @@ export default function ClassForm({
       </div>
 
       <div className="form-row">
-        <label>Default teacher</label>
+        <label>{t("fieldDefaultTeacher")}</label>
         <select
           value={defaultTeacherId}
           onChange={(e) => setDefaultTeacherId(e.target.value)}
         >
           <option value="" disabled>
-            Select…
+            {t("selectDots")}
           </option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          {teachers.map((teacher) => (
+            <option key={teacher.id} value={teacher.id}>
+              {teacher.name}
             </option>
           ))}
         </select>
         <small style={{ color: "var(--text-muted)" }}>
-          For subjects this teacher can teach, they will be forced for this class.
+          {t("defaultTeacherNote")}
         </small>
       </div>
 
       <div className="form-row">
-        <label>Subjects (hours / week)</label>
+        <label>{t("fieldSubjectsHours")}</label>
         {subjects.map((row, i) => (
           <div key={row.subject} className="subject-hours-row">
             <span style={{ textTransform: "capitalize", fontSize: 13 }}>
-              {row.subject}
+              {tSubject(row.subject)}
             </span>
             <input
               type="number"
@@ -146,10 +147,12 @@ export default function ClassForm({
 
       <div className="form-actions">
         <button onClick={submit}>
-          {isEdit ? `Save changes to ${id}` : `Save class (${id})`}
+          {isEdit
+            ? t("saveChangesToId", { id })
+            : t("saveClassWithId", { id })}
         </button>
         <button className="secondary" onClick={onCancel}>
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </div>

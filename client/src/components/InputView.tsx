@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "../i18n";
 import {
   RoomType,
   type SchoolClass,
@@ -15,22 +16,21 @@ interface Props {
 }
 
 export default function InputView({ input, onChange }: Props) {
+  const { t } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
 
-  const teacherById = Object.fromEntries(input.teachers.map((t) => [t.id, t]));
+  const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
   const removeTeacher = (id: string) => {
     if (
       input.classes.some((c) => c.defaultTeacherId === id) &&
-      !confirm(
-        "This teacher is the default teacher for one or more classes. Remove anyway?"
-      )
+      !confirm(t("confirmRemoveTeacher"))
     )
       return;
-    onChange({ ...input, teachers: input.teachers.filter((t) => t.id !== id) });
+    onChange({ ...input, teachers: input.teachers.filter((x) => x.id !== id) });
   };
 
   const removeClass = (id: string) => {
@@ -104,23 +104,23 @@ export default function InputView({ input, onChange }: Props) {
       <div className="section">
         <div className="section-header">
           <div>
-            <h3 className="section-title">Teachers</h3>
+            <h3 className="section-title">{t("teachersSection")}</h3>
             <div className="section-meta">
               {input.teachers.length}{" "}
-              {input.teachers.length === 1 ? "teacher" : "teachers"}
+              {input.teachers.length === 1
+                ? t("countTeachersOne")
+                : t("countTeachersMany")}
             </div>
           </div>
           {!addingTeacher && !editingTeacherId && (
             <button className="add-btn" onClick={() => setAddingTeacher(true)}>
-              + Add teacher
+              {t("addTeacher")}
             </button>
           )}
         </div>
 
         {input.teachers.length === 0 && !addingTeacher && (
-          <div className="empty-state">
-            No teachers yet. Click <strong>+ Add teacher</strong> to start.
-          </div>
+          <div className="empty-state">{t("emptyTeachers")}</div>
         )}
 
         <div className="card-grid">
@@ -156,10 +156,12 @@ export default function InputView({ input, onChange }: Props) {
       <div className="section">
         <div className="section-header">
           <div>
-            <h3 className="section-title">Classes</h3>
+            <h3 className="section-title">{t("classesSection")}</h3>
             <div className="section-meta">
               {input.classes.length}{" "}
-              {input.classes.length === 1 ? "class" : "classes"}
+              {input.classes.length === 1
+                ? t("countClassesOne")
+                : t("countClassesMany")}
             </div>
           </div>
           {!addingClass && !editingClassId && (
@@ -167,11 +169,9 @@ export default function InputView({ input, onChange }: Props) {
               className="add-btn"
               onClick={() => setAddingClass(true)}
               disabled={input.teachers.length === 0}
-              title={
-                input.teachers.length === 0 ? "Add at least one teacher first" : ""
-              }
+              title={input.teachers.length === 0 ? t("addTeacherFirst") : ""}
             >
-              + Add class
+              {t("addClass")}
             </button>
           )}
         </div>
@@ -179,8 +179,8 @@ export default function InputView({ input, onChange }: Props) {
         {input.classes.length === 0 && !addingClass && (
           <div className="empty-state">
             {input.teachers.length === 0
-              ? "Add at least one teacher first, then add classes."
-              : "No classes yet. Click + Add class to create the first one."}
+              ? t("emptyClassesNoTeachers")
+              : t("emptyClasses")}
           </div>
         )}
 
@@ -233,28 +233,31 @@ function TeacherCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t, tDay, tSubject } = useT();
   return (
     <div className="card teacher-card compact">
       <div className="head">
         <div className="avatar">{initials(teacher.name)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{teacher.name}</p>
-          <p className="teacher-role">Grades {teacher.grades.join(", ") || "—"}</p>
+          <p className="teacher-role">
+            {t("grades")} {teacher.grades.join(", ") || "—"}
+          </p>
         </div>
         <div className="card-actions">
           <button
             className="icon-btn"
             onClick={onEdit}
-            aria-label={`Edit ${teacher.name}`}
-            title="Edit"
+            aria-label={t("edit")}
+            title={t("edit")}
           >
             ✎
           </button>
           <button
             className="icon-btn danger"
             onClick={onDelete}
-            aria-label={`Delete ${teacher.name}`}
-            title="Delete"
+            aria-label={t("delete")}
+            title={t("delete")}
           >
             ×
           </button>
@@ -264,16 +267,18 @@ function TeacherCard({
       <div className="row">
         {teacher.subjects.map((s) => (
           <span key={s} className={`tag subj-${s}`}>
-            {s}
+            {tSubject(s)}
           </span>
         ))}
       </div>
 
       <div className="row">
-        <span className="tag warn">Off {teacher.dayOff}</span>
+        <span className="tag warn">
+          {t("off")} {tDay(teacher.dayOff)}
+        </span>
         {teacher.unavailable.map((w, i) => (
           <span key={i} className="tag warn">
-            {formatWindow(w)}
+            {formatWindow(w, tDay, t("allDay"))}
           </span>
         ))}
       </div>
@@ -294,31 +299,32 @@ function ClassCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t, tSubject, tClassName } = useT();
   const totalHours = cls.subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
   return (
     <div className="card class-card compact">
       <div className="head">
         <div className={`grade-badge grade-${cls.grade}`}>{cls.id}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">{cls.name}</p>
+          <p className="teacher-name">{tClassName(cls.id)}</p>
           <p className="teacher-role">
-            Grade {cls.grade} · {totalHours}h / week
+            {t("gradePrefix")} {cls.grade} · {totalHours}h / {t("statHours")}
           </p>
         </div>
         <div className="card-actions">
           <button
             className="icon-btn"
             onClick={onEdit}
-            aria-label={`Edit ${cls.name}`}
-            title="Edit"
+            aria-label={t("edit")}
+            title={t("edit")}
           >
             ✎
           </button>
           <button
             className="icon-btn danger"
             onClick={onDelete}
-            aria-label={`Delete ${cls.name}`}
-            title="Delete"
+            aria-label={t("delete")}
+            title={t("delete")}
           >
             ×
           </button>
@@ -326,14 +332,18 @@ function ClassCard({
       </div>
 
       <div className="row">
-        <span className="tag dot">Teacher: {defaultTeacherName}</span>
-        <span className="tag muted">Room: {defaultRoomName}</span>
+        <span className="tag dot">
+          {t("teacherLabel")}: {defaultTeacherName}
+        </span>
+        <span className="tag muted">
+          {t("roomLabel")}: {defaultRoomName}
+        </span>
       </div>
 
       <div className="row">
         {cls.subjects.map((s) => (
           <span key={s.subject} className={`tag subj-${s.subject}`}>
-            {s.subject} · {s.hoursPerWeek}h
+            {tSubject(s.subject)} · {s.hoursPerWeek}h
           </span>
         ))}
       </div>
@@ -351,9 +361,14 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-function formatWindow(w: UnavailabilityWindow): string {
-  if (!w.fromTime && !w.toTime) return `${w.day} all day`;
-  const from = w.fromTime ?? "start";
-  const to = w.toTime ?? "end";
-  return `${w.day} ${from}–${to}`;
+function formatWindow(
+  w: UnavailabilityWindow,
+  tDay: (d: typeof w.day) => string,
+  allDay: string
+): string {
+  const day = tDay(w.day);
+  if (!w.fromTime && !w.toTime) return `${day} ${allDay}`;
+  const from = w.fromTime ?? "…";
+  const to = w.toTime ?? "…";
+  return `${day} ${from}–${to}`;
 }

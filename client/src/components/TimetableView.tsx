@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { Grid, SchoolInput, SolveResult } from "../types";
+import { useT } from "../i18n";
+import { Day, type Grid, type SchoolInput, type SolveResult } from "../types";
 
 type Mode = "byClass" | "byTeacher";
 
@@ -15,8 +16,12 @@ interface EntityRef {
 }
 
 export default function TimetableView({ input, result, mode }: Props) {
+  const { tClassName } = useT();
   const entities: EntityRef[] =
-    mode === "byClass" ? input.classes : input.teachers;
+    mode === "byClass"
+      ? input.classes.map((c) => ({ id: c.id, name: tClassName(c.id) }))
+      : input.teachers.map((teacher) => ({ id: teacher.id, name: teacher.name }));
+
   // ClassId enum values are strings, so we can safely treat both maps as string-keyed.
   const grids: Record<string, Grid> =
     mode === "byClass"
@@ -53,6 +58,7 @@ interface GridProps {
 }
 
 function GridTable({ input, grid, mode }: GridProps) {
+  const { tDay, tSubject, tClassName } = useT();
   const { days, slotLabels } = input.config;
 
   return (
@@ -62,7 +68,7 @@ function GridTable({ input, grid, mode }: GridProps) {
           <tr>
             <th></th>
             {days.map((d) => (
-              <th key={d}>{d}</th>
+              <th key={d}>{tDay(d as Day)}</th>
             ))}
           </tr>
         </thead>
@@ -80,9 +86,11 @@ function GridTable({ input, grid, mode }: GridProps) {
                   );
                 return (
                   <td key={dayIdx} className={`subj-${cell.subject}`}>
-                    <div className="cell-subject">{cell.subject}</div>
+                    <div className="cell-subject">{tSubject(cell.subject)}</div>
                     <div className="cell-meta">
-                      {mode === "byClass" ? cell.teacherName : cell.className}
+                      {mode === "byClass"
+                        ? cell.teacherName
+                        : tClassName(cell.classId)}
                     </div>
                     <div className="cell-meta">{cell.roomName}</div>
                   </td>

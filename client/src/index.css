@@ -82,6 +82,48 @@ body {
 .save-indicator.save-saved { color: var(--success); }
 .save-indicator.save-error { color: var(--error); }
 
+/* --- Language switcher --- */
+.lang-switcher {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+  gap: 0;
+}
+.lang-pill {
+  background: transparent;
+  color: var(--text-muted);
+  border: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  line-height: 1;
+}
+.lang-pill:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.lang-pill.active {
+  background: var(--text);
+  color: white;
+}
+.login-lang-wrap {
+  position: absolute;
+  top: 20px;
+  inset-inline-end: 20px;
+  z-index: 2;
+}
+
+/* --- RTL tweaks --- */
+[dir="rtl"] body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Heebo", "Arial Hebrew", Arial, sans-serif; }
+[dir="rtl"] table.timetable th,
+[dir="rtl"] table.timetable td { text-align: right; }
+[dir="rtl"] .form-row > label { text-align: right; }
+[dir="rtl"] .login-features { direction: rtl; }
+
 /* --- Login screen --- */
 .login-screen {
   min-height: 100vh;

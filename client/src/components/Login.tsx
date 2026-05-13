@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useT } from "../i18n";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 declare global {
   interface Window {
@@ -24,14 +26,8 @@ interface Props {
   onSuccess: () => void;
 }
 
-const FEATURES = [
-  "Automatic constraint solving in milliseconds",
-  "Teacher availability, day-off, and grade rules",
-  "Special rooms for sport, computer, and music",
-  "Per-user saved configurations",
-];
-
 export default function Login({ clientId, onSuccess }: Props) {
+  const { t } = useT();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,9 +78,14 @@ export default function Login({ clientId, onSuccess }: Props) {
     };
   }, [clientId, onSuccess]);
 
+  const features = [t("feature1"), t("feature2"), t("feature3"), t("feature4")];
+
   return (
     <div className="login-screen">
       <div className="login-shine" aria-hidden="true" />
+      <div className="login-lang-wrap">
+        <LanguageSwitcher />
+      </div>
       <div className="login-content">
         <div className="login-brand">
           <div className="login-icon-box" aria-hidden="true">
@@ -99,14 +100,12 @@ export default function Login({ clientId, onSuccess }: Props) {
               <rect x="12" y="16" width="3" height="2" rx="0.5" fill="white" />
             </svg>
           </div>
-          <h1>School Timetable Builder</h1>
-          <p className="login-tagline">
-            Build conflict-free weekly schedules for every class and teacher in seconds.
-          </p>
+          <h1>{t("appTitle")}</h1>
+          <p className="login-tagline">{t("loginTagline")}</p>
         </div>
 
         <ul className="login-features">
-          {FEATURES.map((f) => (
+          {features.map((f) => (
             <li key={f}>
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <circle cx="10" cy="10" r="10" fill="var(--success-soft)" />
@@ -126,20 +125,18 @@ export default function Login({ clientId, onSuccess }: Props) {
         <div className="login-action">
           <div ref={buttonRef} className="google-button" />
           {error && <div className="banner error" style={{ marginTop: 14 }}>{error}</div>}
-          <p className="login-fine-print">
-            Only invited Google accounts can access this app.
-          </p>
+          <p className="login-fine-print">{t("loginFinePrint")}</p>
         </div>
       </div>
 
       <footer className="login-footer">
-        Built with React + Node ·{" "}
+        {t("loginFooterPrefix")}{" "}
         <a
           href="https://github.com/shiranzaddik/timetable-app"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Source on GitHub
+          {t("loginFooterLink")}
         </a>
       </footer>
     </div>

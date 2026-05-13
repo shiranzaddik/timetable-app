@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "../i18n";
 import {
   Day,
   Grade,
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function TeacherForm({ onSave, onCancel, existingIds, initial }: Props) {
+  const { t, tDay, tSubject } = useT();
   const isEdit = !!initial;
   const [name, setName] = useState(initial?.name ?? "");
   const [subjects, setSubjects] = useState<Subject[]>(initial?.subjects ?? []);
@@ -31,29 +33,30 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
     arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
 
   const submit = () => {
-    if (!name.trim()) return setError("Name is required");
-    if (subjects.length === 0) return setError("Pick at least one subject");
-    if (grades.length === 0) return setError("Pick at least one grade");
-    // Keep the existing id when editing — only mint a new one for additions.
+    if (!name.trim()) return setError(t("errNameRequired"));
+    if (subjects.length === 0) return setError(t("errPickSubject"));
+    if (grades.length === 0) return setError(t("errPickGrade"));
     const id = isEdit ? initial!.id : makeId(name, existingIds);
     onSave({ id, name: name.trim(), subjects, grades, dayOff, unavailable });
   };
 
   return (
     <div className="form-card">
-      <strong style={{ fontSize: 14 }}>{isEdit ? `Edit teacher` : "New teacher"}</strong>
+      <strong style={{ fontSize: 14 }}>
+        {isEdit ? t("editTeacher") : t("newTeacher")}
+      </strong>
 
       <div className="form-row">
-        <label>Name</label>
+        <label>{t("fieldName")}</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Ms. Smith"
+          placeholder={t("fieldNamePlaceholder")}
         />
       </div>
 
       <div className="form-row">
-        <label>Subjects</label>
+        <label>{t("fieldSubjects")}</label>
         <div className="checkbox-grid">
           {Object.values(Subject).map((s) => (
             <label key={s} className={subjects.includes(s) ? "checked" : ""}>
@@ -62,14 +65,14 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
                 checked={subjects.includes(s)}
                 onChange={() => setSubjects(toggle(subjects, s))}
               />
-              {s}
+              {tSubject(s)}
             </label>
           ))}
         </div>
       </div>
 
       <div className="form-row">
-        <label>Grades they can teach</label>
+        <label>{t("fieldGrades")}</label>
         <div className="checkbox-grid">
           {Object.values(Grade).map((g) => (
             <label key={g} className={grades.includes(g) ? "checked" : ""}>
@@ -78,18 +81,18 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
                 checked={grades.includes(g)}
                 onChange={() => setGrades(toggle(grades, g))}
               />
-              Grade {g}
+              {t("gradePrefix")} {g}
             </label>
           ))}
         </div>
       </div>
 
       <div className="form-row">
-        <label>Day off</label>
+        <label>{t("fieldDayOff")}</label>
         <select value={dayOff} onChange={(e) => setDayOff(e.target.value as Day)}>
           {Object.values(Day).map((d) => (
             <option key={d} value={d}>
-              {d}
+              {tDay(d)}
             </option>
           ))}
         </select>
@@ -97,8 +100,10 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
 
       <div className="form-row">
         <label>
-          Other unavailable windows{" "}
-          <span style={{ color: "var(--text-dim)", fontWeight: 400 }}>(optional)</span>
+          {t("fieldUnavailable")}{" "}
+          <span style={{ color: "var(--text-dim)", fontWeight: 400 }}>
+            {t("optional")}
+          </span>
         </label>
         {unavailable.map((w, i) => (
           <div key={i} className="window-row">
@@ -112,7 +117,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
             >
               {Object.values(Day).map((d) => (
                 <option key={d} value={d}>
-                  {d}
+                  {tDay(d)}
                 </option>
               ))}
             </select>
@@ -145,23 +150,23 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
         <button
           className="add-btn"
           style={{ alignSelf: "flex-start" }}
-          onClick={() =>
-            setUnavailable([...unavailable, { day: Day.Sunday }])
-          }
+          onClick={() => setUnavailable([...unavailable, { day: Day.Sunday }])}
         >
-          + Window
+          {t("addWindow")}
         </button>
         <small style={{ color: "var(--text-muted)" }}>
-          Leave times empty to mean the entire day.
+          {t("leaveTimesEmpty")}
         </small>
       </div>
 
       {error && <div className="banner error">{error}</div>}
 
       <div className="form-actions">
-        <button onClick={submit}>{isEdit ? "Save changes" : "Save teacher"}</button>
+        <button onClick={submit}>
+          {isEdit ? t("saveChanges") : t("saveTeacher")}
+        </button>
         <button className="secondary" onClick={onCancel}>
-          Cancel
+          {t("cancel")}
         </button>
       </div>
     </div>
