@@ -74,6 +74,10 @@ interface SolveContext {
   teachers: Teacher[];
   classesById: Record<string, SchoolClass>;
   teacherAvail: Record<string, boolean[][]>;
+  /** When set, search will bail out (return false) past this timestamp. */
+  deadlineMs?: number;
+  /** Mutates to true once the deadline has been observed; sticky. */
+  timedOut: { value: boolean };
 }
 
 function timeToMinutes(t: string): number {
@@ -159,7 +163,8 @@ function candidateTeachers(
 function orderBlocks(
   blocks: Block[],
   classesById: Record<string, SchoolClass>,
-  teachers: Teacher[]
+  teachers: Teacher[],
+  classOrder?: string[]
 ): Block[] {
   const innerScore = (block: Block): number => {
     const cls = classesById[block.classId];
@@ -170,8 +175,14 @@ function orderBlocks(
     s += ts.length * 10; // tight teacher options first
     return s;
   };
+  const classRank = classOrder
+    ? Object.fromEntries(classOrder.map((c, i) => [c, i] as const))
+    : null;
   return [...blocks].sort((a, b) => {
-    if (a.classId !== b.classId) return a.classId.localeCompare(b.classId);
+    if (a.classId !== b.classId) {
+      if (classRank) return (classRank[a.classId] ?? 0) - (classRank[b.classId] ?? 0);
+      return a.classId.localeCompare(b.classId);
+    }
     return innerScore(a) - innerScore(b);
   });
 }
@@ -312,6 +323,11 @@ function search(
   state: SolveState,
   ctx: SolveContext
 ): boolean {
+  if (ctx.timedOut.value) return false;
+  if (ctx.deadlineMs && Date.now() > ctx.deadlineMs) {
+    ctx.timedOut.value = true;
+    return false;
+  }
   if (idx === blocks.length) return true;
 
   const block = blocks[idx];
@@ -395,7 +411,11 @@ function buildOutput(input: SchoolInput, assignments: Assignment[]): Timetables 
   return { byClass, byTeacher };
 }
 
-export function solve(input: SchoolInput): SolveResult {
+function solveOnce(
+  input: SchoolInput,
+  classOrder?: string[],
+  deadlineMs?: number
+): SolveResult {
   const { config, rooms, teachers, classes } = input;
   const classesById = Object.fromEntries(classes.map((c) => [c.id, c]));
 
@@ -407,7 +427,7 @@ export function solve(input: SchoolInput): SolveResult {
   );
 
   const blocks = buildBlocks(classes);
-  const ordered = orderBlocks(blocks, classesById, teachers);
+  const ordered = orderBlocks(blocks, classesById, teachers, classOrder);
 
   const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
     classes.map((c) => {
@@ -437,7 +457,14 @@ export function solve(input: SchoolInput): SolveResult {
     ),
   };
 
-  const ctx: SolveContext = { config, teachers, classesById, teacherAvail };
+  const ctx: SolveContext = {
+    config,
+    teachers,
+    classesById,
+    teacherAvail,
+    deadlineMs,
+    timedOut: { value: false },
+  };
 
   const ok = search(ordered, 0, state, ctx);
   if (!ok) {
@@ -454,4 +481,80 @@ export function solve(input: SchoolInput): SolveResult {
     timetables: buildOutput(input, state.assignments),
     blockCount: blocks.length,
   };
+}
+
+/** Counts (class, day) cells where slot 0 has a lesson. Higher is better. */
+function morningStartScore(result: SolveResult, input: SchoolInput): number {
+  let count = 0;
+  for (const cls of input.classes) {
+    const grid = result.timetables.byClass[cls.id];
+    if (!grid) continue;
+    for (let d = 0; d < input.config.days.length; d++) {
+      if (grid[d][0]) count++;
+    }
+  }
+  return count;
+}
+
+/** Produce a set of class orderings to try. Each class gets a turn going first. */
+function classOrderingsToTry(classIds: string[]): string[][] {
+  const out: string[][] = [];
+  const seen = new Set<string>();
+  const add = (order: string[]) => {
+    const key = order.join(",");
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(order);
+  };
+  add([...classIds]); // alphabetical baseline
+  // Rotate each class to the front
+  for (let i = 0; i < classIds.length; i++) {
+    const arr = [...classIds];
+    const [first] = arr.splice(i, 1);
+    add([first, ...arr]);
+  }
+  add([...classIds].reverse()); // reverse alphabetical
+  return out;
+}
+
+/**
+ * Public entry point. Runs the solver against several class orderings and
+ * returns the result with the most morning-slot (slot 0) starts. Stops early
+ * if a perfect score is found or the total time budget is exceeded.
+ */
+export function solve(input: SchoolInput): SolveResult {
+  const classIds = input.classes.map((c) => c.id);
+  if (classIds.length === 0) {
+    return solveOnce(input);
+  }
+
+  const orderings = classOrderingsToTry(classIds);
+  const perfectScore = classIds.length * input.config.days.length;
+  const totalBudgetMs = 6000;
+  const perAttemptMs = 800; // bail out of a slow attempt so others get a turn
+  const startedAt = Date.now();
+
+  let best: SolveResult | null = null;
+  let bestScore = -1;
+  let firstSuccess: SolveResult | null = null;
+
+  for (const ordering of orderings) {
+    const elapsed = Date.now() - startedAt;
+    if (elapsed > totalBudgetMs) break;
+    const remaining = totalBudgetMs - elapsed;
+    const attemptBudget = Math.min(perAttemptMs, remaining);
+    const result = solveOnce(input, ordering, Date.now() + attemptBudget);
+    if (!result.success) continue;
+    if (!firstSuccess) firstSuccess = result;
+    const score = morningStartScore(result, input);
+    if (score > bestScore) {
+      bestScore = score;
+      best = result;
+      if (score >= perfectScore) break; // can't do better
+    }
+  }
+
+  if (best) return best;
+  if (firstSuccess) return firstSuccess;
+  return solveOnce(input);
 }
