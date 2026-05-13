@@ -139,11 +139,12 @@ export const teachers: Teacher[] = [
   },
 ];
 
-// Subject hours per class per week.
+// Subject hours per class per week. Sums to 18h — most class days fill
+// 3-4 of the 5 hourly slots so the morning runs 08:00 → 11:00 or 12:00.
 const standardSubjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 2 },
-  { subject: Subject.Hebrew, hoursPerWeek: 2 },
-  { subject: Subject.English, hoursPerWeek: 2 },
+  { subject: Subject.Math, hoursPerWeek: 4 },
+  { subject: Subject.Hebrew, hoursPerWeek: 4 },
+  { subject: Subject.English, hoursPerWeek: 4 },
   { subject: Subject.Science, hoursPerWeek: 2 },
   { subject: Subject.Sport, hoursPerWeek: 1 },
   { subject: Subject.Music, hoursPerWeek: 1 },
