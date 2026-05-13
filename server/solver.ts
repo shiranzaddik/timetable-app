@@ -78,6 +78,8 @@ interface SolveContext {
   deadlineMs?: number;
   /** Mutates to true once the deadline has been observed; sticky. */
   timedOut: { value: boolean };
+  /** When true, every class day must begin at slot 0 (hard constraint). */
+  requireMorningStart: boolean;
 }
 
 function timeToMinutes(t: string): number {
@@ -196,17 +198,19 @@ function buildDayQuotas(totalHours: number, dayCount: number): number[] {
   return Array.from({ length: dayCount }, (_, i) => base + (i < extra ? 1 : 0));
 }
 
-/** True if placing `[start, start+duration)` keeps the class's day contiguous. */
+/** True if placing `[start, start+duration)` keeps the class's day contiguous.
+ *  When requireMorningStart is set, an empty day's first block must begin at slot 0. */
 function keepsDayContiguous(
   state: SolveState,
   classId: ClassId,
   day: number,
   start: number,
-  duration: number
+  duration: number,
+  requireMorningStart: boolean
 ): boolean {
   const min = state.classDayMin[classId][day];
   const max = state.classDayMax[classId][day];
-  if (min === -1) return true;
+  if (min === -1) return !requireMorningStart || start === 0;
   const newEnd = start + duration - 1;
   const mergedMin = Math.min(min, start);
   const mergedMax = Math.max(max, newEnd);
@@ -222,10 +226,20 @@ function canPlace(
   teacher: Teacher,
   day: number,
   startSlot: number,
-  state: SolveState
+  state: SolveState,
+  requireMorningStart: boolean
 ): boolean {
   if (state.classDayHoursLeft[block.classId][day] < block.duration) return false;
-  if (!keepsDayContiguous(state, block.classId, day, startSlot, block.duration))
+  if (
+    !keepsDayContiguous(
+      state,
+      block.classId,
+      day,
+      startSlot,
+      block.duration,
+      requireMorningStart
+    )
+  )
     return false;
 
   for (let i = 0; i < block.duration; i++) {
@@ -355,7 +369,7 @@ function search(
   for (let s = 0; s + block.duration <= ctx.config.slotLabels.length; s++) {
     for (const d of dayOrder) {
       for (const teacher of teachers_) {
-        if (canPlace(block, teacher, d, s, state)) {
+        if (canPlace(block, teacher, d, s, state, ctx.requireMorningStart)) {
           const prev = place(block, teacher, d, s, state);
           if (search(blocks, idx + 1, state, ctx)) return true;
           unplace(block, teacher, d, s, state, prev);
@@ -414,7 +428,8 @@ function buildOutput(input: SchoolInput, assignments: Assignment[]): Timetables 
 function solveOnce(
   input: SchoolInput,
   classOrder?: string[],
-  deadlineMs?: number
+  deadlineMs?: number,
+  requireMorningStart: boolean = false
 ): SolveResult {
   const { config, rooms, teachers, classes } = input;
   const classesById = Object.fromEntries(classes.map((c) => [c.id, c]));
@@ -464,6 +479,7 @@ function solveOnce(
     teacherAvail,
     deadlineMs,
     timedOut: { value: false },
+    requireMorningStart,
   };
 
   const ok = search(ordered, 0, state, ctx);
@@ -518,9 +534,19 @@ function classOrderingsToTry(classIds: string[]): string[][] {
 }
 
 /**
- * Public entry point. Runs the solver against several class orderings and
- * returns the result with the most morning-slot (slot 0) starts. Stops early
- * if a perfect score is found or the total time budget is exceeded.
+ * Public entry point. Two-pass strategy:
+ *
+ *   Pass 1 — try several class orderings with the HARD constraint that every
+ *            class day must begin at slot 0. If any ordering succeeds, that's
+ *            a perfect 100% morning-start result and we return immediately.
+ *
+ *   Pass 2 — drop the hard constraint, run the same orderings, and keep the
+ *            result with the highest morning-start score. This is the
+ *            best-effort fallback for inputs that have no all-morning
+ *            solution.
+ *
+ * Each individual attempt has its own deadline so a slow search can't
+ * monopolize the budget.
  */
 export function solve(input: SchoolInput): SolveResult {
   const classIds = input.classes.map((c) => c.id);
@@ -529,32 +555,42 @@ export function solve(input: SchoolInput): SolveResult {
   }
 
   const orderings = classOrderingsToTry(classIds);
-  const perfectScore = classIds.length * input.config.days.length;
-  const totalBudgetMs = 6000;
-  const perAttemptMs = 800; // bail out of a slow attempt so others get a turn
+  const totalBudgetMs = 8000;
+  const perAttemptMs = 1000;
   const startedAt = Date.now();
 
-  let best: SolveResult | null = null;
-  let bestScore = -1;
-  let firstSuccess: SolveResult | null = null;
-
-  for (const ordering of orderings) {
-    const elapsed = Date.now() - startedAt;
-    if (elapsed > totalBudgetMs) break;
-    const remaining = totalBudgetMs - elapsed;
-    const attemptBudget = Math.min(perAttemptMs, remaining);
-    const result = solveOnce(input, ordering, Date.now() + attemptBudget);
-    if (!result.success) continue;
-    if (!firstSuccess) firstSuccess = result;
-    const score = morningStartScore(result, input);
-    if (score > bestScore) {
-      bestScore = score;
-      best = result;
-      if (score >= perfectScore) break; // can't do better
+  const tryWith = (
+    require: boolean,
+    fractionOfBudget: number
+  ): { best: SolveResult | null; bestScore: number; firstSuccess: SolveResult | null } => {
+    const phaseDeadline = startedAt + totalBudgetMs * fractionOfBudget;
+    let best: SolveResult | null = null;
+    let bestScore = -1;
+    let firstSuccess: SolveResult | null = null;
+    for (const ordering of orderings) {
+      if (Date.now() > phaseDeadline) break;
+      const remaining = phaseDeadline - Date.now();
+      const attemptBudget = Math.min(perAttemptMs, remaining);
+      if (attemptBudget < 50) break;
+      const result = solveOnce(input, ordering, Date.now() + attemptBudget, require);
+      if (!result.success) continue;
+      if (!firstSuccess) firstSuccess = result;
+      const score = morningStartScore(result, input);
+      if (score > bestScore) {
+        bestScore = score;
+        best = result;
+      }
     }
-  }
+    return { best, bestScore, firstSuccess };
+  };
 
-  if (best) return best;
-  if (firstSuccess) return firstSuccess;
+  // Pass 1: every class day MUST start at slot 0.
+  const pass1 = tryWith(true, 0.6);
+  if (pass1.best) return pass1.best;
+
+  // Pass 2: best-effort, soft preference for slot-0 placements.
+  const pass2 = tryWith(false, 1.0);
+  if (pass2.best) return pass2.best;
+  if (pass2.firstSuccess) return pass2.firstSuccess;
   return solveOnce(input);
 }
