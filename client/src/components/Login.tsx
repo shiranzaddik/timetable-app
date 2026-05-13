@@ -123,9 +123,7 @@ export default function Login({ clientId, onSuccess }: Props) {
           ))}
         </ul>
 
-        <div className="login-card">
-          <h2>Welcome</h2>
-          <p>Sign in with your Google account to continue.</p>
+        <div className="login-action">
           <div ref={buttonRef} className="google-button" />
           {error && <div className="banner error" style={{ marginTop: 14 }}>{error}</div>}
           <p className="login-fine-print">
