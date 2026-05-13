@@ -137,13 +137,15 @@ function candidateTeachers(
   cls: SchoolClass,
   teachers: Teacher[]
 ): Teacher[] {
-  const defaultTeacher = teachers.find((t) => t.id === cls.defaultTeacherId);
-  const defaultCanTeach =
-    !!defaultTeacher &&
-    defaultTeacher.subjects.includes(block.subject) &&
-    defaultTeacher.grades.includes(cls.grade);
+  if (cls.defaultTeacherId) {
+    const defaultTeacher = teachers.find((t) => t.id === cls.defaultTeacherId);
+    const defaultCanTeach =
+      !!defaultTeacher &&
+      defaultTeacher.subjects.includes(block.subject) &&
+      defaultTeacher.grades.includes(cls.grade);
 
-  if (defaultCanTeach && defaultTeacher) return [defaultTeacher];
+    if (defaultCanTeach && defaultTeacher) return [defaultTeacher];
+  }
 
   return teachers.filter(
     (t) => t.subjects.includes(block.subject) && t.grades.includes(cls.grade)

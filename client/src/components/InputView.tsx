@@ -8,7 +8,7 @@ import {
   type UnavailabilityWindow,
 } from "../types";
 import TeacherForm from "./TeacherForm";
-import ClassForm from "./ClassForm";
+import ClassForm, { type ClassFormResult } from "./ClassForm";
 
 interface Props {
   input: SchoolInput;
@@ -56,42 +56,50 @@ export default function InputView({ input, onChange }: Props) {
     setEditingTeacherId(null);
   };
 
-  const addClass = (c: SchoolClass) => {
-    const room = { id: `room-${c.id}`, name: `Room ${c.id}`, type: RoomType.Regular };
+  const addClass = ({ cls, roomName }: ClassFormResult) => {
+    const room = {
+      id: `room-${cls.id}`,
+      name: roomName,
+      type: RoomType.Regular,
+    };
     onChange({
       ...input,
-      classes: [...input.classes, { ...c, defaultRoomId: room.id }],
+      classes: [...input.classes, { ...cls, defaultRoomId: room.id }],
       rooms: input.rooms.some((r) => r.id === room.id)
-        ? input.rooms
+        ? input.rooms.map((r) => (r.id === room.id ? room : r))
         : [...input.rooms, room],
     });
     setAddingClass(false);
   };
 
-  const updateClass = (c: SchoolClass) => {
+  const updateClass = ({ cls, roomName }: ClassFormResult) => {
     const oldClass = input.classes.find((x) => x.id === editingClassId);
     if (!oldClass) {
       setEditingClassId(null);
       return;
     }
-    // If the id changed (grade or section), swap the per-class room too.
-    const idChanged = oldClass.id !== c.id;
+    const newRoomId = `room-${cls.id}`;
+    const idChanged = oldClass.id !== cls.id;
     let rooms = input.rooms;
     if (idChanged) {
       const oldRoomId = `room-${oldClass.id}`;
-      const newRoomId = `room-${c.id}`;
       rooms = input.rooms.filter((r) => r.id !== oldRoomId);
-      if (!rooms.some((r) => r.id === newRoomId)) {
-        rooms = [
-          ...rooms,
-          { id: newRoomId, name: `Room ${c.id}`, type: RoomType.Regular },
-        ];
-      }
+    }
+    const existingIdx = rooms.findIndex((r) => r.id === newRoomId);
+    if (existingIdx >= 0) {
+      rooms = rooms.map((r, i) =>
+        i === existingIdx ? { ...r, name: roomName } : r
+      );
+    } else {
+      rooms = [
+        ...rooms,
+        { id: newRoomId, name: roomName, type: RoomType.Regular },
+      ];
     }
     onChange({
       ...input,
       classes: input.classes.map((existing) =>
-        existing.id === oldClass.id ? { ...c, defaultRoomId: `room-${c.id}` } : existing
+        existing.id === oldClass.id ? { ...cls, defaultRoomId: newRoomId } : existing
       ),
       rooms,
     });
@@ -198,6 +206,9 @@ export default function InputView({ input, onChange }: Props) {
               <ClassForm
                 key={c.id}
                 initial={c}
+                initialRoomName={
+                  input.rooms.find((r) => r.id === c.defaultRoomId)?.name
+                }
                 teachers={input.teachers}
                 existingIds={input.classes.map((x) => x.id)}
                 onSave={updateClass}
@@ -207,7 +218,11 @@ export default function InputView({ input, onChange }: Props) {
               <ClassCard
                 key={c.id}
                 cls={c}
-                defaultTeacherName={teacherById[c.defaultTeacherId]?.name ?? "—"}
+                defaultTeacherName={
+                  c.defaultTeacherId
+                    ? teacherById[c.defaultTeacherId]?.name ?? "—"
+                    : ""
+                }
                 defaultRoomName={
                   input.rooms.find((r) => r.id === c.defaultRoomId)?.name ?? c.defaultRoomId
                 }
@@ -332,9 +347,13 @@ function ClassCard({
       </div>
 
       <div className="row">
-        <span className="tag dot">
-          {t("teacherLabel")}: {defaultTeacherName}
-        </span>
+        {defaultTeacherName ? (
+          <span className="tag dot">
+            {t("teacherLabel")}: {defaultTeacherName}
+          </span>
+        ) : (
+          <span className="tag muted">{t("noDefaultTeacher")}</span>
+        )}
         <span className="tag muted">
           {t("roomLabel")}: {defaultRoomName}
         </span>

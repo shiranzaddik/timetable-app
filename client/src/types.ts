@@ -73,7 +73,8 @@ export interface SchoolClass {
   grade: Grade;
   section: number;
   name: string;
-  defaultTeacherId: string;
+  /** When null, the solver may pick any qualified teacher for every subject. */
+  defaultTeacherId: string | null;
   defaultRoomId: string;
   subjects: ClassSubject[];
 }

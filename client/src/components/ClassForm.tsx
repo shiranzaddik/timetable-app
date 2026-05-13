@@ -8,13 +8,20 @@ import {
   type Teacher,
 } from "../types";
 
+export interface ClassFormResult {
+  cls: SchoolClass;
+  roomName: string;
+}
+
 interface Props {
   teachers: Teacher[];
   existingIds: string[];
-  onSave: (cls: SchoolClass) => void;
+  onSave: (result: ClassFormResult) => void;
   onCancel: () => void;
   /** When provided, edit this class instead of creating a new one. */
   initial?: SchoolClass;
+  /** Existing display name of the class's room (for editing). */
+  initialRoomName?: string;
 }
 
 const DEFAULT_HOURS: Record<string, number> = {
@@ -35,13 +42,18 @@ export default function ClassForm({
   onSave,
   onCancel,
   initial,
+  initialRoomName,
 }: Props) {
   const { t, tSubject } = useT();
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
+  // "" represents "no default teacher" — the solver may pick anyone qualified.
   const [defaultTeacherId, setDefaultTeacherId] = useState<string>(
-    initial?.defaultTeacherId ?? teachers[0]?.id ?? ""
+    initial?.defaultTeacherId ?? ""
+  );
+  const [roomName, setRoomName] = useState<string>(
+    initialRoomName ?? `Room ${initial?.id ?? `${Grade.A}1`}`
   );
   const [subjects, setSubjects] = useState<ClassSubject[]>(
     initial?.subjects ??
@@ -57,20 +69,22 @@ export default function ClassForm({
     existingIds.includes(id) && (!isEdit || id !== initial?.id);
 
   const submit = () => {
-    if (!defaultTeacherId) return setError(t("errSelectTeacher"));
     if (idCollides) return setError(t("errClassExists", { id }));
     const filtered = subjects
       .map((s) => ({ ...s, subject: s.subject.trim().toLowerCase() }))
       .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
     onSave({
-      id,
-      grade,
-      section,
-      name: `Class ${id}`,
-      defaultTeacherId,
-      defaultRoomId: `room-${id}`,
-      subjects: filtered,
+      cls: {
+        id,
+        grade,
+        section,
+        name: `Class ${id}`,
+        defaultTeacherId: defaultTeacherId || null,
+        defaultRoomId: `room-${id}`,
+        subjects: filtered,
+      },
+      roomName: roomName.trim() || `Room ${id}`,
     });
   };
 
@@ -111,9 +125,7 @@ export default function ClassForm({
           value={defaultTeacherId}
           onChange={(e) => setDefaultTeacherId(e.target.value)}
         >
-          <option value="" disabled>
-            {t("selectDots")}
-          </option>
+          <option value="">{t("noDefaultTeacher")}</option>
           {teachers.map((teacher) => (
             <option key={teacher.id} value={teacher.id}>
               {teacher.name}
@@ -123,6 +135,16 @@ export default function ClassForm({
         <small style={{ color: "var(--text-muted)" }}>
           {t("defaultTeacherNote")}
         </small>
+      </div>
+
+      <div className="form-row">
+        <label>{t("fieldRoomName")}</label>
+        <input
+          type="text"
+          value={roomName}
+          placeholder={t("roomPlaceholder")}
+          onChange={(e) => setRoomName(e.target.value)}
+        />
       </div>
 
       <div className="form-row">
