@@ -48,13 +48,16 @@ export const rooms: Room[] = [
 
 const allGrades: Grade[] = [Grade.A, Grade.B];
 
+// Days off are spread so each day has at most one teacher of any single
+// subject area off — that keeps the solver able to find an all-morning
+// schedule (each class day starts at 08:00).
 export const teachers: Teacher[] = [
   {
     id: "t-cohen",
     name: "Mrs. Cohen",
     subjects: [Subject.Math, Subject.Hebrew],
     grades: allGrades,
-    dayOff: Day.Thursday,
+    dayOff: Day.Sunday,
     unavailable: [],
   },
   {
@@ -62,15 +65,15 @@ export const teachers: Teacher[] = [
     name: "Mr. Levi",
     subjects: [Subject.Math, Subject.Science],
     grades: allGrades,
-    dayOff: Day.Wednesday,
-    unavailable: [{ day: Day.Tuesday, fromTime: "12:00" }],
+    dayOff: Day.Monday,
+    unavailable: [],
   },
   {
     id: "t-shapiro",
     name: "Ms. Shapiro",
     subjects: [Subject.English],
     grades: allGrades,
-    dayOff: Day.Sunday,
+    dayOff: Day.Tuesday,
     unavailable: [],
   },
   {
@@ -78,7 +81,7 @@ export const teachers: Teacher[] = [
     name: "Mr. Avi",
     subjects: [Subject.English],
     grades: [Grade.A], // only teaches grade A — demo of a grade-restricted teacher
-    dayOff: Day.Tuesday,
+    dayOff: Day.Sunday,
     unavailable: [],
   },
   {
@@ -86,7 +89,7 @@ export const teachers: Teacher[] = [
     name: "Mr. David",
     subjects: [Subject.Hebrew, Subject.Science],
     grades: allGrades,
-    dayOff: Day.Monday,
+    dayOff: Day.Wednesday,
     unavailable: [],
   },
   {
@@ -118,7 +121,7 @@ export const teachers: Teacher[] = [
     name: "Ms. Sarah",
     subjects: [Subject.Math, Subject.Hebrew, Subject.Science],
     grades: allGrades,
-    dayOff: Day.Sunday,
+    dayOff: Day.Thursday,
     unavailable: [],
   },
   {
@@ -126,7 +129,7 @@ export const teachers: Teacher[] = [
     name: "Ms. Beth",
     subjects: [Subject.English],
     grades: allGrades,
-    dayOff: Day.Tuesday,
+    dayOff: Day.Thursday,
     unavailable: [],
   },
   {
@@ -139,12 +142,12 @@ export const teachers: Teacher[] = [
   },
 ];
 
-// Subject hours per class per week. Sums to 18h — most class days fill
-// 3-4 of the 5 hourly slots so the morning runs 08:00 → 11:00 or 12:00.
+// Subject hours per class per week. Sums to 12h with quotas [3,3,2,2,2]:
+// 3h days fill 2h + 1h, 2h days fill a single 2h block.
 const standardSubjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 4 },
-  { subject: Subject.Hebrew, hoursPerWeek: 4 },
-  { subject: Subject.English, hoursPerWeek: 4 },
+  { subject: Subject.Math, hoursPerWeek: 2 },
+  { subject: Subject.Hebrew, hoursPerWeek: 2 },
+  { subject: Subject.English, hoursPerWeek: 2 },
   { subject: Subject.Science, hoursPerWeek: 2 },
   { subject: Subject.Sport, hoursPerWeek: 1 },
   { subject: Subject.Music, hoursPerWeek: 1 },
