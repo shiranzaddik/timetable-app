@@ -37,6 +37,11 @@ export enum Subject {
 
 export interface Config {
   days: Day[];
+  /** School day starting hour (24h), e.g., 8 for 08:00. */
+  startHour: number;
+  /** School day ending hour (exclusive). */
+  endHour: number;
+  /** Derived from startHour/endHour. */
   slotLabels: string[];
 }
 

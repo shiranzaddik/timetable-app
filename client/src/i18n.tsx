@@ -30,6 +30,7 @@ const STRINGS = {
     statHours: "Hours / week",
     statDays: "Days",
     statSlots: "Hourly slots / day",
+    statSchoolDay: "School day",
 
     // sections
     teachersSection: "Teachers",
@@ -143,6 +144,7 @@ const STRINGS = {
     statHours: "שעות / שבוע",
     statDays: "ימים",
     statSlots: "משבצות בשעה ביום",
+    statSchoolDay: "יום לימודים",
 
     teachersSection: "מורים",
     classesSection: "כיתות",

@@ -17,18 +17,22 @@ import {
   type Teacher,
 } from "./types.js";
 
+function makeSlotLabels(startHour: number, endHour: number): string[] {
+  const labels: string[] = [];
+  for (let h = startHour; h < endHour; h++) {
+    labels.push(`${String(h).padStart(2, "0")}:00`);
+  }
+  return labels;
+}
+
+const DEFAULT_START_HOUR = 8;
+const DEFAULT_END_HOUR = 13;
+
 export const config: Config = {
   days: [Day.Sunday, Day.Monday, Day.Tuesday, Day.Wednesday, Day.Thursday],
-  slotLabels: [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-  ],
+  startHour: DEFAULT_START_HOUR,
+  endHour: DEFAULT_END_HOUR,
+  slotLabels: makeSlotLabels(DEFAULT_START_HOUR, DEFAULT_END_HOUR),
 };
 
 export const rooms: Room[] = [
@@ -111,12 +115,13 @@ export const teachers: Teacher[] = [
   },
 ];
 
+// Subject hours sized for a 5-hour school day (08:00–13:00 = 25 slots/week per class).
 const standardSubjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 4 },
-  { subject: Subject.Hebrew, hoursPerWeek: 4 },
-  { subject: Subject.English, hoursPerWeek: 4 },
+  { subject: Subject.Math, hoursPerWeek: 2 },
+  { subject: Subject.Hebrew, hoursPerWeek: 2 },
+  { subject: Subject.English, hoursPerWeek: 2 },
   { subject: Subject.Science, hoursPerWeek: 2 },
-  { subject: Subject.Sport, hoursPerWeek: 2 },
+  { subject: Subject.Sport, hoursPerWeek: 1 },
   { subject: Subject.Music, hoursPerWeek: 1 },
   { subject: Subject.Computer, hoursPerWeek: 2 },
 ];

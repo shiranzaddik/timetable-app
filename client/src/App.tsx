@@ -195,7 +195,7 @@ export default function App() {
         <Stat label={t("statClasses")} value={input.classes.length} />
         <Stat label={t("statHours")} value={totalHours} />
         <Stat label={t("statDays")} value={input.config.days.length} />
-        <Stat label={t("statSlots")} value={input.config.slotLabels.length} />
+        <SchoolDayStat input={input} onChange={handleInputChange} />
       </div>
 
       <div className="toolbar">
@@ -252,6 +252,65 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     <div className="stat">
       <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
+    </div>
+  );
+}
+
+function makeSlotLabels(startHour: number, endHour: number): string[] {
+  const labels: string[] = [];
+  for (let h = startHour; h < endHour; h++) {
+    labels.push(`${String(h).padStart(2, "0")}:00`);
+  }
+  return labels;
+}
+
+function SchoolDayStat({
+  input,
+  onChange,
+}: {
+  input: SchoolInput;
+  onChange: (next: SchoolInput) => void;
+}) {
+  const { t } = useT();
+  const startHour = input.config.startHour ?? 8;
+  const endHour = input.config.endHour ?? startHour + input.config.slotLabels.length;
+
+  const update = (nextStart: number, nextEnd: number) => {
+    if (nextEnd <= nextStart) return;
+    if (nextStart < 0 || nextEnd > 24) return;
+    onChange({
+      ...input,
+      config: {
+        ...input.config,
+        startHour: nextStart,
+        endHour: nextEnd,
+        slotLabels: makeSlotLabels(nextStart, nextEnd),
+      },
+    });
+  };
+
+  return (
+    <div className="stat">
+      <div className="stat-label">{t("statSchoolDay")}</div>
+      <div className="school-day-inputs">
+        <input
+          type="number"
+          min={0}
+          max={23}
+          value={startHour}
+          onChange={(e) => update(Number(e.target.value), endHour)}
+          aria-label="start hour"
+        />
+        <span>→</span>
+        <input
+          type="number"
+          min={1}
+          max={24}
+          value={endHour}
+          onChange={(e) => update(startHour, Number(e.target.value))}
+          aria-label="end hour"
+        />
+      </div>
     </div>
   );
 }

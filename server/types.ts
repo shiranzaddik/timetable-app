@@ -39,7 +39,11 @@ export enum Subject {
 
 export interface Config {
   days: Day[];
-  /** Hourly slot start times, e.g. ["08:00", "09:00", ...]. */
+  /** School day starting hour (24h), e.g., 8 for 08:00. */
+  startHour: number;
+  /** School day ending hour (exclusive), e.g., 13 means the last slot is 12:00→13:00. */
+  endHour: number;
+  /** Hourly slot start times derived from startHour/endHour, e.g. ["08:00", "09:00", ...]. */
   slotLabels: string[];
 }
 
