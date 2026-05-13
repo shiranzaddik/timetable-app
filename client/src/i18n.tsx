@@ -94,6 +94,8 @@ const STRINGS = {
     defaultTeacherNote:
       "For subjects this teacher can teach, they will be forced for this class.",
     fieldSubjectsHours: "Subjects (hours / week)",
+    addSubject: "+ Add subject",
+    subjectPlaceholder: "Subject name",
     saveClassWithId: "Save class ({id})",
     saveChangesToId: "Save changes to {id}",
     errSelectTeacher: "Select a default teacher",
@@ -194,6 +196,8 @@ const STRINGS = {
     defaultTeacherNote:
       "במקצועות שמורה זה מלמד, הוא יחויב ללמד את הכיתה הזו.",
     fieldSubjectsHours: "מקצועות (שעות / שבוע)",
+    addSubject: "+ הוסף מקצוע",
+    subjectPlaceholder: "שם המקצוע",
     saveClassWithId: "שמור כיתה ({id})",
     saveChangesToId: "שמור שינויים לכיתה {id}",
     errSelectTeacher: "יש לבחור מורה ברירת מחדל",
@@ -237,7 +241,7 @@ const DAY_NAMES: Record<Lang, Record<Day, string>> = {
   },
 };
 
-const SUBJECT_NAMES: Record<Lang, Record<Subject, string>> = {
+const SUBJECT_NAMES: Record<Lang, Record<string, string>> = {
   en: {
     [Subject.Math]: "math",
     [Subject.Hebrew]: "hebrew",
@@ -270,7 +274,8 @@ export interface I18nApi {
   setLang: (l: Lang) => void;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
   tDay: (d: Day) => string;
-  tSubject: (s: Subject) => string;
+  /** Translates well-known Subject enum values; returns the string as-is for custom subjects. */
+  tSubject: (s: string) => string;
   tClassName: (id: string) => string;
 }
 

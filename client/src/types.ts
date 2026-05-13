@@ -55,14 +55,16 @@ export interface UnavailabilityWindow {
 export interface Teacher {
   id: string;
   name: string;
-  subjects: Subject[];
+  /** Subjects this teacher can teach — Subject enum values OR custom names. */
+  subjects: string[];
   grades: Grade[];
   dayOff: Day;
   unavailable: UnavailabilityWindow[];
 }
 
 export interface ClassSubject {
-  subject: Subject;
+  /** Subject id — Subject enum value or custom string. */
+  subject: string;
   hoursPerWeek: number;
 }
 
@@ -84,7 +86,7 @@ export interface SchoolInput {
 }
 
 export interface TimetableCell {
-  subject: Subject;
+  subject: string;
   classId: ClassId;
   className: string;
   teacherId: string;

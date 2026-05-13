@@ -17,11 +17,14 @@ interface Props {
   initial?: Teacher;
 }
 
+const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
+
 export default function TeacherForm({ onSave, onCancel, existingIds, initial }: Props) {
   const { t, tDay, tSubject } = useT();
   const isEdit = !!initial;
   const [name, setName] = useState(initial?.name ?? "");
-  const [subjects, setSubjects] = useState<Subject[]>(initial?.subjects ?? []);
+  const [subjects, setSubjects] = useState<string[]>(initial?.subjects ?? []);
+  const [customDraft, setCustomDraft] = useState("");
   const [grades, setGrades] = useState<Grade[]>(initial?.grades ?? []);
   const [dayOff, setDayOff] = useState<Day>(initial?.dayOff ?? Day.Sunday);
   const [unavailable, setUnavailable] = useState<UnavailabilityWindow[]>(
@@ -58,7 +61,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
       <div className="form-row">
         <label>{t("fieldSubjects")}</label>
         <div className="checkbox-grid">
-          {Object.values(Subject).map((s) => (
+          {WELL_KNOWN_SUBJECTS.map((s) => (
             <label key={s} className={subjects.includes(s) ? "checked" : ""}>
               <input
                 type="checkbox"
@@ -68,6 +71,51 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
               {tSubject(s)}
             </label>
           ))}
+        </div>
+        {/* Custom subjects */}
+        <div className="row" style={{ marginTop: 8 }}>
+          {subjects
+            .filter((s) => !WELL_KNOWN_SUBJECTS.includes(s))
+            .map((s) => (
+              <span key={s} className="tag">
+                {s}
+                <button
+                  type="button"
+                  className="tag-remove"
+                  aria-label={t("delete")}
+                  onClick={() => setSubjects(subjects.filter((x) => x !== s))}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+        </div>
+        <div className="window-row" style={{ marginTop: 4, gridTemplateColumns: "1fr auto" }}>
+          <input
+            type="text"
+            value={customDraft}
+            placeholder={t("subjectPlaceholder")}
+            onChange={(e) => setCustomDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const v = customDraft.trim().toLowerCase();
+                if (v && !subjects.includes(v)) setSubjects([...subjects, v]);
+                setCustomDraft("");
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="add-btn"
+            onClick={() => {
+              const v = customDraft.trim().toLowerCase();
+              if (v && !subjects.includes(v)) setSubjects([...subjects, v]);
+              setCustomDraft("");
+            }}
+          >
+            {t("addSubject")}
+          </button>
         </div>
       </div>
 

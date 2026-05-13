@@ -17,7 +17,7 @@ interface Props {
   initial?: SchoolClass;
 }
 
-const DEFAULT_HOURS: Record<Subject, number> = {
+const DEFAULT_HOURS: Record<string, number> = {
   [Subject.Math]: 4,
   [Subject.Hebrew]: 4,
   [Subject.English]: 4,
@@ -26,6 +26,8 @@ const DEFAULT_HOURS: Record<Subject, number> = {
   [Subject.Music]: 1,
   [Subject.Computer]: 2,
 };
+
+const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
 
 export default function ClassForm({
   teachers,
@@ -43,9 +45,9 @@ export default function ClassForm({
   );
   const [subjects, setSubjects] = useState<ClassSubject[]>(
     initial?.subjects ??
-      Object.values(Subject).map((s) => ({
+      WELL_KNOWN_SUBJECTS.map((s) => ({
         subject: s,
-        hoursPerWeek: DEFAULT_HOURS[s],
+        hoursPerWeek: DEFAULT_HOURS[s] ?? 0,
       }))
   );
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,9 @@ export default function ClassForm({
   const submit = () => {
     if (!defaultTeacherId) return setError(t("errSelectTeacher"));
     if (idCollides) return setError(t("errClassExists", { id }));
-    const filtered = subjects.filter((s) => s.hoursPerWeek > 0);
+    const filtered = subjects
+      .map((s) => ({ ...s, subject: s.subject.trim().toLowerCase() }))
+      .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
     onSave({
       id,
@@ -123,24 +127,63 @@ export default function ClassForm({
 
       <div className="form-row">
         <label>{t("fieldSubjectsHours")}</label>
-        {subjects.map((row, i) => (
-          <div key={row.subject} className="subject-hours-row">
-            <span style={{ textTransform: "capitalize", fontSize: 13 }}>
-              {tSubject(row.subject)}
-            </span>
-            <input
-              type="number"
-              min={0}
-              value={row.hoursPerWeek}
-              onChange={(e) => {
-                const next = [...subjects];
-                next[i] = { ...next[i], hoursPerWeek: Math.max(0, Number(e.target.value)) };
-                setSubjects(next);
-              }}
-            />
-            <span style={{ color: "var(--text-dim)", fontSize: 12 }}>h</span>
-          </div>
-        ))}
+        {subjects.map((row, i) => {
+          const isKnown = WELL_KNOWN_SUBJECTS.includes(row.subject);
+          return (
+            <div key={i} className="subject-hours-row">
+              {isKnown ? (
+                <span
+                  style={{ textTransform: "capitalize", fontSize: 13, alignSelf: "center" }}
+                >
+                  {tSubject(row.subject)}
+                </span>
+              ) : (
+                <input
+                  type="text"
+                  value={row.subject}
+                  placeholder={t("subjectPlaceholder")}
+                  onChange={(e) => {
+                    const next = [...subjects];
+                    next[i] = { ...next[i], subject: e.target.value };
+                    setSubjects(next);
+                  }}
+                />
+              )}
+              <input
+                type="number"
+                min={0}
+                value={row.hoursPerWeek}
+                onChange={(e) => {
+                  const next = [...subjects];
+                  next[i] = {
+                    ...next[i],
+                    hoursPerWeek: Math.max(0, Number(e.target.value)),
+                  };
+                  setSubjects(next);
+                }}
+              />
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setSubjects(subjects.filter((_, j) => j !== i))}
+                title={t("delete")}
+                aria-label={t("delete")}
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          className="add-btn"
+          style={{ alignSelf: "flex-start", marginTop: 4 }}
+          onClick={() =>
+            setSubjects([...subjects, { subject: "", hoursPerWeek: 2 }])
+          }
+        >
+          {t("addSubject")}
+        </button>
       </div>
 
       {error && <div className="banner error">{error}</div>}

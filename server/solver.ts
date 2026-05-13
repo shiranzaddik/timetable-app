@@ -29,17 +29,17 @@ import {
   type UnavailabilityWindow,
 } from "./types.js";
 
-const SPECIAL_ROOM_BY_SUBJECT: Partial<Record<Subject, RoomType>> = {
+const SPECIAL_ROOM_BY_SUBJECT: Record<string, RoomType> = {
   [Subject.Sport]: RoomType.Sport,
   [Subject.Computer]: RoomType.Computer,
 };
 
-const ONE_HOUR_SUBJECTS = new Set<Subject>([Subject.Sport, Subject.Music]);
+const ONE_HOUR_SUBJECTS = new Set<string>([Subject.Sport, Subject.Music]);
 
 interface Block {
   id: string;
   classId: ClassId;
-  subject: Subject;
+  subject: string;
   duration: number;
   requiredRoomType: RoomType | null;
 }
@@ -47,7 +47,7 @@ interface Block {
 interface Assignment {
   blockId: string;
   classId: ClassId;
-  subject: Subject;
+  subject: string;
   teacherId: string;
   day: number;
   slot: number;

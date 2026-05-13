@@ -505,6 +505,18 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
   background: currentColor;
   display: inline-block;
 }
+.tag-remove {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 0 0 4px;
+  margin-inline-start: 4px;
+  opacity: 0.6;
+}
+.tag-remove:hover { opacity: 1; }
 
 /* Subject chips - colored */
 .tag.subj-math      { background: #fef3c7; color: #92400e; border-color: transparent; }

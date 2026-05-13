@@ -62,7 +62,9 @@ export interface UnavailabilityWindow {
 export interface Teacher {
   id: string;
   name: string;
-  subjects: Subject[];
+  /** Subjects this teacher can teach. Well-known values come from the Subject
+   *  enum; custom strings are also allowed for school-specific subjects. */
+  subjects: string[];
   /** Grade letters this teacher can teach (e.g., [A, B] means any A* or B* class). */
   grades: Grade[];
   /** Required default day off — the teacher does not work this day. */
@@ -72,7 +74,9 @@ export interface Teacher {
 }
 
 export interface ClassSubject {
-  subject: Subject;
+  /** Subject identifier — typically one of the Subject enum values, but
+   *  custom subject names are also supported. */
+  subject: string;
   hoursPerWeek: number;
 }
 
@@ -96,7 +100,7 @@ export interface SchoolInput {
 }
 
 export interface TimetableCell {
-  subject: Subject;
+  subject: string;
   classId: ClassId;
   className: string;
   teacherId: string;
