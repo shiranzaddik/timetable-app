@@ -117,6 +117,19 @@ export interface DroppedBlock {
   hours: number;
 }
 
+export interface TeacherRef {
+  id: string;
+  name: string;
+}
+
+export interface DayOffSuggestion {
+  teacherId: string;
+  teacherName: string;
+  currentDay: Day;
+  suggestedDay: Day;
+  improvesBlocksBy: number;
+}
+
 export interface SolveResult {
   success: boolean;
   error?: string;
@@ -124,4 +137,6 @@ export interface SolveResult {
   blockCount?: number;
   elapsedMs?: number;
   droppedBlocks?: DroppedBlock[];
+  unusedTeachers?: TeacherRef[];
+  dayOffSuggestions?: DayOffSuggestion[];
 }

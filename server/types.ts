@@ -132,6 +132,20 @@ export interface DroppedBlock {
   hours: number;
 }
 
+export interface TeacherRef {
+  id: string;
+  name: string;
+}
+
+export interface DayOffSuggestion {
+  teacherId: string;
+  teacherName: string;
+  currentDay: Day;
+  suggestedDay: Day;
+  /** How many additional blocks the swap would fit. */
+  improvesBlocksBy: number;
+}
+
 export interface SolveResult {
   success: boolean;
   error?: string;
@@ -141,4 +155,11 @@ export interface SolveResult {
   /** Non-mandatory subjects the solver couldn't fit. Non-empty when the
    *  schedule is partial — the UI should show a "needs more teachers" hint. */
   droppedBlocks?: DroppedBlock[];
+  /** Teachers who ended up with zero assignments — the user can consider
+   *  removing them. */
+  unusedTeachers?: TeacherRef[];
+  /** When subjects were dropped, the solver tries alternative day-offs
+   *  for the teachers of those subjects and reports any that would have
+   *  reduced the dropped count. */
+  dayOffSuggestions?: DayOffSuggestion[];
 }

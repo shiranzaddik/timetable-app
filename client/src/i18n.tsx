@@ -106,6 +106,14 @@ const STRINGS = {
     droppedHint:
       "Mark them mandatory only if you add more teachers — otherwise they will keep being skipped.",
     droppedLine: "{className}: {subject} — {hours}h missing",
+    unusedTeachersHeading: "Teachers not needed",
+    unusedTeachersHint:
+      "These teachers ended up with no assigned lessons. You can remove them or assign them to more subjects.",
+    dayOffSuggestionsHeading: "Day-off suggestions",
+    dayOffSuggestionsHint:
+      "Moving these teachers to a different day off would have placed more lessons.",
+    dayOffSuggestionLine:
+      "{teacherName}: change day off from {currentDay} to {suggestedDay} (+{count} blocks)",
     saveClassWithId: "Save class ({id})",
     saveChangesToId: "Save changes to {id}",
     errSelectTeacher: "Select a default teacher",
@@ -218,6 +226,14 @@ const STRINGS = {
     droppedHint:
       "סמנו כחובה רק אם תוסיפו מורים נוספים — אחרת המקצועות הללו ימשיכו להידלג.",
     droppedLine: "{className}: {subject} — חסרות {hours} שעות",
+    unusedTeachersHeading: "מורים שאינם נחוצים",
+    unusedTeachersHint:
+      "המורים הבאים לא קיבלו שיעורים במערכת הזו. אפשר להסיר אותם או להוסיף להם מקצועות.",
+    dayOffSuggestionsHeading: "הצעות לשינוי יום חופש",
+    dayOffSuggestionsHint:
+      "שינוי יום החופש למורים הבאים היה מאפשר לשבץ עוד שיעורים.",
+    dayOffSuggestionLine:
+      "{teacherName}: לשנות יום חופש מ-{currentDay} ל-{suggestedDay} (+{count} שיעורים)",
     saveClassWithId: "שמור כיתה ({id})",
     saveChangesToId: "שמור שינויים לכיתה {id}",
     errSelectTeacher: "יש לבחור מורה ברירת מחדל",

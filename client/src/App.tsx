@@ -4,7 +4,7 @@ import LanguageSwitcher from "./components/LanguageSwitcher";
 import Login from "./components/Login";
 import TimetableView from "./components/TimetableView";
 import { useT } from "./i18n";
-import type { SchoolInput, SolveResult } from "./types";
+import { Day, type SchoolInput, type SolveResult } from "./types";
 
 type View = "byClass" | "byTeacher";
 
@@ -33,7 +33,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function App() {
-  const { t } = useT();
+  const { t, tDay } = useT();
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [persisted, setPersisted] = useState(false);
@@ -237,6 +237,49 @@ export default function App() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {result?.success && result.dayOffSuggestions && result.dayOffSuggestions.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title" style={{ color: "var(--primary)" }}>
+                {t("dayOffSuggestionsHeading")}
+              </h3>
+              <div className="section-meta">{t("dayOffSuggestionsHint")}</div>
+            </div>
+          </div>
+          <ul style={{ margin: 0, paddingInlineStart: 22 }}>
+            {result.dayOffSuggestions.map((s) => (
+              <li key={s.teacherId} style={{ marginBottom: 4 }}>
+                {t("dayOffSuggestionLine", {
+                  teacherName: s.teacherName,
+                  currentDay: tDay(s.currentDay as Day),
+                  suggestedDay: tDay(s.suggestedDay as Day),
+                  count: s.improvesBlocksBy,
+                })}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result?.success && result.unusedTeachers && result.unusedTeachers.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title">{t("unusedTeachersHeading")}</h3>
+              <div className="section-meta">{t("unusedTeachersHint")}</div>
+            </div>
+          </div>
+          <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+            {result.unusedTeachers.map((u) => (
+              <span key={u.id} className="tag muted">
+                {u.name}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

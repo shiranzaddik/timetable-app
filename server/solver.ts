@@ -18,6 +18,7 @@ import {
   Subject,
   type ClassId,
   type Config,
+  type DayOffSuggestion,
   type DroppedBlock,
   type Grid,
   type Room,
@@ -25,6 +26,7 @@ import {
   type SchoolInput,
   type SolveResult,
   type Teacher,
+  type TeacherRef,
   type TimetableCell,
   type Timetables,
   type UnavailabilityWindow,
@@ -560,6 +562,71 @@ function solveOnce(
   };
 }
 
+/** Returns teachers with no assignments in the produced schedule. */
+function findUnusedTeachers(result: SolveResult, input: SchoolInput): TeacherRef[] {
+  const out: TeacherRef[] = [];
+  for (const t of input.teachers) {
+    const grid = result.timetables.byTeacher[t.id];
+    if (!grid) {
+      out.push({ id: t.id, name: t.name });
+      continue;
+    }
+    const hasAny = grid.some((row) => row.some((cell) => cell !== null));
+    if (!hasAny) out.push({ id: t.id, name: t.name });
+  }
+  return out;
+}
+
+/** Probe alternative day-offs for teachers of dropped subjects. Returns
+ *  suggestions where moving the day-off would have placed more blocks. */
+function findDayOffSuggestions(
+  input: SchoolInput,
+  baseline: SolveResult,
+  deadlineMs: number
+): DayOffSuggestion[] {
+  const droppedSubjects = new Set(
+    (baseline.droppedBlocks ?? []).map((d) => d.subject)
+  );
+  if (droppedSubjects.size === 0) return [];
+
+  const baselinePlaced = baseline.blockCount ?? 0;
+  const relevantTeachers = input.teachers.filter((t) =>
+    t.subjects.some((s) => droppedSubjects.has(s))
+  );
+
+  const suggestions: DayOffSuggestion[] = [];
+  for (const teacher of relevantTeachers) {
+    if (Date.now() > deadlineMs) break;
+    let best: DayOffSuggestion | null = null;
+    for (const day of input.config.days) {
+      if (day === teacher.dayOff) continue;
+      if (Date.now() > deadlineMs) break;
+      const altInput: SchoolInput = {
+        ...input,
+        teachers: input.teachers.map((t) =>
+          t.id === teacher.id ? { ...t, dayOff: day } : t
+        ),
+      };
+      // Quick single-attempt solve for the alternative.
+      const altResult = solveOnce(altInput, undefined, Date.now() + 600, false);
+      if (!altResult.success) continue;
+      const altPlaced = altResult.blockCount ?? 0;
+      const improves = altPlaced - baselinePlaced;
+      if (improves > 0 && (!best || improves > best.improvesBlocksBy)) {
+        best = {
+          teacherId: teacher.id,
+          teacherName: teacher.name,
+          currentDay: teacher.dayOff,
+          suggestedDay: day,
+          improvesBlocksBy: improves,
+        };
+      }
+    }
+    if (best) suggestions.push(best);
+  }
+  return suggestions;
+}
+
 /** Counts (class, day) cells where slot 0 has a lesson. Higher is better. */
 function morningStartScore(result: SolveResult, input: SchoolInput): number {
   let count = 0;
@@ -645,13 +712,33 @@ export function solve(input: SchoolInput): SolveResult {
     return { best, bestScore, firstSuccess };
   };
 
+  const enrich = (result: SolveResult): SolveResult => {
+    if (!result.success) return result;
+    const unusedTeachers = findUnusedTeachers(result, input);
+    let dayOffSuggestions: DayOffSuggestion[] | undefined;
+    if (result.droppedBlocks && result.droppedBlocks.length > 0) {
+      // Give the suggestion probe up to 3s, never extending the deadline by much.
+      const probeDeadline = Math.min(
+        startedAt + totalBudgetMs + 3000,
+        Date.now() + 3000
+      );
+      const found = findDayOffSuggestions(input, result, probeDeadline);
+      if (found.length > 0) dayOffSuggestions = found;
+    }
+    return {
+      ...result,
+      unusedTeachers: unusedTeachers.length > 0 ? unusedTeachers : undefined,
+      dayOffSuggestions,
+    };
+  };
+
   // Pass 1: every class day MUST start at slot 0.
   const pass1 = tryWith(true, 0.6);
-  if (pass1.best) return pass1.best;
+  if (pass1.best) return enrich(pass1.best);
 
   // Pass 2: best-effort, soft preference for slot-0 placements.
   const pass2 = tryWith(false, 1.0);
-  if (pass2.best) return pass2.best;
-  if (pass2.firstSuccess) return pass2.firstSuccess;
+  if (pass2.best) return enrich(pass2.best);
+  if (pass2.firstSuccess) return enrich(pass2.firstSuccess);
   return solveOnce(input);
 }
