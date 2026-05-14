@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useT } from "../i18n";
 import {
+  Grade,
   RoomType,
+  type ClassSubject,
   type SchoolClass,
   type SchoolInput,
   type Teacher,
@@ -9,6 +11,7 @@ import {
 } from "../types";
 import TeacherForm from "./TeacherForm";
 import ClassForm, { type ClassFormResult } from "./ClassForm";
+import GradeForm, { defaultGradeSubjects } from "./GradeForm";
 
 interface Props {
   input: SchoolInput;
@@ -16,43 +19,25 @@ interface Props {
 }
 
 export default function InputView({ input, onChange }: Props) {
-  const { t } = useT();
+  const { t, tSubject } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
 
   const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
-  // For each grade, derive the "mandatory" flag per subject from any class in
-  // that grade. Used both as the form's default and to propagate edits.
-  const gradeMandatoryMap: Record<string, Record<string, boolean>> = {};
-  for (const c of input.classes) {
-    const m = (gradeMandatoryMap[c.grade] ??= {});
-    for (const s of c.subjects) {
-      if (!(s.subject in m)) m[s.subject] = s.mandatory !== false;
-    }
-  }
-
-  /** Propagate a class's subject.mandatory edits to every class in the same grade. */
-  const syncMandatoryAcrossGrade = (
-    classes: SchoolClass[],
-    targetCls: SchoolClass
-  ): SchoolClass[] => {
-    const targetMandatoryBySubject: Record<string, boolean> = {};
-    for (const s of targetCls.subjects) {
-      targetMandatoryBySubject[s.subject] = s.mandatory ?? true;
-    }
-    return classes.map((c) => {
-      if (c.grade !== targetCls.grade || c.id === targetCls.id) return c;
-      const updatedSubjects = c.subjects.map((s) =>
-        s.subject in targetMandatoryBySubject
-          ? { ...s, mandatory: targetMandatoryBySubject[s.subject] }
-          : s
-      );
-      return { ...c, subjects: updatedSubjects };
-    });
+  // Subjects per grade — taken from any class of that grade.
+  const subjectsForGrade = (grade: Grade): ClassSubject[] => {
+    const cls = input.classes.find((c) => c.grade === grade);
+    return cls ? cls.subjects : defaultGradeSubjects();
   };
+
+  // Grades that have at least one class, in alphabetical order.
+  const presentGrades = Array.from(
+    new Set(input.classes.map((c) => c.grade))
+  ).sort();
 
   const removeTeacher = (id: string) => {
     if (
@@ -71,16 +56,16 @@ export default function InputView({ input, onChange }: Props) {
     });
   };
 
-  const addTeacher = (t: Teacher) => {
-    onChange({ ...input, teachers: [...input.teachers, t] });
+  const addTeacher = (teacher: Teacher) => {
+    onChange({ ...input, teachers: [...input.teachers, teacher] });
     setAddingTeacher(false);
   };
 
-  const updateTeacher = (t: Teacher) => {
+  const updateTeacher = (teacher: Teacher) => {
     onChange({
       ...input,
       teachers: input.teachers.map((existing) =>
-        existing.id === t.id ? t : existing
+        existing.id === teacher.id ? teacher : existing
       ),
     });
     setEditingTeacherId(null);
@@ -92,11 +77,14 @@ export default function InputView({ input, onChange }: Props) {
       name: roomName,
       type: RoomType.Regular,
     };
-    const newCls = { ...cls, defaultRoomId: room.id };
-    const synced = syncMandatoryAcrossGrade(input.classes, newCls);
+    const fullCls: SchoolClass = {
+      ...cls,
+      defaultRoomId: room.id,
+      subjects: subjectsForGrade(cls.grade),
+    };
     onChange({
       ...input,
-      classes: [...synced, newCls],
+      classes: [...input.classes, fullCls],
       rooms: input.rooms.some((r) => r.id === room.id)
         ? input.rooms.map((r) => (r.id === room.id ? room : r))
         : [...input.rooms, room],
@@ -128,16 +116,33 @@ export default function InputView({ input, onChange }: Props) {
         { id: newRoomId, name: roomName, type: RoomType.Regular },
       ];
     }
-    const updatedCls = { ...cls, defaultRoomId: newRoomId };
-    const classesAfterEdit = input.classes.map((existing) =>
-      existing.id === oldClass.id ? updatedCls : existing
-    );
+    const gradeChanged = oldClass.grade !== cls.grade;
+    const subjects = gradeChanged
+      ? subjectsForGrade(cls.grade)
+      : oldClass.subjects;
+    const updatedCls: SchoolClass = {
+      ...cls,
+      defaultRoomId: newRoomId,
+      subjects,
+    };
     onChange({
       ...input,
-      classes: syncMandatoryAcrossGrade(classesAfterEdit, updatedCls),
+      classes: input.classes.map((existing) =>
+        existing.id === oldClass.id ? updatedCls : existing
+      ),
       rooms,
     });
     setEditingClassId(null);
+  };
+
+  const saveGradeSubjects = (grade: Grade, subjects: ClassSubject[]) => {
+    onChange({
+      ...input,
+      classes: input.classes.map((c) =>
+        c.grade === grade ? { ...c, subjects } : c
+      ),
+    });
+    setEditingGrade(null);
   };
 
   return (
@@ -170,29 +175,68 @@ export default function InputView({ input, onChange }: Props) {
             <TeacherForm
               onSave={addTeacher}
               onCancel={() => setAddingTeacher(false)}
-              existingIds={input.teachers.map((t) => t.id)}
+              existingIds={input.teachers.map((teacher) => teacher.id)}
             />
           )}
-          {input.teachers.map((t) =>
-            editingTeacherId === t.id ? (
+          {input.teachers.map((teacher) =>
+            editingTeacherId === teacher.id ? (
               <TeacherForm
-                key={t.id}
-                initial={t}
+                key={teacher.id}
+                initial={teacher}
                 onSave={updateTeacher}
                 onCancel={() => setEditingTeacherId(null)}
                 existingIds={input.teachers.map((x) => x.id)}
               />
             ) : (
               <TeacherCard
-                key={t.id}
-                teacher={t}
-                onEdit={() => setEditingTeacherId(t.id)}
-                onDelete={() => removeTeacher(t.id)}
+                key={teacher.id}
+                teacher={teacher}
+                onEdit={() => setEditingTeacherId(teacher.id)}
+                onDelete={() => removeTeacher(teacher.id)}
               />
             )
           )}
         </div>
       </div>
+
+      {/* GRADES (subjects) */}
+      {presentGrades.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title">{t("gradesSection")}</h3>
+              <div className="section-meta">
+                {presentGrades.length}{" "}
+                {presentGrades.length === 1
+                  ? t("countGradesOne")
+                  : t("countGradesMany")}
+              </div>
+            </div>
+          </div>
+          <div className="card-grid">
+            {presentGrades.map((grade) =>
+              editingGrade === grade ? (
+                <GradeForm
+                  key={grade}
+                  grade={grade}
+                  initialSubjects={subjectsForGrade(grade)}
+                  onSave={(subjects) => saveGradeSubjects(grade, subjects)}
+                  onCancel={() => setEditingGrade(null)}
+                />
+              ) : (
+                <GradeCard
+                  key={grade}
+                  grade={grade}
+                  subjects={subjectsForGrade(grade)}
+                  classCount={input.classes.filter((c) => c.grade === grade).length}
+                  onEdit={() => setEditingGrade(grade)}
+                  tSubject={tSubject}
+                />
+              )
+            )}
+          </div>
+        </div>
+      )}
 
       {/* CLASSES */}
       <div className="section">
@@ -245,7 +289,6 @@ export default function InputView({ input, onChange }: Props) {
                 }
                 teachers={input.teachers}
                 existingIds={input.classes.map((x) => x.id)}
-                gradeMandatoryBySubject={gradeMandatoryMap[c.grade]}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
               />
@@ -259,7 +302,8 @@ export default function InputView({ input, onChange }: Props) {
                     : ""
                 }
                 defaultRoomName={
-                  input.rooms.find((r) => r.id === c.defaultRoomId)?.name ?? c.defaultRoomId
+                  input.rooms.find((r) => r.id === c.defaultRoomId)?.name ??
+                  c.defaultRoomId
                 }
                 onEdit={() => setEditingClassId(c.id)}
                 onDelete={() => removeClass(c.id)}
@@ -272,7 +316,7 @@ export default function InputView({ input, onChange }: Props) {
   );
 }
 
-// --- Read-only cards ---
+// --- Cards ---
 
 function TeacherCard({
   teacher,
@@ -336,6 +380,64 @@ function TeacherCard({
   );
 }
 
+function GradeCard({
+  grade,
+  subjects,
+  classCount,
+  onEdit,
+  tSubject,
+}: {
+  grade: Grade;
+  subjects: ClassSubject[];
+  classCount: number;
+  onEdit: () => void;
+  tSubject: (s: string) => string;
+}) {
+  const { t } = useT();
+  const total = subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
+  return (
+    <div className="card class-card compact">
+      <div className="head">
+        <div className={`grade-badge grade-${grade}`}>{grade}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p className="teacher-name">
+            {t("gradeBadgePrefix")} {grade}
+          </p>
+          <p className="teacher-role">
+            {t("classesInGrade", { n: classCount })} · {total}h / {t("statHours")}
+          </p>
+        </div>
+        <div className="card-actions">
+          <button
+            className="icon-btn"
+            onClick={onEdit}
+            aria-label={t("edit")}
+            title={t("edit")}
+          >
+            ✎
+          </button>
+        </div>
+      </div>
+
+      <div className="row">
+        {subjects.map((s) => {
+          const mandatory = s.mandatory !== false;
+          return (
+            <span
+              key={s.subject}
+              className={`tag subj-${s.subject}`}
+              style={{ opacity: mandatory ? 1 : 0.55 }}
+              title={mandatory ? undefined : t("mandatoryLabel") + ": —"}
+            >
+              {tSubject(s.subject)} · {s.hoursPerWeek}h
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ClassCard({
   cls,
   defaultTeacherName,
@@ -349,8 +451,7 @@ function ClassCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t, tSubject, tClassName } = useT();
-  const totalHours = cls.subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
+  const { t, tClassName } = useT();
   return (
     <div className="card class-card compact">
       <div className="head">
@@ -358,7 +459,7 @@ function ClassCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{tClassName(cls.id)}</p>
           <p className="teacher-role">
-            {t("gradePrefix")} {cls.grade} · {totalHours}h / {t("statHours")}
+            {t("gradePrefix")} {cls.grade}
           </p>
         </div>
         <div className="card-actions">
@@ -392,14 +493,6 @@ function ClassCard({
         <span className="tag muted">
           {t("roomLabel")}: {defaultRoomName}
         </span>
-      </div>
-
-      <div className="row">
-        {cls.subjects.map((s) => (
-          <span key={s.subject} className={`tag subj-${s.subject}`}>
-            {tSubject(s.subject)} · {s.hoursPerWeek}h
-          </span>
-        ))}
       </div>
     </div>
   );

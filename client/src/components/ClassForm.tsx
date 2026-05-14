@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { useT } from "../i18n";
-import {
-  Grade,
-  Subject,
-  type ClassSubject,
-  type SchoolClass,
-  type Teacher,
-} from "../types";
+import { Grade, type SchoolClass, type Teacher } from "../types";
 
 export interface ClassFormResult {
-  cls: SchoolClass;
+  /** New/edited class meta — subjects are filled in by the parent from the
+   *  grade-level template. */
+  cls: Omit<SchoolClass, "subjects">;
   roomName: string;
 }
 
@@ -22,23 +18,7 @@ interface Props {
   initial?: SchoolClass;
   /** Existing display name of the class's room (for editing). */
   initialRoomName?: string;
-  /** Mandatory flags for the current grade, keyed by subject. The parent
-   *  uses these so toggling mandatory in one class applies to all
-   *  classes of the same grade. */
-  gradeMandatoryBySubject?: Record<string, boolean>;
 }
-
-const DEFAULT_HOURS: Record<string, number> = {
-  [Subject.Math]: 4,
-  [Subject.Hebrew]: 4,
-  [Subject.English]: 4,
-  [Subject.Science]: 2,
-  [Subject.Sport]: 2,
-  [Subject.Music]: 1,
-  [Subject.Computer]: 2,
-};
-
-const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
 
 export default function ClassForm({
   teachers,
@@ -47,9 +27,8 @@ export default function ClassForm({
   onCancel,
   initial,
   initialRoomName,
-  gradeMandatoryBySubject,
 }: Props) {
-  const { t, tSubject } = useT();
+  const { t } = useT();
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
@@ -59,23 +38,6 @@ export default function ClassForm({
   const [roomName, setRoomName] = useState<string>(
     initialRoomName ?? `Room ${initial?.id ?? `${Grade.A}1`}`
   );
-  const [subjects, setSubjects] = useState<ClassSubject[]>(() => {
-    const base =
-      initial?.subjects ??
-      WELL_KNOWN_SUBJECTS.map((s) => ({
-        subject: s,
-        hoursPerWeek: DEFAULT_HOURS[s] ?? 0,
-        mandatory: true,
-      }));
-    // For each row, fall back to grade-wide mandatory flag if defined.
-    return base.map((row) => ({
-      ...row,
-      mandatory:
-        row.mandatory ??
-        gradeMandatoryBySubject?.[row.subject] ??
-        true,
-    }));
-  });
   const [error, setError] = useState<string | null>(null);
 
   const id = `${grade}${section}`;
@@ -84,14 +46,6 @@ export default function ClassForm({
 
   const submit = () => {
     if (idCollides) return setError(t("errClassExists", { id }));
-    const filtered = subjects
-      .map((s) => ({
-        subject: s.subject.trim().toLowerCase(),
-        hoursPerWeek: s.hoursPerWeek,
-        mandatory: s.mandatory ?? true,
-      }))
-      .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
-    if (filtered.length === 0) return setError(t("errSetHours"));
     onSave({
       cls: {
         id,
@@ -100,7 +54,6 @@ export default function ClassForm({
         name: `Class ${id}`,
         defaultTeacherId: defaultTeacherId || null,
         defaultRoomId: `room-${id}`,
-        subjects: filtered,
       },
       roomName: roomName.trim() || `Room ${id}`,
     });
@@ -163,89 +116,6 @@ export default function ClassForm({
           placeholder={t("roomPlaceholder")}
           onChange={(e) => setRoomName(e.target.value)}
         />
-      </div>
-
-      <div className="form-row">
-        <label>{t("fieldSubjectsHours")}</label>
-        {subjects.map((row, i) => {
-          const isKnown = WELL_KNOWN_SUBJECTS.includes(row.subject);
-          const isMandatory = row.mandatory ?? true;
-          return (
-            <div key={i} className="subject-hours-row mandatory-row">
-              {isKnown ? (
-                <span
-                  style={{ textTransform: "capitalize", fontSize: 13, alignSelf: "center" }}
-                >
-                  {tSubject(row.subject)}
-                </span>
-              ) : (
-                <input
-                  type="text"
-                  value={row.subject}
-                  placeholder={t("subjectPlaceholder")}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[i] = { ...next[i], subject: e.target.value };
-                    setSubjects(next);
-                  }}
-                />
-              )}
-              <input
-                type="number"
-                min={0}
-                value={row.hoursPerWeek}
-                onChange={(e) => {
-                  const next = [...subjects];
-                  next[i] = {
-                    ...next[i],
-                    hoursPerWeek: Math.max(0, Number(e.target.value)),
-                  };
-                  setSubjects(next);
-                }}
-              />
-              <label
-                className="mandatory-toggle"
-                title={t("mandatoryGradeNote")}
-              >
-                <input
-                  type="checkbox"
-                  checked={isMandatory}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[i] = { ...next[i], mandatory: e.target.checked };
-                    setSubjects(next);
-                  }}
-                />
-                <span>{t("mandatoryLabel")}</span>
-              </label>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() => setSubjects(subjects.filter((_, j) => j !== i))}
-                title={t("delete")}
-                aria-label={t("delete")}
-              >
-                ×
-              </button>
-            </div>
-          );
-        })}
-        <small style={{ color: "var(--text-muted)" }}>
-          {t("mandatoryGradeNote")}
-        </small>
-        <button
-          type="button"
-          className="add-btn"
-          style={{ alignSelf: "flex-start", marginTop: 4 }}
-          onClick={() =>
-            setSubjects([
-              ...subjects,
-              { subject: "", hoursPerWeek: 2, mandatory: true },
-            ])
-          }
-        >
-          {t("addSubject")}
-        </button>
       </div>
 
       {error && <div className="banner error">{error}</div>}
