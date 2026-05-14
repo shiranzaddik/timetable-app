@@ -429,7 +429,7 @@ function GradeCard({
               style={{ opacity: mandatory ? 1 : 0.55 }}
               title={mandatory ? undefined : t("mandatoryLabel") + ": —"}
             >
-              {tSubject(s.subject)} · {s.hoursPerWeek}h
+              {tSubject(s.subject)} {s.hoursPerWeek}h
             </span>
           );
         })}
