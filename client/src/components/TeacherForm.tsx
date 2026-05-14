@@ -273,51 +273,51 @@ export default function TeacherForm({
       <div className="form-row">
         <label>{t("fieldVacation")}</label>
         <small style={{ color: "var(--text-muted)" }}>{t("vacationHint")}</small>
-        {unavailable.length > 0 && (
-          <div className="window-row vacation-row vacation-row-header">
-            <span>{t("colDay")}</span>
-            <span>{t("colFrom")}</span>
-            <span>{t("colTo")}</span>
-            <span>{t("colType")}</span>
-            <span />
-          </div>
-        )}
         {unavailable.map((w, i) => (
-          <div key={i} className="window-row vacation-row">
-            <select
-              value={w.day}
-              onChange={(e) => {
-                const next = [...unavailable];
-                next[i] = { ...next[i], day: e.target.value as Day };
-                setUnavailable(next);
-              }}
-            >
-              {Object.values(Day).map((d) => (
-                <option key={d} value={d}>
-                  {tDay(d)}
-                </option>
-              ))}
-            </select>
-            <input
-              type="time"
-              value={w.fromTime ?? ""}
-              onChange={(e) => {
-                const next = [...unavailable];
-                next[i] = { ...next[i], fromTime: e.target.value || undefined };
-                setUnavailable(next);
-              }}
-            />
-            <input
-              type="time"
-              value={w.toTime ?? ""}
-              onChange={(e) => {
-                const next = [...unavailable];
-                next[i] = { ...next[i], toTime: e.target.value || undefined };
-                setUnavailable(next);
-              }}
-            />
-            <div className="vacation-type-cell">
-              <span className="vacation-type-label">{t("colType")}:</span>
+          <div key={i} className="vacation-row-flex">
+            <label className="vacation-field">
+              <span className="vacation-field-label">{t("colDay")}</span>
+              <select
+                value={w.day}
+                onChange={(e) => {
+                  const next = [...unavailable];
+                  next[i] = { ...next[i], day: e.target.value as Day };
+                  setUnavailable(next);
+                }}
+              >
+                {Object.values(Day).map((d) => (
+                  <option key={d} value={d}>
+                    {tDay(d)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="vacation-field vacation-field-time">
+              <span className="vacation-field-label">{t("colFrom")}</span>
+              <input
+                type="time"
+                value={w.fromTime ?? ""}
+                onChange={(e) => {
+                  const next = [...unavailable];
+                  next[i] = { ...next[i], fromTime: e.target.value || undefined };
+                  setUnavailable(next);
+                }}
+              />
+            </label>
+            <label className="vacation-field vacation-field-time">
+              <span className="vacation-field-label">{t("colTo")}</span>
+              <input
+                type="time"
+                value={w.toTime ?? ""}
+                onChange={(e) => {
+                  const next = [...unavailable];
+                  next[i] = { ...next[i], toTime: e.target.value || undefined };
+                  setUnavailable(next);
+                }}
+              />
+            </label>
+            <label className="vacation-field vacation-field-type">
+              <span className="vacation-field-label">{t("colType")}</span>
               <select
                 value={w.hard === false ? "soft" : "hard"}
                 onChange={(e) => {
@@ -329,11 +329,12 @@ export default function TeacherForm({
                 <option value="hard">{t("cantWork")}</option>
                 <option value="soft">{t("preferNot")}</option>
               </select>
-            </div>
+            </label>
             <button
               type="button"
-              className="icon-btn"
+              className="icon-btn vacation-remove"
               onClick={() => setUnavailable(unavailable.filter((_, j) => j !== i))}
+              aria-label={t("delete")}
             >
               ×
             </button>

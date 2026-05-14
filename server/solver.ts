@@ -558,24 +558,34 @@ function solveOnce(
   const globalEndHour =
     rawInput.config.endHour ?? globalStartHour + slotsPerDay;
 
-  /** Per-class slot span computed from per-class overrides or the global config. */
-  const classSlotRange = (c: SchoolClass): { start: number; slots: number } => {
+  /** Per-class slot bounds. `minSlots` is the school day the user committed
+   *  to (used to warn when subjects can't fill it). `maxSlots` is the global
+   *  upper bound the day may extend to if there are more subject hours than
+   *  the minimum requires. */
+  const classSlotRange = (
+    c: SchoolClass
+  ): { start: number; minSlots: number; maxSlots: number } => {
     const cStart = c.startHour ?? globalStartHour;
     const cEnd = c.endHour ?? globalEndHour;
-    return { start: cStart - globalStartHour, slots: cEnd - cStart };
+    const start = cStart - globalStartHour;
+    return {
+      start,
+      minSlots: Math.max(0, cEnd - cStart),
+      maxSlots: Math.max(0, slotsPerDay - start),
+    };
   };
 
-  // Hours warnings: each class needs as many subject hours as its own school day.
+  // Hours warnings: each class needs as many subject hours as its own minimum.
   const warnings: string[] = [];
   for (const c of rawInput.classes) {
-    const { slots } = classSlotRange(c);
-    const target = slots * daysCount;
+    const { minSlots } = classSlotRange(c);
+    const target = minSlots * daysCount;
     const total = c.subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
     if (total < target) {
       const cStart = c.startHour ?? globalStartHour;
       const cEnd = c.endHour ?? globalEndHour;
       warnings.push(
-        `${c.name} has ${total}h/week but its ${cStart}:00–${cEnd}:00 school day needs ${target}h. Add hours to this trend's subjects, or shorten the class's school day.`
+        `${c.name} has ${total}h/week but its minimum school day ${cStart}:00–${cEnd}:00 needs ${target}h. Add hours to this trend's subjects, or shorten the minimum.`
       );
     }
   }
@@ -614,10 +624,12 @@ function solveOnce(
   const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
     classes.map((c) => {
       const total = c.subjects.reduce((sum, s) => sum + s.hoursPerWeek, 0);
-      // Cap per-day quota at the class's own slot count so the solver never
-      // schedules into a slot beyond its school day.
-      const { slots } = classSlotRange(c);
-      const quotas = buildDayQuotas(total, days).map((q) => Math.min(q, slots));
+      // Cap per-day quota at the class's MAX slot count (global), so the day
+      // may extend beyond the minimum if there are more subject hours.
+      const { maxSlots } = classSlotRange(c);
+      const quotas = buildDayQuotas(total, days).map((q) =>
+        Math.min(q, maxSlots)
+      );
       return [c.id, quotas];
     })
   );
@@ -644,7 +656,7 @@ function solveOnce(
     classSlotRange: Object.fromEntries(
       classes.map((c) => {
         const r = classSlotRange(c);
-        return [c.id, { startSlot: r.start, slotCount: r.slots }];
+        return [c.id, { startSlot: r.start, slotCount: r.maxSlots }];
       })
     ),
   };

@@ -141,22 +141,37 @@ export default function ClassForm({
 
       <div className="form-row">
         <label>{t("classHoursLabel")}</label>
-        <div className="school-day-inputs">
-          <input
-            type="number"
-            min={0}
-            max={23}
-            value={startHour}
-            onChange={(e) => setStartHour(Number(e.target.value))}
-          />
-          <span>→</span>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={endHour}
-            onChange={(e) => setEndHour(Number(e.target.value))}
-          />
+        <div className="min-hours-card">
+          <label className="min-hours-field">
+            <span className="min-hours-field-label">{t("classHoursFrom")}</span>
+            <div className="min-hours-input">
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={startHour}
+                onChange={(e) => setStartHour(Number(e.target.value))}
+              />
+              <span className="min-hours-suffix">:00</span>
+            </div>
+          </label>
+          <span className="min-hours-arrow">→</span>
+          <label className="min-hours-field">
+            <span className="min-hours-field-label">{t("classHoursTo")}</span>
+            <div className="min-hours-input">
+              <input
+                type="number"
+                min={1}
+                max={24}
+                value={endHour}
+                onChange={(e) => setEndHour(Number(e.target.value))}
+              />
+              <span className="min-hours-suffix">:00</span>
+            </div>
+          </label>
+          <span className="min-hours-total">
+            = {Math.max(0, endHour - startHour)}h
+          </span>
         </div>
         <small style={{ color: "var(--text-muted)" }}>{t("classHoursHint")}</small>
       </div>

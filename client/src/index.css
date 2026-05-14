@@ -800,35 +800,87 @@ td.subj-bible     { background: #fefce8; }
   gap: 6px;
   align-items: center;
 }
-.window-row.vacation-row {
-  grid-template-columns: minmax(100px, 1fr) 100px 100px minmax(180px, auto) 32px;
+.min-hours-card {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
-.window-row.vacation-row-header {
-  font-size: 11px;
+.min-hours-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.min-hours-field-label {
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--text);
   font-weight: 600;
-  margin-top: 2px;
 }
-.window-row.vacation-row-header > span {
-  padding: 0 2px;
-}
-.vacation-type-cell {
+.min-hours-input {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
+  gap: 4px;
 }
-.vacation-type-label {
-  font-size: 11px;
+.min-hours-input input {
+  width: 56px;
+  text-align: center;
+}
+.min-hours-suffix {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.min-hours-arrow {
+  color: var(--text-muted);
+  font-size: 16px;
+  padding-bottom: 8px;
+}
+.min-hours-total {
+  margin-inline-start: auto;
+  font-weight: 600;
+  color: var(--primary);
+  padding-bottom: 8px;
+}
+
+.vacation-row-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 6px 8px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+.vacation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 100px;
+  min-width: 90px;
+}
+.vacation-field-time {
+  flex: 0 1 110px;
+}
+.vacation-field-type {
+  flex: 1 1 140px;
+  min-width: 130px;
+}
+.vacation-field-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--text);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
 }
-.vacation-type-cell select {
-  flex: 1;
-  min-width: 0;
+.vacation-field select,
+.vacation-field input {
+  width: 100%;
+}
+.vacation-remove {
+  align-self: flex-end;
 }
