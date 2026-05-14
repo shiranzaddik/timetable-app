@@ -801,15 +801,34 @@ td.subj-bible     { background: #fefce8; }
   align-items: center;
 }
 .window-row.vacation-row {
-  grid-template-columns: minmax(100px, 1fr) 100px 100px minmax(120px, auto) 32px;
+  grid-template-columns: minmax(100px, 1fr) 100px 100px minmax(180px, auto) 32px;
 }
 .window-row.vacation-row-header {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-muted);
+  color: var(--text);
+  font-weight: 600;
   margin-top: 2px;
 }
 .window-row.vacation-row-header > span {
   padding: 0 2px;
+}
+.vacation-type-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.vacation-type-label {
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.vacation-type-cell select {
+  flex: 1;
+  min-width: 0;
 }

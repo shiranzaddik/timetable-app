@@ -316,17 +316,20 @@ export default function TeacherForm({
                 setUnavailable(next);
               }}
             />
-            <select
-              value={w.hard === false ? "soft" : "hard"}
-              onChange={(e) => {
-                const next = [...unavailable];
-                next[i] = { ...next[i], hard: e.target.value === "hard" };
-                setUnavailable(next);
-              }}
-            >
-              <option value="hard">{t("cantWork")}</option>
-              <option value="soft">{t("preferNot")}</option>
-            </select>
+            <div className="vacation-type-cell">
+              <span className="vacation-type-label">{t("colType")}:</span>
+              <select
+                value={w.hard === false ? "soft" : "hard"}
+                onChange={(e) => {
+                  const next = [...unavailable];
+                  next[i] = { ...next[i], hard: e.target.value === "hard" };
+                  setUnavailable(next);
+                }}
+              >
+                <option value="hard">{t("cantWork")}</option>
+                <option value="soft">{t("preferNot")}</option>
+              </select>
+            </div>
             <button
               type="button"
               className="icon-btn"
