@@ -107,11 +107,17 @@ export default function ClassForm({
           onChange={(e) => setDefaultTeacherId(e.target.value)}
         >
           <option value="">{t("noDefaultTeacher")}</option>
-          {teachers.map((teacher) => (
-            <option key={teacher.id} value={teacher.id}>
-              {teacher.name}
-            </option>
-          ))}
+          {teachers
+            .filter(
+              (teacher) =>
+                teacher.canBeDefault !== false ||
+                teacher.id === defaultTeacherId
+            )
+            .map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.name}
+              </option>
+            ))}
         </select>
         <small style={{ color: "var(--text-muted)" }}>
           {t("defaultTeacherNote")}
