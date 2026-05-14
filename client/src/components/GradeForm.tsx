@@ -11,14 +11,16 @@ interface Props {
 
 const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
 
+/** Default hours/week per subject — totals 25h so every class fills a 5-hour
+ *  school day across 5 weekdays (08:00 → 13:00). The user can adjust. */
 const DEFAULT_HOURS: Record<string, number> = {
-  [Subject.Math]: 2,
-  [Subject.Hebrew]: 2,
-  [Subject.English]: 2,
-  [Subject.Science]: 2,
-  [Subject.Sport]: 1,
-  [Subject.Music]: 1,
-  [Subject.Computer]: 2,
+  [Subject.Math]: 4,
+  [Subject.Hebrew]: 4,
+  [Subject.English]: 4,
+  [Subject.Science]: 4,
+  [Subject.Sport]: 3,
+  [Subject.Music]: 2,
+  [Subject.Computer]: 4,
 };
 
 export function defaultGradeSubjects(): ClassSubject[] {

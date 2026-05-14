@@ -142,16 +142,17 @@ export const teachers: Teacher[] = [
   },
 ];
 
-// Subject hours per class per week. Sums to 12h with quotas [3,3,2,2,2]:
-// 3h days fill 2h + 1h, 2h days fill a single 2h block.
+// Subject hours per class per week. Sums to 25h so every class fills the
+// full school day (5 hours × 5 days = 25h). Block counts (10 × 2h-blocks
+// + 5 × 1h-blocks) fit the per-day quota of 5 = 2 + 2 + 1 for every day.
 const standardSubjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 2 },
-  { subject: Subject.Hebrew, hoursPerWeek: 2 },
-  { subject: Subject.English, hoursPerWeek: 2 },
-  { subject: Subject.Science, hoursPerWeek: 2 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 2 },
+  { subject: Subject.Math, hoursPerWeek: 4 },
+  { subject: Subject.Hebrew, hoursPerWeek: 4 },
+  { subject: Subject.English, hoursPerWeek: 4 },
+  { subject: Subject.Science, hoursPerWeek: 4 },
+  { subject: Subject.Sport, hoursPerWeek: 3 },
+  { subject: Subject.Music, hoursPerWeek: 2 },
+  { subject: Subject.Computer, hoursPerWeek: 4 },
 ];
 
 export const classes: SchoolClass[] = [

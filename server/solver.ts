@@ -381,6 +381,11 @@ function search(
   // moving on to slot 1, etc. This makes the solver strongly prefer
   // morning starts for every class day.
   for (let s = 0; s + block.duration <= ctx.config.slotLabels.length; s++) {
+    if (ctx.timedOut.value) return false;
+    if (ctx.deadlineMs && Date.now() > ctx.deadlineMs) {
+      ctx.timedOut.value = true;
+      return false;
+    }
     for (const d of dayOrder) {
       for (const teacher of teachers_) {
         if (canPlace(block, teacher, d, s, state, ctx.requireMorningStart)) {
@@ -510,6 +515,31 @@ function solveOnce(
   deadlineMs?: number,
   requireMorningStart: boolean = false
 ): SolveResult {
+  // Pre-flight: each class needs at least (slotsPerDay × days) hours of
+  // subjects to fill the school day. If any class falls short, fail fast
+  // with a "need more hours" message — that comes before the solver even
+  // runs (and before any "need more teachers" feedback).
+  const slotsPerDay = rawInput.config.slotLabels.length;
+  const daysCount = rawInput.config.days.length;
+  const targetHours = slotsPerDay * daysCount;
+  for (const c of rawInput.classes) {
+    const total = c.subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
+    if (total < targetHours) {
+      return {
+        success: false,
+        error: `Class ${c.name} has ${total}h/week but needs ${targetHours}h to fill the ${rawInput.config.startHour}-${rawInput.config.endHour} school day. Add more subject hours to this grade, or shorten the school day.`,
+        timetables: {
+          byClass: Object.fromEntries(
+            rawInput.classes.map((cl) => [cl.id, emptyGrid(daysCount, slotsPerDay)])
+          ),
+          byTeacher: Object.fromEntries(
+            rawInput.teachers.map((t) => [t.id, emptyGrid(daysCount, slotsPerDay)])
+          ),
+        },
+      };
+    }
+  }
+
   // Auto-assign homeroom teachers to classes whose defaultTeacherId is null.
   const { classes: assignedClasses, assignments: assignedHomerooms } =
     assignHomerooms(rawInput);
@@ -579,13 +609,15 @@ function solveOnce(
     requireMorningStart,
   };
 
-  // Phase 1: backtracking search over mandatory blocks. Failure here = unsolvable.
+  // Phase 1: backtracking search over mandatory blocks. Failure here = unsolvable
+  // (hours were already validated by the pre-flight check above, so the
+  // remaining knob is teacher availability).
   const ok = search(orderedMandatory, 0, state, ctx);
   if (!ok) {
     return {
       success: false,
       error:
-        "Couldn't place every mandatory subject. Add more teachers, remove a day off, mark some subjects as optional, or reduce hours so the schedule can fit.",
+        "Couldn't fit every mandatory subject — you probably need more teachers (or fewer day-offs / unavailable windows). Marking some subjects as optional is the other escape valve.",
       timetables: buildOutput(input, state.assignments),
     };
   }
@@ -800,5 +832,7 @@ export function solve(input: SchoolInput): SolveResult {
   const pass2 = tryWith(false, 1.0);
   if (pass2.best) return enrich(pass2.best);
   if (pass2.firstSuccess) return enrich(pass2.firstSuccess);
-  return solveOnce(input);
+
+  // Both passes failed; surface a bounded final attempt so we don't hang.
+  return solveOnce(input, undefined, Date.now() + 1500, false);
 }
