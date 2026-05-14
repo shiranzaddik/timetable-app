@@ -53,14 +53,18 @@ export interface Room {
   type: RoomType;
 }
 
-/** A window in which a teacher cannot teach.
- *  Omit both fromTime and toTime → entire day is unavailable. */
+/** A window in which a teacher prefers (or refuses) to teach.
+ *  Omit both fromTime and toTime → entire day. */
 export interface UnavailabilityWindow {
   day: Day;
   /** "HH:MM" inclusive lower bound. Omitted → from start of day. */
   fromTime?: string;
   /** "HH:MM" exclusive upper bound. Omitted → to end of day. */
   toTime?: string;
+  /** true = hard ("can't" — solver respects strictly), false = soft
+   *  ("prefer not" — solver may override if needed). Default true for
+   *  back-compat with older inputs that didn't have this flag. */
+  hard?: boolean;
 }
 
 export interface Teacher {
@@ -73,14 +77,17 @@ export interface Teacher {
    *  per-subject grade list. Kept for back-compat with older inputs. */
   grades: Grade[];
   /** Per-subject grade restrictions. When set, overrides `grades` for that
-   *  subject. Default UX: when adding a subject in the form, this list is
-   *  initialised to every grade — the user can then narrow it. */
+   *  subject. */
   gradesPerSubject?: Record<string, Grade[]>;
-  /** Soft preference — the solver tries to honor this day off but may still
-   *  schedule lessons here if no other slot fits. */
-  dayOff: Day;
-  /** Additional unavailable windows on top of dayOff. */
+  /** Legacy "day off" field. New inputs put this entry inside `unavailable`
+   *  instead; the solver still recognises it for back-compat. */
+  dayOff?: Day;
+  /** Unified list of times when the teacher can't (hard=true) or would
+   *  rather not (hard=false) teach. Replaces the separate dayOff + windows. */
   unavailable: UnavailabilityWindow[];
+  /** When false, the homeroom-auto-assigner won't pick this teacher as a
+   *  class's default teacher. Default true. */
+  canBeDefault?: boolean;
 }
 
 export interface ClassSubject {

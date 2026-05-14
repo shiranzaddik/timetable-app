@@ -41,7 +41,7 @@ export default function InputView({ input, onChange }: Props) {
   // Grades that have at least one class, in alphabetical order.
   const presentGrades = Array.from(
     new Set(input.classes.map((c) => c.grade))
-  ).sort();
+  ).sort() as Grade[];
 
   const removeTeacher = (id: string) => {
     if (
@@ -164,6 +164,7 @@ export default function InputView({ input, onChange }: Props) {
               onSave={addTeacher}
               onCancel={() => setAddingTeacher(false)}
               existingIds={input.teachers.map((teacher) => teacher.id)}
+              availableGrades={presentGrades}
             />
           )}
           {input.teachers.map((teacher) =>
@@ -174,6 +175,7 @@ export default function InputView({ input, onChange }: Props) {
                 onSave={updateTeacher}
                 onCancel={() => setEditingTeacherId(null)}
                 existingIds={input.teachers.map((x) => x.id)}
+                availableGrades={presentGrades}
               />
             ) : (
               <TeacherCard
@@ -405,14 +407,23 @@ function TeacherCard({
       </div>
 
       <div className="row">
-        <span className="tag warn">
-          {t("off")} {tDay(teacher.dayOff)}
-        </span>
+        {teacher.dayOff && (
+          <span className="tag warn">
+            {t("off")} {tDay(teacher.dayOff)}
+          </span>
+        )}
         {teacher.unavailable.map((w, i) => (
-          <span key={i} className="tag warn">
+          <span
+            key={i}
+            className={`tag ${w.hard === false ? "muted" : "warn"}`}
+            title={w.hard === false ? t("preferNot") : t("cantWork")}
+          >
             {formatWindow(w, tDay, t("allDay"))}
           </span>
         ))}
+        {teacher.canBeDefault === false && (
+          <span className="tag muted">{t("canBeDefaultLabel")}: —</span>
+        )}
       </div>
     </div>
   );

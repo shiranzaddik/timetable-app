@@ -55,19 +55,22 @@ export interface UnavailabilityWindow {
   day: Day;
   fromTime?: string;
   toTime?: string;
+  /** true = hard ("can't"), false = soft ("prefer not"). Default true. */
+  hard?: boolean;
 }
 
 export interface Teacher {
   id: string;
   name: string;
-  /** Subjects this teacher can teach — Subject enum values OR custom names. */
   subjects: string[];
   grades: Grade[];
-  /** Per-subject grade restrictions. When defined for a subject, overrides
-   *  the fallback `grades` list. */
   gradesPerSubject?: Record<string, Grade[]>;
-  dayOff: Day;
+  /** Legacy field — new code uses `unavailable` exclusively. */
+  dayOff?: Day;
   unavailable: UnavailabilityWindow[];
+  /** Whether this teacher is eligible to be a class's default (homeroom)
+   *  teacher. Default true. */
+  canBeDefault?: boolean;
 }
 
 export interface ClassSubject {

@@ -98,9 +98,18 @@ function timeToMinutes(t: string): number {
 
 function buildAvailability(teacher: Teacher, config: Config): boolean[][] {
   const matrix = config.days.map(() => config.slotLabels.map(() => true));
-  const dayOffIdx = config.days.indexOf(teacher.dayOff);
-  if (dayOffIdx >= 0) matrix[dayOffIdx] = matrix[dayOffIdx].map(() => false);
-  for (const w of teacher.unavailable) applyUnavailability(matrix, w, config);
+  // Legacy: dayOff field is treated as a whole-day hard entry.
+  if (teacher.dayOff) {
+    const dayOffIdx = config.days.indexOf(teacher.dayOff);
+    if (dayOffIdx >= 0) matrix[dayOffIdx] = matrix[dayOffIdx].map(() => false);
+  }
+  for (const w of teacher.unavailable) {
+    // hard === false means "prefer not" — solver currently still treats it as
+    // available (the schedule fills it only if no other slot fits). When hard
+    // is true or undefined, the window blocks placement.
+    if (w.hard === false) continue;
+    applyUnavailability(matrix, w, config);
+  }
   return matrix;
 }
 
@@ -461,7 +470,9 @@ function assignHomerooms(input: SchoolInput): {
   const newClasses = input.classes.map((c) => {
     if (c.defaultTeacherId) return c;
 
-    const eligible = input.teachers.filter((t) => !usedTeachers.has(t.id));
+    const eligible = input.teachers.filter(
+      (t) => !usedTeachers.has(t.id) && t.canBeDefault !== false
+    );
 
     let best: Teacher | null = null;
     let bestHours = -1;
@@ -693,17 +704,24 @@ function findDayOffSuggestions(
   const suggestions: DayOffSuggestion[] = [];
   for (const teacher of relevantTeachers) {
     if (Date.now() > deadlineMs) break;
+    // Pick a representative "current day off": prefer the legacy field,
+    // otherwise the first hard whole-day entry in unavailable.
+    const currentDayOff =
+      teacher.dayOff ??
+      teacher.unavailable.find(
+        (w) => (w.hard ?? true) && !w.fromTime && !w.toTime
+      )?.day;
+    if (!currentDayOff) continue;
     let best: DayOffSuggestion | null = null;
     for (const day of input.config.days) {
-      if (day === teacher.dayOff) continue;
+      if (day === currentDayOff) continue;
       if (Date.now() > deadlineMs) break;
       const altInput: SchoolInput = {
         ...input,
         teachers: input.teachers.map((t) =>
-          t.id === teacher.id ? { ...t, dayOff: day } : t
+          t.id === teacher.id ? { ...t, dayOff: day, unavailable: [] } : t
         ),
       };
-      // Quick single-attempt solve for the alternative.
       const altResult = solveOnce(altInput, undefined, Date.now() + 600, false);
       if (!altResult.success) continue;
       const altPlaced = altResult.blockCount ?? 0;
@@ -712,7 +730,7 @@ function findDayOffSuggestions(
         best = {
           teacherId: teacher.id,
           teacherName: teacher.name,
-          currentDay: teacher.dayOff,
+          currentDay: currentDayOff,
           suggestedDay: day,
           improvesBlocksBy: improves,
         };

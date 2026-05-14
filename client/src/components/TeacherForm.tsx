@@ -13,36 +13,60 @@ interface Props {
   onCancel: () => void;
   existingIds: string[];
   initial?: Teacher;
+  /** Grades that actually exist among the school's classes. The form
+   *  filters the per-subject grade chips to these. Falls back to the full
+   *  Grade enum when no classes have been created yet. */
+  availableGrades?: Grade[];
 }
 
 const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
 const ALL_GRADES: Grade[] = Object.values(Grade);
 
-export default function TeacherForm({ onSave, onCancel, existingIds, initial }: Props) {
+function mergeLegacyDayOff(
+  legacyDayOff: Day | undefined,
+  list: UnavailabilityWindow[]
+): UnavailabilityWindow[] {
+  if (!legacyDayOff) return list;
+  // If the same all-day entry already exists, don't duplicate.
+  const already = list.some(
+    (w) => w.day === legacyDayOff && !w.fromTime && !w.toTime
+  );
+  if (already) return list;
+  return [{ day: legacyDayOff, hard: true }, ...list];
+}
+
+export default function TeacherForm({
+  onSave,
+  onCancel,
+  existingIds,
+  initial,
+  availableGrades,
+}: Props) {
   const { t, tDay, tSubject } = useT();
   const isEdit = !!initial;
+  const gradeChipChoices = availableGrades?.length ? availableGrades : ALL_GRADES;
+
   const [name, setName] = useState(initial?.name ?? "");
   const [subjects, setSubjects] = useState<string[]>(initial?.subjects ?? []);
   const [customDraft, setCustomDraft] = useState("");
-  /** Per-subject grade list. Initialised from initial.gradesPerSubject OR
-   *  from initial.grades for legacy data. When the user adds a subject the
-   *  grades default to every Grade enum value. */
   const [gradesPerSubject, setGradesPerSubject] = useState<Record<string, Grade[]>>(() => {
     const out: Record<string, Grade[]> = {};
     for (const s of initial?.subjects ?? []) {
-      out[s] = initial?.gradesPerSubject?.[s] ?? initial?.grades ?? [...ALL_GRADES];
+      out[s] = initial?.gradesPerSubject?.[s] ?? initial?.grades ?? [...gradeChipChoices];
     }
     return out;
   });
-  const [dayOff, setDayOff] = useState<Day>(initial?.dayOff ?? Day.Sunday);
   const [unavailable, setUnavailable] = useState<UnavailabilityWindow[]>(
-    initial?.unavailable ?? []
+    mergeLegacyDayOff(initial?.dayOff, initial?.unavailable ?? [])
+  );
+  const [canBeDefault, setCanBeDefault] = useState<boolean>(
+    initial?.canBeDefault !== false
   );
   const [error, setError] = useState<string | null>(null);
 
   const toggleGradeForSubject = (subject: string, grade: Grade) => {
     setGradesPerSubject((prev) => {
-      const list = prev[subject] ?? [...ALL_GRADES];
+      const list = prev[subject] ?? [...gradeChipChoices];
       const next = list.includes(grade)
         ? list.filter((g) => g !== grade)
         : [...list, grade];
@@ -55,7 +79,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
     setSubjects([...subjects, s]);
     setGradesPerSubject((prev) => ({
       ...prev,
-      [s]: prev[s] ?? [...ALL_GRADES],
+      [s]: prev[s] ?? [...gradeChipChoices],
     }));
   };
 
@@ -71,14 +95,12 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
   const submit = () => {
     if (!name.trim()) return setError(t("errNameRequired"));
     if (subjects.length === 0) return setError(t("errPickSubject"));
-    // Each subject must have at least one grade.
     for (const s of subjects) {
       if ((gradesPerSubject[s]?.length ?? 0) === 0) {
         return setError(t("errPickGrade"));
       }
     }
     const id = isEdit ? initial!.id : makeId(name, existingIds);
-    // Union of all per-subject grades populates the legacy `grades` field.
     const overallGrades = Array.from(
       new Set(subjects.flatMap((s) => gradesPerSubject[s] ?? []))
     );
@@ -88,8 +110,11 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
       subjects,
       grades: overallGrades,
       gradesPerSubject,
-      dayOff,
+      // Legacy dayOff is folded into unavailable; emit undefined here so it's
+      // not double-counted on the next read.
+      dayOff: undefined,
       unavailable,
+      canBeDefault,
     });
   };
 
@@ -114,7 +139,6 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
           {t("perSubjectGradesHint")}
         </small>
 
-        {/* Well-known subject toggles */}
         <div className="checkbox-grid">
           {WELL_KNOWN_SUBJECTS.map((s) => (
             <label key={s} className={subjects.includes(s) ? "checked" : ""}>
@@ -130,7 +154,6 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
           ))}
         </div>
 
-        {/* Custom subjects already selected */}
         {subjects.filter((s) => !WELL_KNOWN_SUBJECTS.includes(s)).length > 0 && (
           <div className="row" style={{ marginTop: 6 }}>
             {subjects
@@ -151,7 +174,6 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
           </div>
         )}
 
-        {/* Add custom subject */}
         <div
           className="window-row"
           style={{ marginTop: 4, gridTemplateColumns: "1fr auto" }}
@@ -183,7 +205,6 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
           </button>
         </div>
 
-        {/* Per-subject grade pickers */}
         {subjects.length > 0 && (
           <div className="per-subject-grades">
             {subjects.map((s) => {
@@ -194,7 +215,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
                     {tSubject(s)}
                   </span>
                   <div className="grade-chip-row">
-                    {ALL_GRADES.map((g) => {
+                    {gradeChipChoices.map((g) => {
                       const on = selected.includes(g);
                       return (
                         <button
@@ -215,27 +236,12 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
         )}
       </div>
 
+      {/* Unified time-off / preferences */}
       <div className="form-row">
-        <label>{t("fieldDayOff")}</label>
-        <select value={dayOff} onChange={(e) => setDayOff(e.target.value as Day)}>
-          {Object.values(Day).map((d) => (
-            <option key={d} value={d}>
-              {tDay(d)}
-            </option>
-          ))}
-        </select>
-        <small style={{ color: "var(--text-muted)" }}>{t("dayOffSoftNote")}</small>
-      </div>
-
-      <div className="form-row">
-        <label>
-          {t("fieldUnavailable")}{" "}
-          <span style={{ color: "var(--text-dim)", fontWeight: 400 }}>
-            {t("optional")}
-          </span>
-        </label>
+        <label>{t("fieldVacation")}</label>
+        <small style={{ color: "var(--text-muted)" }}>{t("vacationHint")}</small>
         {unavailable.map((w, i) => (
-          <div key={i} className="window-row">
+          <div key={i} className="window-row vacation-row">
             <select
               value={w.day}
               onChange={(e) => {
@@ -268,7 +274,19 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
                 setUnavailable(next);
               }}
             />
+            <select
+              value={w.hard === false ? "soft" : "hard"}
+              onChange={(e) => {
+                const next = [...unavailable];
+                next[i] = { ...next[i], hard: e.target.value === "hard" };
+                setUnavailable(next);
+              }}
+            >
+              <option value="hard">{t("cantWork")}</option>
+              <option value="soft">{t("preferNot")}</option>
+            </select>
             <button
+              type="button"
               className="icon-btn"
               onClick={() => setUnavailable(unavailable.filter((_, j) => j !== i))}
             >
@@ -277,15 +295,30 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
           </div>
         ))}
         <button
+          type="button"
           className="add-btn"
           style={{ alignSelf: "flex-start" }}
-          onClick={() => setUnavailable([...unavailable, { day: Day.Sunday }])}
+          onClick={() =>
+            setUnavailable([
+              ...unavailable,
+              { day: Day.Sunday, hard: true },
+            ])
+          }
         >
-          {t("addWindow")}
+          {t("addVacation")}
         </button>
-        <small style={{ color: "var(--text-muted)" }}>
-          {t("leaveTimesEmpty")}
-        </small>
+      </div>
+
+      <div className="form-row">
+        <label className="mandatory-toggle">
+          <input
+            type="checkbox"
+            checked={canBeDefault}
+            onChange={(e) => setCanBeDefault(e.target.checked)}
+          />
+          <span>{t("canBeDefaultLabel")}</span>
+        </label>
+        <small style={{ color: "var(--text-muted)" }}>{t("canBeDefaultHint")}</small>
       </div>
 
       {error && <div className="banner error">{error}</div>}
