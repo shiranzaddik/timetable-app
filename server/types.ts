@@ -106,6 +106,10 @@ export interface SchoolClass {
   grade: Grade;
   /** Section number within the grade, e.g., 1 for "A1". */
   section: number;
+  /** Optional trend specialization within the grade ("science", "sport",
+   *  "computers", ...). Empty/undefined = the "regular" trend. Classes
+   *  that share the same (grade, trendName) tuple share one subjects list. */
+  trendName?: string;
   name: string;
   /** When null, the solver may pick any qualified teacher for every subject. */
   defaultTeacherId: string | null;

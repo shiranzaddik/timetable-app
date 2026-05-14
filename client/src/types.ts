@@ -85,6 +85,8 @@ export interface SchoolClass {
   id: ClassId;
   grade: Grade;
   section: number;
+  /** Optional trend specialization (e.g., "science"). Empty = "regular". */
+  trendName?: string;
   name: string;
   /** When null, the solver may pick any qualified teacher for every subject. */
   defaultTeacherId: string | null;

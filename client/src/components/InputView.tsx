@@ -26,19 +26,33 @@ export default function InputView({ input, onChange }: Props) {
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
-  const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
+  const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
   const [addingRoom, setAddingRoom] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 
   const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
-  // Subjects per grade — taken from any class of that grade.
-  const subjectsForGrade = (grade: Grade): ClassSubject[] => {
-    const cls = input.classes.find((c) => c.grade === grade);
+  /** Trend id = grade + optional ":" + trendName (so "A regular" → "A" and
+   *  "A science" → "A:science"). Used as a stable grouping key. */
+  const trendKeyOf = (grade: Grade, trendName?: string) =>
+    trendName ? `${grade}:${trendName}` : `${grade}`;
+  const parseTrendKey = (key: string): { grade: Grade; trendName?: string } => {
+    const [g, t] = key.split(":");
+    return { grade: g as Grade, trendName: t || undefined };
+  };
+
+  // Subjects for a (grade, trendName) tuple — taken from any class with that combo.
+  const subjectsForTrend = (grade: Grade, trendName?: string): ClassSubject[] => {
+    const cls = input.classes.find(
+      (c) => c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+    );
     return cls ? cls.subjects : defaultGradeSubjects();
   };
 
-  // Grades that have at least one class, in alphabetical order.
+  // Trends that have at least one class, sorted.
+  const presentTrendKeys = Array.from(
+    new Set(input.classes.map((c) => trendKeyOf(c.grade, c.trendName)))
+  ).sort();
   const presentGrades = Array.from(
     new Set(input.classes.map((c) => c.grade))
   ).sort() as Grade[];
@@ -78,7 +92,7 @@ export default function InputView({ input, onChange }: Props) {
   const addClass = ({ cls }: ClassFormResult) => {
     const fullCls: SchoolClass = {
       ...cls,
-      subjects: subjectsForGrade(cls.grade),
+      subjects: subjectsForTrend(cls.grade, cls.trendName),
     };
     onChange({ ...input, classes: [...input.classes, fullCls] });
     setAddingClass(false);
@@ -90,9 +104,11 @@ export default function InputView({ input, onChange }: Props) {
       setEditingClassId(null);
       return;
     }
-    const gradeChanged = oldClass.grade !== cls.grade;
-    const subjects = gradeChanged
-      ? subjectsForGrade(cls.grade)
+    const oldKey = trendKeyOf(oldClass.grade, oldClass.trendName);
+    const newKey = trendKeyOf(cls.grade, cls.trendName);
+    const trendChanged = oldKey !== newKey;
+    const subjects = trendChanged
+      ? subjectsForTrend(cls.grade, cls.trendName)
       : oldClass.subjects;
     const updatedCls: SchoolClass = { ...cls, subjects };
     onChange({
@@ -123,14 +139,20 @@ export default function InputView({ input, onChange }: Props) {
     onChange({ ...input, rooms: input.rooms.filter((r) => r.id !== id) });
   };
 
-  const saveGradeSubjects = (grade: Grade, subjects: ClassSubject[]) => {
+  const saveTrendSubjects = (
+    grade: Grade,
+    trendName: string | undefined,
+    subjects: ClassSubject[]
+  ) => {
     onChange({
       ...input,
       classes: input.classes.map((c) =>
-        c.grade === grade ? { ...c, subjects } : c
+        c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+          ? { ...c, subjects }
+          : c
       ),
     });
-    setEditingGrade(null);
+    setEditingTrendKey(null);
   };
 
   return (
@@ -237,41 +259,50 @@ export default function InputView({ input, onChange }: Props) {
         </div>
       </div>
 
-      {/* GRADES (subjects) */}
-      {presentGrades.length > 0 && (
+      {/* TRENDS (subjects per grade + specialization) */}
+      {presentTrendKeys.length > 0 && (
         <div className="section">
           <div className="section-header">
             <div>
               <h3 className="section-title">{t("gradesSection")}</h3>
               <div className="section-meta">
-                {presentGrades.length}{" "}
-                {presentGrades.length === 1
+                {presentTrendKeys.length}{" "}
+                {presentTrendKeys.length === 1
                   ? t("countGradesOne")
                   : t("countGradesMany")}
               </div>
             </div>
           </div>
           <div className="card-grid">
-            {presentGrades.map((grade) =>
-              editingGrade === grade ? (
+            {presentTrendKeys.map((key) => {
+              const { grade, trendName } = parseTrendKey(key);
+              const subjects = subjectsForTrend(grade, trendName);
+              const classCount = input.classes.filter(
+                (c) =>
+                  c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+              ).length;
+              const label = trendName ? `${grade} ${trendName}` : `${grade}`;
+              return editingTrendKey === key ? (
                 <GradeForm
-                  key={grade}
+                  key={key}
                   grade={grade}
-                  initialSubjects={subjectsForGrade(grade)}
-                  onSave={(subjects) => saveGradeSubjects(grade, subjects)}
-                  onCancel={() => setEditingGrade(null)}
+                  trendLabel={label}
+                  initialSubjects={subjects}
+                  onSave={(s) => saveTrendSubjects(grade, trendName, s)}
+                  onCancel={() => setEditingTrendKey(null)}
                 />
               ) : (
                 <GradeCard
-                  key={grade}
+                  key={key}
                   grade={grade}
-                  subjects={subjectsForGrade(grade)}
-                  classCount={input.classes.filter((c) => c.grade === grade).length}
-                  onEdit={() => setEditingGrade(grade)}
+                  trendLabel={label}
+                  subjects={subjects}
+                  classCount={classCount}
+                  onEdit={() => setEditingTrendKey(key)}
                   tSubject={tSubject}
                 />
-              )
-            )}
+              );
+            })}
           </div>
         </div>
       )}
@@ -431,12 +462,14 @@ function TeacherCard({
 
 function GradeCard({
   grade,
+  trendLabel,
   subjects,
   classCount,
   onEdit,
   tSubject,
 }: {
   grade: Grade;
+  trendLabel?: string;
   subjects: ClassSubject[];
   classCount: number;
   onEdit: () => void;
@@ -444,13 +477,14 @@ function GradeCard({
 }) {
   const { t } = useT();
   const total = subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
+  const title = trendLabel ?? `${grade}`;
   return (
     <div className="card class-card compact">
       <div className="head">
         <div className={`grade-badge grade-${grade}`}>{grade}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">
-            {t("gradeBadgePrefix")} {grade}
+            {t("gradeBadgePrefix")} {title}
           </p>
           <p className="teacher-role">
             {t("classesInGrade", { n: classCount })} · {total}h / {t("statHours")}
@@ -502,7 +536,7 @@ function ClassCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t, tClassName } = useT();
+  const { t } = useT();
   const typeLabel =
     defaultRoomType === RoomType.Sport
       ? t("roomTypeSport")
@@ -513,14 +547,17 @@ function ClassCard({
       : defaultRoomType === RoomType.Regular
       ? t("roomTypeRegular")
       : null;
+  const trendLabel = cls.trendName
+    ? `${cls.grade} ${cls.trendName}`
+    : `${cls.grade}`;
   return (
     <div className="card class-card compact">
       <div className="head">
         <div className={`grade-badge grade-${cls.grade}`}>{cls.id}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">{tClassName(cls.id)}</p>
+          <p className="teacher-name">{cls.id}</p>
           <p className="teacher-role">
-            {t("gradePrefix")} {cls.grade}
+            {t("gradePrefix")} {trendLabel}
           </p>
         </div>
         <div className="card-actions">

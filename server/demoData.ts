@@ -38,9 +38,12 @@ export const config: Config = {
 export const rooms: Room[] = [
   { id: "room-A1", name: "Room A1", type: RoomType.Regular },
   { id: "room-A2", name: "Room A2", type: RoomType.Regular },
+  { id: "room-A3", name: "Room A3", type: RoomType.Regular },
+  { id: "room-A4", name: "Room A4", type: RoomType.Regular },
   { id: "room-B1", name: "Room B1", type: RoomType.Regular },
   { id: "room-B2", name: "Room B2", type: RoomType.Regular },
   { id: "room-B3", name: "Room B3", type: RoomType.Regular },
+  { id: "room-B4", name: "Room B4", type: RoomType.Regular },
   { id: "sport-hall", name: "Sport Hall", type: RoomType.Sport },
   { id: "computer-lab", name: "Computer Lab", type: RoomType.Computer },
   { id: "music-room", name: "Music Room", type: RoomType.Music },
@@ -185,12 +188,52 @@ const standardSubjects: ClassSubject[] = [
   { subject: "bible", hoursPerWeek: 1 },
 ];
 
+// Each specialized trend has its own subject mix totalling 25h. Block
+// counts (10 × 2h + 5 × 1h) match the per-day quota of 5 hours.
+
+const scienceTrendSubjects: ClassSubject[] = [
+  { subject: Subject.Math, hoursPerWeek: 4 },
+  { subject: Subject.Hebrew, hoursPerWeek: 4 },
+  { subject: Subject.English, hoursPerWeek: 4 },
+  { subject: Subject.Science, hoursPerWeek: 4 }, // emphasis
+  { subject: Subject.Sport, hoursPerWeek: 2 },
+  { subject: Subject.Music, hoursPerWeek: 1 },
+  { subject: Subject.Computer, hoursPerWeek: 2 },
+  { subject: "art", hoursPerWeek: 2 },
+  { subject: "history", hoursPerWeek: 1 },
+  { subject: "geography", hoursPerWeek: 1 },
+];
+
+const sportTrendSubjects: ClassSubject[] = [
+  { subject: Subject.Math, hoursPerWeek: 4 },
+  { subject: Subject.Hebrew, hoursPerWeek: 4 },
+  { subject: Subject.English, hoursPerWeek: 4 },
+  { subject: Subject.Science, hoursPerWeek: 2 },
+  { subject: Subject.Sport, hoursPerWeek: 4 }, // emphasis (4 × 1h)
+  { subject: Subject.Computer, hoursPerWeek: 2 },
+  { subject: "art", hoursPerWeek: 4 },
+  { subject: "history", hoursPerWeek: 1 },
+];
+
+const computersTrendSubjects: ClassSubject[] = [
+  { subject: Subject.Math, hoursPerWeek: 4 },
+  { subject: Subject.Hebrew, hoursPerWeek: 4 },
+  { subject: Subject.English, hoursPerWeek: 4 },
+  { subject: Subject.Science, hoursPerWeek: 2 },
+  { subject: Subject.Sport, hoursPerWeek: 2 },
+  { subject: Subject.Music, hoursPerWeek: 1 },
+  { subject: Subject.Computer, hoursPerWeek: 4 }, // emphasis
+  { subject: "art", hoursPerWeek: 2 },
+  { subject: "history", hoursPerWeek: 1 },
+  { subject: "geography", hoursPerWeek: 1 },
+];
+
 export const classes: SchoolClass[] = [
   {
     id: "A1",
     grade: Grade.A,
     section: 1,
-    name: "Class A1",
+    name: "A1",
     defaultTeacherId: "t-cohen",
     defaultRoomId: "room-A1",
     subjects: standardSubjects,
@@ -199,16 +242,36 @@ export const classes: SchoolClass[] = [
     id: "A2",
     grade: Grade.A,
     section: 2,
-    name: "Class A2",
+    name: "A2",
     defaultTeacherId: "t-david",
     defaultRoomId: "room-A2",
     subjects: standardSubjects,
   },
   {
+    id: "A3",
+    grade: Grade.A,
+    section: 3,
+    trendName: "science",
+    name: "A3",
+    defaultTeacherId: "t-levi",
+    defaultRoomId: "room-A3",
+    subjects: scienceTrendSubjects,
+  },
+  {
+    id: "A4",
+    grade: Grade.A,
+    section: 4,
+    trendName: "sport",
+    name: "A4",
+    defaultTeacherId: "t-yossi",
+    defaultRoomId: "room-A4",
+    subjects: sportTrendSubjects,
+  },
+  {
     id: "B1",
     grade: Grade.B,
     section: 1,
-    name: "Class B1",
+    name: "B1",
     defaultTeacherId: "t-levi",
     defaultRoomId: "room-B1",
     subjects: standardSubjects,
@@ -217,7 +280,7 @@ export const classes: SchoolClass[] = [
     id: "B2",
     grade: Grade.B,
     section: 2,
-    name: "Class B2",
+    name: "B2",
     defaultTeacherId: "t-shapiro",
     defaultRoomId: "room-B2",
     subjects: standardSubjects,
@@ -226,10 +289,20 @@ export const classes: SchoolClass[] = [
     id: "B3",
     grade: Grade.B,
     section: 3,
-    name: "Class B3",
+    name: "B3",
     defaultTeacherId: "t-mira",
     defaultRoomId: "room-B3",
     subjects: standardSubjects,
+  },
+  {
+    id: "B4",
+    grade: Grade.B,
+    section: 4,
+    trendName: "computers",
+    name: "B4",
+    defaultTeacherId: "t-tech",
+    defaultRoomId: "room-B4",
+    subjects: computersTrendSubjects,
   },
 ];
 

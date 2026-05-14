@@ -46,6 +46,7 @@ export default function ClassForm({
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
+  const [trendName, setTrendName] = useState<string>(initial?.trendName ?? "");
   const [defaultTeacherId, setDefaultTeacherId] = useState<string>(
     initial?.defaultTeacherId ?? ""
   );
@@ -64,12 +65,14 @@ export default function ClassForm({
   const submit = () => {
     if (idCollides) return setError(t("errClassExists", { id }));
     if (!defaultRoomId) return setError(t("addRoomsFirst"));
+    const cleanTrend = trendName.trim().toLowerCase();
     onSave({
       cls: {
         id,
         grade,
         section,
-        name: `Class ${id}`,
+        trendName: cleanTrend || undefined,
+        name: id, // the class IS its id (e.g., "A1")
         defaultTeacherId: defaultTeacherId || null,
         defaultRoomId,
       },
@@ -105,6 +108,19 @@ export default function ClassForm({
             onChange={(e) => setSection(Math.max(1, Number(e.target.value)))}
           />
         </div>
+      </div>
+
+      <div className="form-row">
+        <label>{t("fieldTrendSpecialization")}</label>
+        <input
+          type="text"
+          value={trendName}
+          placeholder={t("trendPlaceholder")}
+          onChange={(e) => setTrendName(e.target.value)}
+        />
+        <small style={{ color: "var(--text-muted)" }}>
+          {t("trendSpecializationHint")}
+        </small>
       </div>
 
       <div className="form-row">
