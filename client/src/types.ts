@@ -150,4 +150,5 @@ export interface SolveResult {
   unusedTeachers?: TeacherRef[];
   dayOffSuggestions?: DayOffSuggestion[];
   assignedHomerooms?: AssignedHomeroom[];
+  warnings?: string[];
 }

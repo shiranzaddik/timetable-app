@@ -515,28 +515,26 @@ function solveOnce(
   deadlineMs?: number,
   requireMorningStart: boolean = false
 ): SolveResult {
-  // Pre-flight: each class needs at least (slotsPerDay × days) hours of
-  // subjects to fill the school day. If any class falls short, fail fast
-  // with a "need more hours" message — that comes before the solver even
-  // runs (and before any "need more teachers" feedback).
   const slotsPerDay = rawInput.config.slotLabels.length;
   const daysCount = rawInput.config.days.length;
   const targetHours = slotsPerDay * daysCount;
+  // Derive start/end hour from slotLabels for legacy inputs that don't have
+  // them in the persisted config.
+  const startHour =
+    rawInput.config.startHour ??
+    Number.parseInt(rawInput.config.slotLabels[0]?.split(":")[0] ?? "8", 10);
+  const endHour =
+    rawInput.config.endHour ?? startHour + slotsPerDay;
+
+  // Hours warnings (informational — the solver still runs and produces a
+  // partial schedule even when classes are short on hours).
+  const warnings: string[] = [];
   for (const c of rawInput.classes) {
     const total = c.subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
     if (total < targetHours) {
-      return {
-        success: false,
-        error: `Class ${c.name} has ${total}h/week but needs ${targetHours}h to fill the ${rawInput.config.startHour}-${rawInput.config.endHour} school day. Add more subject hours to this grade, or shorten the school day.`,
-        timetables: {
-          byClass: Object.fromEntries(
-            rawInput.classes.map((cl) => [cl.id, emptyGrid(daysCount, slotsPerDay)])
-          ),
-          byTeacher: Object.fromEntries(
-            rawInput.teachers.map((t) => [t.id, emptyGrid(daysCount, slotsPerDay)])
-          ),
-        },
-      };
+      warnings.push(
+        `${c.name} has ${total}h/week but the ${startHour}:00–${endHour}:00 school day needs ${targetHours}h. Add hours to this grade's subjects, or shorten the school day.`
+      );
     }
   }
 
@@ -609,22 +607,27 @@ function solveOnce(
     requireMorningStart,
   };
 
-  // Phase 1: backtracking search over mandatory blocks. Failure here = unsolvable
-  // (hours were already validated by the pre-flight check above, so the
-  // remaining knob is teacher availability).
+  // Phase 1: backtracking search over mandatory blocks.
   const ok = search(orderedMandatory, 0, state, ctx);
+
+  const droppedRaw: Block[] = [];
   if (!ok) {
-    return {
-      success: false,
-      error:
-        "Couldn't fit every mandatory subject — you probably need more teachers (or fewer day-offs / unavailable windows). Marking some subjects as optional is the other escape valve.",
-      timetables: buildOutput(input, state.assignments),
-    };
+    // Backtracking exhausted without placing every mandatory block. State has
+    // been fully unwound at this point. Switch to a greedy fallback that
+    // places as many mandatory blocks as it can — anything that doesn't fit
+    // gets reported as a dropped block.
+    for (const block of orderedMandatory) {
+      if (!greedyPlace(block, state, ctx)) droppedRaw.push(block);
+    }
+    warnings.push(
+      "Couldn't fit every mandatory subject. Try one of these in order: " +
+        "(1) give existing teachers more subjects/grades, (2) cancel a day off " +
+        "for the busiest teacher, (3) add more teachers, " +
+        "(4) mark some subjects as optional."
+    );
   }
 
-  // Phase 2: greedily add optional blocks on top. Anything that doesn't fit
-  // gets reported as a dropped block in the result.
-  const droppedRaw: Block[] = [];
+  // Phase 2: greedily add optional blocks on top.
   for (const block of orderedOptional) {
     if (!greedyPlace(block, state, ctx)) droppedRaw.push(block);
   }
@@ -648,9 +651,10 @@ function solveOnce(
   return {
     success: true,
     timetables: buildOutput(input, state.assignments),
-    blockCount: mandatoryBlocks.length + (optionalBlocks.length - droppedRaw.length),
+    blockCount: allBlocks.length - droppedRaw.length,
     droppedBlocks: droppedBlocks.length > 0 ? droppedBlocks : undefined,
     assignedHomerooms: assignedHomerooms.length > 0 ? assignedHomerooms : undefined,
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 
@@ -795,7 +799,9 @@ export function solve(input: SchoolInput): SolveResult {
       const result = solveOnce(input, ordering, Date.now() + attemptBudget, require);
       if (!result.success) continue;
       if (!firstSuccess) firstSuccess = result;
-      const score = morningStartScore(result, input);
+      // Higher score = more blocks placed + more morning starts.
+      const placed = result.blockCount ?? 0;
+      const score = placed * 1000 + morningStartScore(result, input);
       if (score > bestScore) {
         bestScore = score;
         best = result;

@@ -216,6 +216,23 @@ export default function App() {
 
       <InputView input={input} onChange={handleInputChange} />
 
+      {result?.success && result.warnings && result.warnings.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title" style={{ color: "var(--warn)" }}>
+                Recommendations
+              </h3>
+            </div>
+          </div>
+          <ul style={{ margin: 0, paddingInlineStart: 22 }}>
+            {result.warnings.map((w, i) => (
+              <li key={i} style={{ marginBottom: 4 }}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {result?.success && result.droppedBlocks && result.droppedBlocks.length > 0 && (
         <div className="section">
           <div className="section-header">

@@ -178,4 +178,8 @@ export interface SolveResult {
   /** Classes whose defaultTeacherId was null in the input — the solver
    *  picked a homeroom teacher for each based on subject coverage. */
   assignedHomerooms?: AssignedHomeroom[];
+  /** Free-text warnings / recommendations (e.g., "Class A1 has 12h but needs
+   *  25h to fill the school day"). Always returned alongside a timetable —
+   *  the schedule is never withheld from the user. */
+  warnings?: string[];
 }
