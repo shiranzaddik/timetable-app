@@ -133,6 +133,18 @@ export default function App() {
     setDirty(true);
   };
 
+  const loadDemo = async () => {
+    if (!window.confirm(t("confirmLoadDemo"))) return;
+    try {
+      const demo = await api<SchoolInput>("/api/demo");
+      setInput(demo);
+      setResult(null);
+      setDirty(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setAuth({ authEnabled: true, user: null });
@@ -214,6 +226,9 @@ export default function App() {
       <div className="toolbar">
         <button onClick={runSolver} disabled={loading || input.classes.length === 0}>
           {loading ? t("solving") : t("generate")}
+        </button>
+        <button className="secondary" onClick={loadDemo}>
+          {t("loadDemo")}
         </button>
         <button
           className="secondary"

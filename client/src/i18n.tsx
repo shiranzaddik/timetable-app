@@ -20,6 +20,9 @@ const STRINGS = {
     clearAll: "Clear all (delete demo)",
     confirmClearAll:
       "Delete every teacher, class and room? This wipes your saved data and starts you with an empty school.",
+    loadDemo: "Reset to demo",
+    confirmLoadDemo:
+      "Replace your current data with the latest demo school? Anything unsaved will be lost.",
     signOut: "Sign out",
     loading: "Loading…",
     saving: "Saving…",
@@ -198,6 +201,9 @@ const STRINGS = {
     clearAll: "מחק הכל (מחיקת הדמו)",
     confirmClearAll:
       "למחוק את כל המורים, הכיתות והחדרים? פעולה זו מוחקת את הנתונים השמורים ומשאירה בית-ספר ריק.",
+    loadDemo: "טען מחדש את הדמו",
+    confirmLoadDemo:
+      "להחליף את הנתונים הנוכחיים בנתוני הדמו העדכניים? נתונים שלא נשמרו ייאבדו.",
     signOut: "התנתק",
     loading: "טוען…",
     saving: "שומר…",
