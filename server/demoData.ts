@@ -140,19 +140,49 @@ export const teachers: Teacher[] = [
     dayOff: Day.Monday,
     unavailable: [],
   },
+  {
+    id: "t-dafna",
+    name: "Ms. Dafna",
+    subjects: ["art"],
+    grades: allGrades,
+    dayOff: Day.Tuesday,
+    unavailable: [],
+  },
+  {
+    id: "t-ronen",
+    name: "Mr. Ronen",
+    subjects: ["history", "geography"],
+    grades: allGrades,
+    dayOff: Day.Monday,
+    unavailable: [],
+  },
+  {
+    id: "t-tova",
+    name: "Ms. Tova",
+    subjects: ["bible"],
+    grades: allGrades,
+    dayOff: Day.Sunday,
+    unavailable: [],
+  },
 ];
 
 // Subject hours per class per week. Sums to 25h so every class fills the
 // full school day (5 hours × 5 days = 25h). Block counts (10 × 2h-blocks
 // + 5 × 1h-blocks) fit the per-day quota of 5 = 2 + 2 + 1 for every day.
+// Custom subjects (art, history, geography, bible) demo the per-subject
+// flexibility — they need their own teachers below.
 const standardSubjects: ClassSubject[] = [
   { subject: Subject.Math, hoursPerWeek: 4 },
   { subject: Subject.Hebrew, hoursPerWeek: 4 },
-  { subject: Subject.English, hoursPerWeek: 4 },
-  { subject: Subject.Science, hoursPerWeek: 4 },
-  { subject: Subject.Sport, hoursPerWeek: 3 },
-  { subject: Subject.Music, hoursPerWeek: 2 },
-  { subject: Subject.Computer, hoursPerWeek: 4 },
+  { subject: Subject.English, hoursPerWeek: 3 },
+  { subject: Subject.Science, hoursPerWeek: 2 },
+  { subject: Subject.Sport, hoursPerWeek: 2 },
+  { subject: Subject.Music, hoursPerWeek: 1 },
+  { subject: Subject.Computer, hoursPerWeek: 2 },
+  { subject: "art", hoursPerWeek: 2 },
+  { subject: "history", hoursPerWeek: 2 },
+  { subject: "geography", hoursPerWeek: 2 },
+  { subject: "bible", hoursPerWeek: 1 },
 ];
 
 export const classes: SchoolClass[] = [

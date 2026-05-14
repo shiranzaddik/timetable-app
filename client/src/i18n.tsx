@@ -352,6 +352,10 @@ const SUBJECT_NAMES: Record<Lang, Record<string, string>> = {
     [Subject.Sport]: "sport",
     [Subject.Music]: "music",
     [Subject.Computer]: "computer",
+    art: "art",
+    history: "history",
+    geography: "geography",
+    bible: "bible",
   },
   he: {
     [Subject.Math]: "מתמטיקה",
@@ -361,6 +365,10 @@ const SUBJECT_NAMES: Record<Lang, Record<string, string>> = {
     [Subject.Sport]: "ספורט",
     [Subject.Music]: "מוזיקה",
     [Subject.Computer]: "מחשבים",
+    art: "אמנות",
+    history: "היסטוריה",
+    geography: "גיאוגרפיה",
+    bible: 'תנ"ך',
   },
 };
 

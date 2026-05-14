@@ -553,6 +553,10 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
 .tag.subj-sport     { background: #fee2e2; color: #991b1b; border-color: transparent; }
 .tag.subj-music     { background: #fce7f3; color: #9d174d; border-color: transparent; }
 .tag.subj-computer  { background: #dbeafe; color: #1e3a8a; border-color: transparent; }
+.tag.subj-art       { background: #fae8ff; color: #86198f; border-color: transparent; }
+.tag.subj-history   { background: #fed7aa; color: #9a3412; border-color: transparent; }
+.tag.subj-geography { background: #d1fae5; color: #065f46; border-color: transparent; }
+.tag.subj-bible     { background: #fef9c3; color: #854d0e; border-color: transparent; }
 
 /* --- Timetable --- */
 .timetable-wrap { overflow-x: auto; }
@@ -612,6 +616,10 @@ td.subj-science   { background: #ecfeff; }
 td.subj-sport     { background: #fef2f2; }
 td.subj-music     { background: #fdf2f8; }
 td.subj-computer  { background: #eff6ff; }
+td.subj-art       { background: #fdf4ff; }
+td.subj-history   { background: #fff7ed; }
+td.subj-geography { background: #ecfdf5; }
+td.subj-bible     { background: #fefce8; }
 
 /* --- Forms --- */
 .icon-btn {
