@@ -82,6 +82,9 @@ export interface ClassSubject {
    *  custom subject names are also supported. */
   subject: string;
   hoursPerWeek: number;
+  /** When false, the solver is allowed to skip this subject if it can't fit
+   *  (the dropped block appears in SolveResult.droppedBlocks). Default true. */
+  mandatory?: boolean;
 }
 
 export interface SchoolClass {
@@ -122,10 +125,20 @@ export interface Timetables {
   byTeacher: Record<string, Grid>;
 }
 
+export interface DroppedBlock {
+  classId: string;
+  className: string;
+  subject: string;
+  hours: number;
+}
+
 export interface SolveResult {
   success: boolean;
   error?: string;
   timetables: Timetables;
   blockCount?: number;
   elapsedMs?: number;
+  /** Non-mandatory subjects the solver couldn't fit. Non-empty when the
+   *  schedule is partial — the UI should show a "needs more teachers" hint. */
+  droppedBlocks?: DroppedBlock[];
 }

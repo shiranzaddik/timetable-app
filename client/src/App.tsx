@@ -216,6 +216,30 @@ export default function App() {
 
       <InputView input={input} onChange={handleInputChange} />
 
+      {result?.success && result.droppedBlocks && result.droppedBlocks.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title" style={{ color: "var(--warn)" }}>
+                {t("droppedHeading")}
+              </h3>
+              <div className="section-meta">{t("droppedHint")}</div>
+            </div>
+          </div>
+          <ul style={{ margin: 0, paddingInlineStart: 22 }}>
+            {result.droppedBlocks.map((d) => (
+              <li key={`${d.classId}-${d.subject}`} style={{ marginBottom: 4 }}>
+                {t("droppedLine", {
+                  className: d.className,
+                  subject: d.subject,
+                  hours: d.hours,
+                })}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {result?.success && (
         <div className="section">
           <div className="section-header">

@@ -71,6 +71,8 @@ export interface ClassSubject {
   /** Subject id — Subject enum value or custom string. */
   subject: string;
   hoursPerWeek: number;
+  /** When false, the solver may skip this subject if it can't fit. Default true. */
+  mandatory?: boolean;
 }
 
 export interface SchoolClass {
@@ -108,10 +110,18 @@ export interface Timetables {
   byTeacher: Record<string, Grid>;
 }
 
+export interface DroppedBlock {
+  classId: string;
+  className: string;
+  subject: string;
+  hours: number;
+}
+
 export interface SolveResult {
   success: boolean;
   error?: string;
   timetables: Timetables;
   blockCount?: number;
   elapsedMs?: number;
+  droppedBlocks?: DroppedBlock[];
 }

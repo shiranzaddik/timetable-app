@@ -24,6 +24,36 @@ export default function InputView({ input, onChange }: Props) {
 
   const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
+  // For each grade, derive the "mandatory" flag per subject from any class in
+  // that grade. Used both as the form's default and to propagate edits.
+  const gradeMandatoryMap: Record<string, Record<string, boolean>> = {};
+  for (const c of input.classes) {
+    const m = (gradeMandatoryMap[c.grade] ??= {});
+    for (const s of c.subjects) {
+      if (!(s.subject in m)) m[s.subject] = s.mandatory !== false;
+    }
+  }
+
+  /** Propagate a class's subject.mandatory edits to every class in the same grade. */
+  const syncMandatoryAcrossGrade = (
+    classes: SchoolClass[],
+    targetCls: SchoolClass
+  ): SchoolClass[] => {
+    const targetMandatoryBySubject: Record<string, boolean> = {};
+    for (const s of targetCls.subjects) {
+      targetMandatoryBySubject[s.subject] = s.mandatory ?? true;
+    }
+    return classes.map((c) => {
+      if (c.grade !== targetCls.grade || c.id === targetCls.id) return c;
+      const updatedSubjects = c.subjects.map((s) =>
+        s.subject in targetMandatoryBySubject
+          ? { ...s, mandatory: targetMandatoryBySubject[s.subject] }
+          : s
+      );
+      return { ...c, subjects: updatedSubjects };
+    });
+  };
+
   const removeTeacher = (id: string) => {
     if (
       input.classes.some((c) => c.defaultTeacherId === id) &&
@@ -62,9 +92,11 @@ export default function InputView({ input, onChange }: Props) {
       name: roomName,
       type: RoomType.Regular,
     };
+    const newCls = { ...cls, defaultRoomId: room.id };
+    const synced = syncMandatoryAcrossGrade(input.classes, newCls);
     onChange({
       ...input,
-      classes: [...input.classes, { ...cls, defaultRoomId: room.id }],
+      classes: [...synced, newCls],
       rooms: input.rooms.some((r) => r.id === room.id)
         ? input.rooms.map((r) => (r.id === room.id ? room : r))
         : [...input.rooms, room],
@@ -96,11 +128,13 @@ export default function InputView({ input, onChange }: Props) {
         { id: newRoomId, name: roomName, type: RoomType.Regular },
       ];
     }
+    const updatedCls = { ...cls, defaultRoomId: newRoomId };
+    const classesAfterEdit = input.classes.map((existing) =>
+      existing.id === oldClass.id ? updatedCls : existing
+    );
     onChange({
       ...input,
-      classes: input.classes.map((existing) =>
-        existing.id === oldClass.id ? { ...cls, defaultRoomId: newRoomId } : existing
-      ),
+      classes: syncMandatoryAcrossGrade(classesAfterEdit, updatedCls),
       rooms,
     });
     setEditingClassId(null);
@@ -211,6 +245,7 @@ export default function InputView({ input, onChange }: Props) {
                 }
                 teachers={input.teachers}
                 existingIds={input.classes.map((x) => x.id)}
+                gradeMandatoryBySubject={gradeMandatoryMap[c.grade]}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
               />

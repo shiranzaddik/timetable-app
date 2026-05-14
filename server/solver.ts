@@ -18,6 +18,7 @@ import {
   Subject,
   type ClassId,
   type Config,
+  type DroppedBlock,
   type Grid,
   type Room,
   type SchoolClass,
@@ -42,6 +43,10 @@ interface Block {
   subject: string;
   duration: number;
   requiredRoomType: RoomType | null;
+  /** Mandatory blocks must be placed for the solver to succeed.
+   *  Non-mandatory blocks are placed greedily after mandatory ones and
+   *  may be dropped (reported in SolveResult.droppedBlocks). */
+  mandatory: boolean;
 }
 
 interface Assignment {
@@ -118,7 +123,7 @@ function buildBlocks(classes: SchoolClass[]): Block[] {
   const blocks: Block[] = [];
   let blockId = 0;
   for (const cls of classes) {
-    for (const { subject, hoursPerWeek } of cls.subjects) {
+    for (const { subject, hoursPerWeek, mandatory } of cls.subjects) {
       const isOneHour = ONE_HOUR_SUBJECTS.has(subject);
       const blockDuration = isOneHour ? 1 : 2;
       let remaining = hoursPerWeek;
@@ -130,6 +135,7 @@ function buildBlocks(classes: SchoolClass[]): Block[] {
           subject,
           duration,
           requiredRoomType: SPECIAL_ROOM_BY_SUBJECT[subject] ?? null,
+          mandatory: mandatory !== false, // default true when undefined
         });
         remaining -= duration;
       }
@@ -425,6 +431,23 @@ function buildOutput(input: SchoolInput, assignments: Assignment[]): Timetables 
   return { byClass, byTeacher };
 }
 
+/** Greedy first-fit placement for non-mandatory blocks. Returns true if placed. */
+function greedyPlace(block: Block, state: SolveState, ctx: SolveContext): boolean {
+  const cls = ctx.classesById[block.classId];
+  const teachers_ = candidateTeachers(block, cls, ctx.teachers);
+  for (let s = 0; s + block.duration <= ctx.config.slotLabels.length; s++) {
+    for (let d = 0; d < ctx.config.days.length; d++) {
+      for (const teacher of teachers_) {
+        if (canPlace(block, teacher, d, s, state, false)) {
+          place(block, teacher, d, s, state);
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 function solveOnce(
   input: SchoolInput,
   classOrder?: string[],
@@ -441,8 +464,21 @@ function solveOnce(
     teachers.map((t) => [t.id, buildAvailability(t, config)])
   );
 
-  const blocks = buildBlocks(classes);
-  const ordered = orderBlocks(blocks, classesById, teachers, classOrder);
+  const allBlocks = buildBlocks(classes);
+  const mandatoryBlocks = allBlocks.filter((b) => b.mandatory);
+  const optionalBlocks = allBlocks.filter((b) => !b.mandatory);
+  const orderedMandatory = orderBlocks(
+    mandatoryBlocks,
+    classesById,
+    teachers,
+    classOrder
+  );
+  const orderedOptional = orderBlocks(
+    optionalBlocks,
+    classesById,
+    teachers,
+    classOrder
+  );
 
   const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
     classes.map((c) => {
@@ -482,20 +518,45 @@ function solveOnce(
     requireMorningStart,
   };
 
-  const ok = search(ordered, 0, state, ctx);
+  // Phase 1: backtracking search over mandatory blocks. Failure here = unsolvable.
+  const ok = search(orderedMandatory, 0, state, ctx);
   if (!ok) {
     return {
       success: false,
       error:
-        "No valid timetable could be found with the given constraints. Try adding teachers, removing days off, relaxing unavailable windows, or adjusting class hour totals so every day can hold ≥1 lesson.",
+        "Couldn't place every mandatory subject. Add more teachers, remove a day off, mark some subjects as optional, or reduce hours so the schedule can fit.",
       timetables: buildOutput(input, state.assignments),
     };
   }
 
+  // Phase 2: greedily add optional blocks on top. Anything that doesn't fit
+  // gets reported as a dropped block in the result.
+  const droppedRaw: Block[] = [];
+  for (const block of orderedOptional) {
+    if (!greedyPlace(block, state, ctx)) droppedRaw.push(block);
+  }
+
+  // Aggregate dropped blocks by (class, subject) summing hours.
+  const droppedAgg: Record<string, DroppedBlock> = {};
+  for (const block of droppedRaw) {
+    const key = `${block.classId}__${block.subject}`;
+    if (!droppedAgg[key]) {
+      droppedAgg[key] = {
+        classId: block.classId,
+        className: classesById[block.classId].name,
+        subject: block.subject,
+        hours: 0,
+      };
+    }
+    droppedAgg[key].hours += block.duration;
+  }
+  const droppedBlocks = Object.values(droppedAgg);
+
   return {
     success: true,
     timetables: buildOutput(input, state.assignments),
-    blockCount: blocks.length,
+    blockCount: mandatoryBlocks.length + (optionalBlocks.length - droppedRaw.length),
+    droppedBlocks: droppedBlocks.length > 0 ? droppedBlocks : undefined,
   };
 }
 

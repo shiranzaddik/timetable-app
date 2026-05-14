@@ -731,6 +731,19 @@ td.subj-computer  { background: #eff6ff; }
   gap: 8px;
   align-items: center;
 }
+.subject-hours-row.mandatory-row {
+  grid-template-columns: 1fr 70px auto 32px;
+}
+.mandatory-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.mandatory-toggle input[type="checkbox"] { margin: 0; }
 
 .window-row {
   display: grid;

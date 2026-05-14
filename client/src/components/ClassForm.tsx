@@ -22,6 +22,10 @@ interface Props {
   initial?: SchoolClass;
   /** Existing display name of the class's room (for editing). */
   initialRoomName?: string;
+  /** Mandatory flags for the current grade, keyed by subject. The parent
+   *  uses these so toggling mandatory in one class applies to all
+   *  classes of the same grade. */
+  gradeMandatoryBySubject?: Record<string, boolean>;
 }
 
 const DEFAULT_HOURS: Record<string, number> = {
@@ -43,25 +47,35 @@ export default function ClassForm({
   onCancel,
   initial,
   initialRoomName,
+  gradeMandatoryBySubject,
 }: Props) {
   const { t, tSubject } = useT();
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
-  // "" represents "no default teacher" — the solver may pick anyone qualified.
   const [defaultTeacherId, setDefaultTeacherId] = useState<string>(
     initial?.defaultTeacherId ?? ""
   );
   const [roomName, setRoomName] = useState<string>(
     initialRoomName ?? `Room ${initial?.id ?? `${Grade.A}1`}`
   );
-  const [subjects, setSubjects] = useState<ClassSubject[]>(
-    initial?.subjects ??
+  const [subjects, setSubjects] = useState<ClassSubject[]>(() => {
+    const base =
+      initial?.subjects ??
       WELL_KNOWN_SUBJECTS.map((s) => ({
         subject: s,
         hoursPerWeek: DEFAULT_HOURS[s] ?? 0,
-      }))
-  );
+        mandatory: true,
+      }));
+    // For each row, fall back to grade-wide mandatory flag if defined.
+    return base.map((row) => ({
+      ...row,
+      mandatory:
+        row.mandatory ??
+        gradeMandatoryBySubject?.[row.subject] ??
+        true,
+    }));
+  });
   const [error, setError] = useState<string | null>(null);
 
   const id = `${grade}${section}`;
@@ -71,7 +85,11 @@ export default function ClassForm({
   const submit = () => {
     if (idCollides) return setError(t("errClassExists", { id }));
     const filtered = subjects
-      .map((s) => ({ ...s, subject: s.subject.trim().toLowerCase() }))
+      .map((s) => ({
+        subject: s.subject.trim().toLowerCase(),
+        hoursPerWeek: s.hoursPerWeek,
+        mandatory: s.mandatory ?? true,
+      }))
       .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
     onSave({
@@ -151,8 +169,9 @@ export default function ClassForm({
         <label>{t("fieldSubjectsHours")}</label>
         {subjects.map((row, i) => {
           const isKnown = WELL_KNOWN_SUBJECTS.includes(row.subject);
+          const isMandatory = row.mandatory ?? true;
           return (
-            <div key={i} className="subject-hours-row">
+            <div key={i} className="subject-hours-row mandatory-row">
               {isKnown ? (
                 <span
                   style={{ textTransform: "capitalize", fontSize: 13, alignSelf: "center" }}
@@ -184,6 +203,21 @@ export default function ClassForm({
                   setSubjects(next);
                 }}
               />
+              <label
+                className="mandatory-toggle"
+                title={t("mandatoryGradeNote")}
+              >
+                <input
+                  type="checkbox"
+                  checked={isMandatory}
+                  onChange={(e) => {
+                    const next = [...subjects];
+                    next[i] = { ...next[i], mandatory: e.target.checked };
+                    setSubjects(next);
+                  }}
+                />
+                <span>{t("mandatoryLabel")}</span>
+              </label>
               <button
                 type="button"
                 className="icon-btn"
@@ -196,12 +230,18 @@ export default function ClassForm({
             </div>
           );
         })}
+        <small style={{ color: "var(--text-muted)" }}>
+          {t("mandatoryGradeNote")}
+        </small>
         <button
           type="button"
           className="add-btn"
           style={{ alignSelf: "flex-start", marginTop: 4 }}
           onClick={() =>
-            setSubjects([...subjects, { subject: "", hoursPerWeek: 2 }])
+            setSubjects([
+              ...subjects,
+              { subject: "", hoursPerWeek: 2, mandatory: true },
+            ])
           }
         >
           {t("addSubject")}
