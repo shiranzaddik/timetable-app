@@ -273,6 +273,15 @@ export default function TeacherForm({
       <div className="form-row">
         <label>{t("fieldVacation")}</label>
         <small style={{ color: "var(--text-muted)" }}>{t("vacationHint")}</small>
+        {unavailable.length > 0 && (
+          <div className="window-row vacation-row vacation-row-header">
+            <span>{t("colDay")}</span>
+            <span>{t("colFrom")}</span>
+            <span>{t("colTo")}</span>
+            <span>{t("colType")}</span>
+            <span />
+          </div>
+        )}
         {unavailable.map((w, i) => (
           <div key={i} className="window-row vacation-row">
             <select

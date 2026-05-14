@@ -11,6 +11,9 @@ export interface ClassFormResult {
 interface Props {
   teachers: Teacher[];
   existingIds: string[];
+  /** Global default school day; used when this class doesn't override. */
+  defaultStartHour: number;
+  defaultEndHour: number;
   onSave: (result: ClassFormResult) => void;
   onCancel: () => void;
   /** When provided, edit this class instead of creating a new one. */
@@ -20,6 +23,8 @@ interface Props {
 export default function ClassForm({
   teachers,
   existingIds,
+  defaultStartHour,
+  defaultEndHour,
   onSave,
   onCancel,
   initial,
@@ -32,6 +37,12 @@ export default function ClassForm({
   const [defaultTeacherId, setDefaultTeacherId] = useState<string>(
     initial?.defaultTeacherId ?? ""
   );
+  const [startHour, setStartHour] = useState<number>(
+    initial?.startHour ?? defaultStartHour
+  );
+  const [endHour, setEndHour] = useState<number>(
+    initial?.endHour ?? defaultEndHour
+  );
   const [error, setError] = useState<string | null>(null);
 
   const id = `${grade}${section}`;
@@ -42,6 +53,8 @@ export default function ClassForm({
 
   const submit = () => {
     if (idCollides) return setError(t("errClassExists", { id }));
+    if (endHour <= startHour)
+      return setError(t("errEndHourBeforeStart"));
     const cleanTrend = trendName.trim().toLowerCase();
     onSave({
       cls: {
@@ -52,6 +65,8 @@ export default function ClassForm({
         name: id, // the class IS its id (e.g., "A1")
         defaultTeacherId: defaultTeacherId || null,
         defaultRoomId,
+        startHour: startHour === defaultStartHour ? undefined : startHour,
+        endHour: endHour === defaultEndHour ? undefined : endHour,
       },
     });
   };
@@ -122,6 +137,28 @@ export default function ClassForm({
         <small style={{ color: "var(--text-muted)" }}>
           {t("defaultTeacherNote")}
         </small>
+      </div>
+
+      <div className="form-row">
+        <label>{t("classHoursLabel")}</label>
+        <div className="school-day-inputs">
+          <input
+            type="number"
+            min={0}
+            max={23}
+            value={startHour}
+            onChange={(e) => setStartHour(Number(e.target.value))}
+          />
+          <span>→</span>
+          <input
+            type="number"
+            min={1}
+            max={24}
+            value={endHour}
+            onChange={(e) => setEndHour(Number(e.target.value))}
+          />
+        </div>
+        <small style={{ color: "var(--text-muted)" }}>{t("classHoursHint")}</small>
       </div>
 
       <div className="form-row">

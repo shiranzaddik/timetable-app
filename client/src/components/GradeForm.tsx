@@ -4,8 +4,6 @@ import { Subject, type ClassSubject, type Grade } from "../types";
 
 export interface GradeFormResult {
   subjects: ClassSubject[];
-  startHour?: number;
-  endHour?: number;
 }
 
 interface Props {
@@ -13,11 +11,6 @@ interface Props {
   /** Specialization name within the grade (e.g., "science"). Undefined = regular. */
   trendName?: string;
   initialSubjects: ClassSubject[];
-  initialStartHour?: number;
-  initialEndHour?: number;
-  /** Global config defaults; used when this trend has no override. */
-  defaultStartHour: number;
-  defaultEndHour: number;
   onSave: (result: GradeFormResult) => void;
   onCancel: () => void;
 }
@@ -48,17 +41,11 @@ export default function GradeForm({
   grade,
   trendName,
   initialSubjects,
-  initialStartHour,
-  initialEndHour,
-  defaultStartHour,
-  defaultEndHour,
   onSave,
   onCancel,
 }: Props) {
   const { t, tSubject } = useT();
   const [subjects, setSubjects] = useState<ClassSubject[]>(initialSubjects);
-  const [startHour, setStartHour] = useState<number>(initialStartHour ?? defaultStartHour);
-  const [endHour, setEndHour] = useState<number>(initialEndHour ?? defaultEndHour);
   const [error, setError] = useState<string | null>(null);
   const headerLabel = trendName ? `${grade} · ${trendName}` : `${grade}`;
 
@@ -71,13 +58,7 @@ export default function GradeForm({
       }))
       .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
-    if (endHour <= startHour)
-      return setError("End hour must be greater than start hour");
-    onSave({
-      subjects: filtered,
-      startHour: startHour === defaultStartHour ? undefined : startHour,
-      endHour: endHour === defaultEndHour ? undefined : endHour,
-    });
+    onSave({ subjects: filtered });
   };
 
   return (
@@ -85,28 +66,6 @@ export default function GradeForm({
       <strong style={{ fontSize: 14 }}>
         {t("editGradeSubjects", { grade: headerLabel })}
       </strong>
-
-      <div className="form-row">
-        <label>{t("trendHoursLabel")}</label>
-        <div className="school-day-inputs">
-          <input
-            type="number"
-            min={0}
-            max={23}
-            value={startHour}
-            onChange={(e) => setStartHour(Number(e.target.value))}
-          />
-          <span>→</span>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={endHour}
-            onChange={(e) => setEndHour(Number(e.target.value))}
-          />
-        </div>
-        <small style={{ color: "var(--text-muted)" }}>{t("trendHoursHint")}</small>
-      </div>
 
       <div className="form-row">
         <label>{t("fieldSubjectsHours")}</label>

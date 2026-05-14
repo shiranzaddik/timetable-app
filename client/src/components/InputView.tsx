@@ -54,6 +54,12 @@ export default function InputView({ input, onChange }: Props) {
     new Set(input.classes.map((c) => trendKeyOf(c.grade, c.trendName)))
   ).sort();
 
+  const configStartHour =
+    input.config.startHour ??
+    Number.parseInt(input.config.slotLabels[0]?.split(":")[0] ?? "8", 10);
+  const configEndHour =
+    input.config.endHour ?? configStartHour + input.config.slotLabels.length;
+
   /** Trend chips offered to teachers — one per trend the school actually has. */
   const availableTrends: TrendChoice[] = presentTrendKeys.map((key) => {
     const { grade, trendName } = parseTrendKey(key);
@@ -169,12 +175,7 @@ export default function InputView({ input, onChange }: Props) {
       ...input,
       classes: input.classes.map((c) =>
         c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
-          ? {
-              ...c,
-              subjects: result.subjects,
-              startHour: result.startHour,
-              endHour: result.endHour,
-            }
+          ? { ...c, subjects: result.subjects }
           : c
       ),
     });
@@ -307,30 +308,12 @@ export default function InputView({ input, onChange }: Props) {
                 (c) =>
                   c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
               ).length;
-              // For per-trend hours: take values from any class of this trend.
-              const exampleCls = input.classes.find(
-                (c) =>
-                  c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
-              );
-              const globalStartHour =
-                input.config.startHour ??
-                Number.parseInt(
-                  input.config.slotLabels[0]?.split(":")[0] ?? "8",
-                  10
-                );
-              const globalEndHour =
-                input.config.endHour ??
-                globalStartHour + input.config.slotLabels.length;
               return editingTrendKey === key ? (
                 <GradeForm
                   key={key}
                   grade={grade}
                   trendName={trendName}
                   initialSubjects={subjects}
-                  initialStartHour={exampleCls?.startHour}
-                  initialEndHour={exampleCls?.endHour}
-                  defaultStartHour={globalStartHour}
-                  defaultEndHour={globalEndHour}
                   onSave={(r) => saveTrendSubjects(grade, trendName, r)}
                   onCancel={() => setEditingTrendKey(null)}
                 />
@@ -389,6 +372,8 @@ export default function InputView({ input, onChange }: Props) {
               onCancel={() => setAddingClass(false)}
               teachers={input.teachers}
               existingIds={input.classes.map((c) => c.id)}
+              defaultStartHour={configStartHour}
+              defaultEndHour={configEndHour}
             />
           )}
           {input.classes.map((c) =>
@@ -398,6 +383,8 @@ export default function InputView({ input, onChange }: Props) {
                 initial={c}
                 teachers={input.teachers}
                 existingIds={input.classes.map((x) => x.id)}
+                defaultStartHour={configStartHour}
+                defaultEndHour={configEndHour}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
               />
@@ -415,6 +402,8 @@ export default function InputView({ input, onChange }: Props) {
                     }
                     defaultRoomName={room?.name ?? c.defaultRoomId}
                     defaultRoomType={room?.type}
+                    startHour={c.startHour ?? configStartHour}
+                    endHour={c.endHour ?? configEndHour}
                     onEdit={() => setEditingClassId(c.id)}
                     onDelete={() => removeClass(c.id)}
                   />
@@ -570,6 +559,8 @@ function ClassCard({
   defaultTeacherName,
   defaultRoomName,
   defaultRoomType,
+  startHour,
+  endHour,
   onEdit,
   onDelete,
 }: {
@@ -577,6 +568,8 @@ function ClassCard({
   defaultTeacherName: string;
   defaultRoomName: string;
   defaultRoomType?: RoomType;
+  startHour: number;
+  endHour: number;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -636,9 +629,16 @@ function ClassCard({
           {t("roomLabel")}: {defaultRoomName}
           {typeLabel ? ` · ${typeLabel}` : ""}
         </span>
+        <span className="tag muted">
+          {`${pad2(startHour)}:00 → ${pad2(endHour)}:00`}
+        </span>
       </div>
     </div>
   );
+}
+
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`;
 }
 
 function RoomCard({

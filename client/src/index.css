@@ -801,5 +801,15 @@ td.subj-bible     { background: #fefce8; }
   align-items: center;
 }
 .window-row.vacation-row {
-  grid-template-columns: minmax(100px, 1fr) 100px 100px auto 32px;
+  grid-template-columns: minmax(100px, 1fr) 100px 100px minmax(120px, auto) 32px;
+}
+.window-row.vacation-row-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.window-row.vacation-row-header > span {
+  padding: 0 2px;
 }
