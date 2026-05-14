@@ -10,9 +10,9 @@ import {
   type Teacher,
   type UnavailabilityWindow,
 } from "../types";
-import TeacherForm from "./TeacherForm";
+import TeacherForm, { type TrendChoice } from "./TeacherForm";
 import ClassForm, { type ClassFormResult } from "./ClassForm";
-import GradeForm, { defaultGradeSubjects } from "./GradeForm";
+import GradeForm, { defaultGradeSubjects, type GradeFormResult } from "./GradeForm";
 import RoomForm from "./RoomForm";
 
 interface Props {
@@ -56,6 +56,16 @@ export default function InputView({ input, onChange }: Props) {
   const presentGrades = Array.from(
     new Set(input.classes.map((c) => c.grade))
   ).sort() as Grade[];
+
+  /** Trend chips offered to teachers — one per trend the school actually has. */
+  const availableTrends: TrendChoice[] = presentTrendKeys.map((key) => {
+    const { grade, trendName } = parseTrendKey(key);
+    return {
+      key,
+      label: trendName ? `${grade} · ${trendName}` : `${grade}`,
+      grade,
+    };
+  });
 
   const removeTeacher = (id: string) => {
     if (
@@ -156,13 +166,18 @@ export default function InputView({ input, onChange }: Props) {
   const saveTrendSubjects = (
     grade: Grade,
     trendName: string | undefined,
-    subjects: ClassSubject[]
+    result: GradeFormResult
   ) => {
     onChange({
       ...input,
       classes: input.classes.map((c) =>
         c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
-          ? { ...c, subjects }
+          ? {
+              ...c,
+              subjects: result.subjects,
+              startHour: result.startHour,
+              endHour: result.endHour,
+            }
           : c
       ),
     });
@@ -200,7 +215,7 @@ export default function InputView({ input, onChange }: Props) {
               onSave={addTeacher}
               onCancel={() => setAddingTeacher(false)}
               existingIds={input.teachers.map((teacher) => teacher.id)}
-              availableGrades={presentGrades}
+              availableTrends={availableTrends}
             />
           )}
           {input.teachers.map((teacher) =>
@@ -211,7 +226,7 @@ export default function InputView({ input, onChange }: Props) {
                 onSave={updateTeacher}
                 onCancel={() => setEditingTeacherId(null)}
                 existingIds={input.teachers.map((x) => x.id)}
-                availableGrades={presentGrades}
+                availableTrends={availableTrends}
               />
             ) : (
               <TeacherCard
@@ -295,13 +310,31 @@ export default function InputView({ input, onChange }: Props) {
                 (c) =>
                   c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
               ).length;
+              // For per-trend hours: take values from any class of this trend.
+              const exampleCls = input.classes.find(
+                (c) =>
+                  c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+              );
+              const globalStartHour =
+                input.config.startHour ??
+                Number.parseInt(
+                  input.config.slotLabels[0]?.split(":")[0] ?? "8",
+                  10
+                );
+              const globalEndHour =
+                input.config.endHour ??
+                globalStartHour + input.config.slotLabels.length;
               return editingTrendKey === key ? (
                 <GradeForm
                   key={key}
                   grade={grade}
                   trendName={trendName}
                   initialSubjects={subjects}
-                  onSave={(s) => saveTrendSubjects(grade, trendName, s)}
+                  initialStartHour={exampleCls?.startHour}
+                  initialEndHour={exampleCls?.endHour}
+                  defaultStartHour={globalStartHour}
+                  defaultEndHour={globalEndHour}
+                  onSave={(r) => saveTrendSubjects(grade, trendName, r)}
                   onCancel={() => setEditingTrendKey(null)}
                 />
               ) : (

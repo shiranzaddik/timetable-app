@@ -65,6 +65,9 @@ export interface Teacher {
   subjects: string[];
   grades: Grade[];
   gradesPerSubject?: Record<string, Grade[]>;
+  /** Per-subject trend restrictions. A trend key is "A" or "A:science".
+   *  Overrides gradesPerSubject when set. */
+  trendsPerSubject?: Record<string, string[]>;
   /** Legacy field — new code uses `unavailable` exclusively. */
   dayOff?: Day;
   unavailable: UnavailabilityWindow[];
@@ -87,6 +90,9 @@ export interface SchoolClass {
   section: number;
   /** Optional trend specialization (e.g., "science"). Empty = "regular". */
   trendName?: string;
+  /** Per-trend school day start/end hour overrides. */
+  startHour?: number;
+  endHour?: number;
   name: string;
   /** When null, the solver may pick any qualified teacher for every subject. */
   defaultTeacherId: string | null;

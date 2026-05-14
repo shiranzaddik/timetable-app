@@ -162,6 +162,9 @@ const STRINGS = {
     saveChangesToId: "Save changes to {id}",
     editGradeSubjects: "Edit subjects for trend {grade}",
     saveGradeSubjects: "Save subjects",
+    trendHoursLabel: "School day for this trend (hours)",
+    trendHoursHint:
+      "Default is the global school day (set at the top). Use a smaller window if this trend ends earlier than the rest.",
     gradeBadgePrefix: "Trend",
     classesInGrade: "{n} classes",
     fieldTrendSpecialization: "Trend specialization (optional)",
@@ -336,6 +339,9 @@ const STRINGS = {
     saveChangesToId: "שמור שינויים לכיתה {id}",
     editGradeSubjects: "עריכת מקצועות למסלול {grade}",
     saveGradeSubjects: "שמור מקצועות",
+    trendHoursLabel: "שעות לימוד למסלול זה",
+    trendHoursHint:
+      "ברירת המחדל היא יום הלימודים הכללי (למעלה). שנו אם המסלול הזה מסתיים מוקדם יותר משאר המסלולים.",
     gradeBadgePrefix: "מסלול",
     classesInGrade: "{n} כיתות",
     fieldTrendSpecialization: "התמחות במסלול (אופציונלי)",

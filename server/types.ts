@@ -79,6 +79,11 @@ export interface Teacher {
   /** Per-subject grade restrictions. When set, overrides `grades` for that
    *  subject. */
   gradesPerSubject?: Record<string, Grade[]>;
+  /** Per-subject TREND restrictions. A trend key is "A" or "A:science" —
+   *  see SchoolClass.trendName. When set, this overrides both
+   *  gradesPerSubject and grades for that subject. Lets a teacher say
+   *  "I teach math to A regular but not to A science". */
+  trendsPerSubject?: Record<string, string[]>;
   /** Legacy "day off" field. New inputs put this entry inside `unavailable`
    *  instead; the solver still recognises it for back-compat. */
   dayOff?: Day;
@@ -110,6 +115,12 @@ export interface SchoolClass {
    *  "computers", ...). Empty/undefined = the "regular" trend. Classes
    *  that share the same (grade, trendName) tuple share one subjects list. */
   trendName?: string;
+  /** Per-class (per-trend) school day start hour. Overrides the global
+   *  config.startHour for this class. When undefined, the global value
+   *  applies. */
+  startHour?: number;
+  /** Per-class (per-trend) school day end hour (exclusive). */
+  endHour?: number;
   name: string;
   /** When null, the solver may pick any qualified teacher for every subject. */
   defaultTeacherId: string | null;

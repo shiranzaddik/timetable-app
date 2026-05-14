@@ -8,15 +8,23 @@ import {
   type UnavailabilityWindow,
 } from "../types";
 
+/** A trend the school has at least one class for. Used as the unit of
+ *  teacher per-subject eligibility. */
+export interface TrendChoice {
+  key: string; // "A" or "A:science"
+  label: string; // "A" or "A · science"
+  grade: Grade;
+}
+
 interface Props {
   onSave: (teacher: Teacher) => void;
   onCancel: () => void;
   existingIds: string[];
   initial?: Teacher;
-  /** Grades that actually exist among the school's classes. The form
-   *  filters the per-subject grade chips to these. Falls back to the full
-   *  Grade enum when no classes have been created yet. */
-  availableGrades?: Grade[];
+  /** Trends that actually exist among the school's classes. Each per-subject
+   *  chip toggles one trend. When omitted/empty, the form falls back to
+   *  generic per-grade chips. */
+  availableTrends?: TrendChoice[];
 }
 
 const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
@@ -40,19 +48,38 @@ export default function TeacherForm({
   onCancel,
   existingIds,
   initial,
-  availableGrades,
+  availableTrends,
 }: Props) {
   const { t, tDay, tSubject } = useT();
   const isEdit = !!initial;
-  const gradeChipChoices = availableGrades?.length ? availableGrades : ALL_GRADES;
+
+  /** Trend choices: prefer the school's actual trends. Fall back to the
+   *  Grade enum so the form still works before any classes exist. */
+  const trendChoices: TrendChoice[] =
+    availableTrends?.length
+      ? availableTrends
+      : ALL_GRADES.map((g) => ({ key: g as string, label: g as string, grade: g }));
+  const allTrendKeys = trendChoices.map((c) => c.key);
+
+  /** Expand legacy gradesPerSubject (Grade enum) into trend keys covered by
+   *  those grades. */
+  const expandLegacyForSubject = (subject: string): string[] => {
+    const grades = initial?.gradesPerSubject?.[subject] ?? initial?.grades;
+    if (!grades) return [...allTrendKeys];
+    const set = new Set<string>(grades as Grade[]);
+    return allTrendKeys.filter((key) => {
+      const g = key.split(":")[0];
+      return set.has(g as Grade);
+    });
+  };
 
   const [name, setName] = useState(initial?.name ?? "");
   const [subjects, setSubjects] = useState<string[]>(initial?.subjects ?? []);
   const [customDraft, setCustomDraft] = useState("");
-  const [gradesPerSubject, setGradesPerSubject] = useState<Record<string, Grade[]>>(() => {
-    const out: Record<string, Grade[]> = {};
+  const [trendsPerSubject, setTrendsPerSubject] = useState<Record<string, string[]>>(() => {
+    const out: Record<string, string[]> = {};
     for (const s of initial?.subjects ?? []) {
-      out[s] = initial?.gradesPerSubject?.[s] ?? initial?.grades ?? [...gradeChipChoices];
+      out[s] = initial?.trendsPerSubject?.[s] ?? expandLegacyForSubject(s);
     }
     return out;
   });
@@ -64,12 +91,12 @@ export default function TeacherForm({
   );
   const [error, setError] = useState<string | null>(null);
 
-  const toggleGradeForSubject = (subject: string, grade: Grade) => {
-    setGradesPerSubject((prev) => {
-      const list = prev[subject] ?? [...gradeChipChoices];
-      const next = list.includes(grade)
-        ? list.filter((g) => g !== grade)
-        : [...list, grade];
+  const toggleTrendForSubject = (subject: string, trendKey: string) => {
+    setTrendsPerSubject((prev) => {
+      const list = prev[subject] ?? [...allTrendKeys];
+      const next = list.includes(trendKey)
+        ? list.filter((k) => k !== trendKey)
+        : [...list, trendKey];
       return { ...prev, [subject]: next };
     });
   };
@@ -77,15 +104,15 @@ export default function TeacherForm({
   const addSubject = (s: string) => {
     if (subjects.includes(s)) return;
     setSubjects([...subjects, s]);
-    setGradesPerSubject((prev) => ({
+    setTrendsPerSubject((prev) => ({
       ...prev,
-      [s]: prev[s] ?? [...gradeChipChoices],
+      [s]: prev[s] ?? [...allTrendKeys],
     }));
   };
 
   const removeSubject = (s: string) => {
     setSubjects(subjects.filter((x) => x !== s));
-    setGradesPerSubject((prev) => {
+    setTrendsPerSubject((prev) => {
       const next = { ...prev };
       delete next[s];
       return next;
@@ -96,20 +123,26 @@ export default function TeacherForm({
     if (!name.trim()) return setError(t("errNameRequired"));
     if (subjects.length === 0) return setError(t("errPickSubject"));
     for (const s of subjects) {
-      if ((gradesPerSubject[s]?.length ?? 0) === 0) {
+      if ((trendsPerSubject[s]?.length ?? 0) === 0) {
         return setError(t("errPickGrade"));
       }
     }
     const id = isEdit ? initial!.id : makeId(name, existingIds);
+    // Derive grades from selected trend keys (key form "A" or "A:science").
+    const keyToGrade = new Map(trendChoices.map((c) => [c.key, c.grade]));
     const overallGrades = Array.from(
-      new Set(subjects.flatMap((s) => gradesPerSubject[s] ?? []))
-    );
+      new Set(
+        subjects.flatMap((s) =>
+          (trendsPerSubject[s] ?? []).map((k) => keyToGrade.get(k)).filter(Boolean)
+        )
+      )
+    ) as Grade[];
     onSave({
       id,
       name: name.trim(),
       subjects,
       grades: overallGrades,
-      gradesPerSubject,
+      trendsPerSubject,
       // Legacy dayOff is folded into unavailable; emit undefined here so it's
       // not double-counted on the next read.
       dayOff: undefined,
@@ -208,23 +241,23 @@ export default function TeacherForm({
         {subjects.length > 0 && (
           <div className="per-subject-grades">
             {subjects.map((s) => {
-              const selected = gradesPerSubject[s] ?? [];
+              const selected = trendsPerSubject[s] ?? [];
               return (
                 <div key={s} className="per-subject-grades-row">
                   <span className={`tag subj-${s}`} style={{ alignSelf: "center" }}>
                     {tSubject(s)}
                   </span>
                   <div className="grade-chip-row">
-                    {gradeChipChoices.map((g) => {
-                      const on = selected.includes(g);
+                    {trendChoices.map((c) => {
+                      const on = selected.includes(c.key);
                       return (
                         <button
-                          key={g}
+                          key={c.key}
                           type="button"
                           className={`grade-chip ${on ? "on" : ""}`}
-                          onClick={() => toggleGradeForSubject(s, g)}
+                          onClick={() => toggleTrendForSubject(s, c.key)}
                         >
-                          {g}
+                          {c.label}
                         </button>
                       );
                     })}

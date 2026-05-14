@@ -76,6 +76,9 @@ interface SolveState {
   /** [classId][day] → first/last slot used so far on this day, or -1 if empty. */
   classDayMin: Record<string, number[]>;
   classDayMax: Record<string, number[]>;
+  /** [classId] → permissible slot range. The first slot index the class may
+   *  use is `startSlot`; the last (inclusive) is `startSlot + slotCount - 1`. */
+  classSlotRange: Record<string, { startSlot: number; slotCount: number }>;
 }
 
 interface SolveContext {
@@ -157,13 +160,24 @@ function buildBlocks(classes: SchoolClass[]): Block[] {
   return blocks;
 }
 
-/** Whether a teacher is allowed to teach a given (subject, grade). Uses
- *  gradesPerSubject when present, otherwise falls back to the overall grades. */
-function teacherEligible(teacher: Teacher, subject: string, grade: string): boolean {
+function trendKeyOf(grade: string, trendName?: string): string {
+  return trendName ? `${grade}:${trendName}` : `${grade}`;
+}
+
+/** Whether a teacher is allowed to teach a subject for a specific (grade, trend).
+ *  Priority: trendsPerSubject → gradesPerSubject → overall grades. */
+function teacherEligibleForTrend(
+  teacher: Teacher,
+  subject: string,
+  grade: string,
+  trendName: string | undefined
+): boolean {
   if (!teacher.subjects.includes(subject)) return false;
-  const subjectGrades = teacher.gradesPerSubject?.[subject];
-  const grades = subjectGrades ?? teacher.grades;
-  return grades.includes(grade as never);
+  const classTrend = trendKeyOf(grade, trendName);
+  const trendList = teacher.trendsPerSubject?.[subject];
+  if (trendList) return trendList.includes(classTrend);
+  const gradeList = teacher.gradesPerSubject?.[subject] ?? teacher.grades;
+  return gradeList.includes(grade as never);
 }
 
 function candidateTeachers(
@@ -175,12 +189,14 @@ function candidateTeachers(
     const defaultTeacher = teachers.find((t) => t.id === cls.defaultTeacherId);
     if (
       defaultTeacher &&
-      teacherEligible(defaultTeacher, block.subject, cls.grade)
+      teacherEligibleForTrend(defaultTeacher, block.subject, cls.grade, cls.trendName)
     ) {
       return [defaultTeacher];
     }
   }
-  return teachers.filter((t) => teacherEligible(t, block.subject, cls.grade));
+  return teachers.filter((t) =>
+    teacherEligibleForTrend(t, block.subject, cls.grade, cls.trendName)
+  );
 }
 
 // Schedule one class fully before moving to the next. Within a class, place
@@ -255,6 +271,13 @@ function canPlace(
   requireMorningStart: boolean
 ): boolean {
   if (state.classDayHoursLeft[block.classId][day] < block.duration) return false;
+  // Respect this class's own school-day window.
+  const range = state.classSlotRange[block.classId];
+  if (
+    startSlot < range.startSlot ||
+    startSlot + block.duration > range.startSlot + range.slotCount
+  )
+    return false;
   if (
     !keepsDayContiguous(
       state,
@@ -480,7 +503,7 @@ function assignHomerooms(input: SchoolInput): {
       let hours = 0;
       for (const s of c.subjects) {
         if (s.mandatory === false) continue;
-        if (!teacherEligible(t, s.subject, c.grade)) continue;
+        if (!teacherEligibleForTrend(t, s.subject, c.grade, c.trendName)) continue;
         hours += s.hoursPerWeek;
       }
       if (hours > bestHours) {
@@ -528,23 +551,31 @@ function solveOnce(
 ): SolveResult {
   const slotsPerDay = rawInput.config.slotLabels.length;
   const daysCount = rawInput.config.days.length;
-  const targetHours = slotsPerDay * daysCount;
-  // Derive start/end hour from slotLabels for legacy inputs that don't have
-  // them in the persisted config.
-  const startHour =
+  // Derive global start/end hour from slotLabels for legacy inputs.
+  const globalStartHour =
     rawInput.config.startHour ??
     Number.parseInt(rawInput.config.slotLabels[0]?.split(":")[0] ?? "8", 10);
-  const endHour =
-    rawInput.config.endHour ?? startHour + slotsPerDay;
+  const globalEndHour =
+    rawInput.config.endHour ?? globalStartHour + slotsPerDay;
 
-  // Hours warnings (informational — the solver still runs and produces a
-  // partial schedule even when classes are short on hours).
+  /** Per-class slot span computed from per-class overrides or the global config. */
+  const classSlotRange = (c: SchoolClass): { start: number; slots: number } => {
+    const cStart = c.startHour ?? globalStartHour;
+    const cEnd = c.endHour ?? globalEndHour;
+    return { start: cStart - globalStartHour, slots: cEnd - cStart };
+  };
+
+  // Hours warnings: each class needs as many subject hours as its own school day.
   const warnings: string[] = [];
   for (const c of rawInput.classes) {
+    const { slots } = classSlotRange(c);
+    const target = slots * daysCount;
     const total = c.subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
-    if (total < targetHours) {
+    if (total < target) {
+      const cStart = c.startHour ?? globalStartHour;
+      const cEnd = c.endHour ?? globalEndHour;
       warnings.push(
-        `${c.name} has ${total}h/week but the ${startHour}:00–${endHour}:00 school day needs ${targetHours}h. Add hours to this grade's subjects, or shorten the school day.`
+        `${c.name} has ${total}h/week but its ${cStart}:00–${cEnd}:00 school day needs ${target}h. Add hours to this trend's subjects, or shorten the class's school day.`
       );
     }
   }
@@ -583,7 +614,11 @@ function solveOnce(
   const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
     classes.map((c) => {
       const total = c.subjects.reduce((sum, s) => sum + s.hoursPerWeek, 0);
-      return [c.id, buildDayQuotas(total, days)];
+      // Cap per-day quota at the class's own slot count so the solver never
+      // schedules into a slot beyond its school day.
+      const { slots } = classSlotRange(c);
+      const quotas = buildDayQuotas(total, days).map((q) => Math.min(q, slots));
+      return [c.id, quotas];
     })
   );
 
@@ -605,6 +640,12 @@ function solveOnce(
     ),
     classDayMax: Object.fromEntries(
       classes.map((c) => [c.id, Array.from({ length: days }, () => -1)])
+    ),
+    classSlotRange: Object.fromEntries(
+      classes.map((c) => {
+        const r = classSlotRange(c);
+        return [c.id, { startSlot: r.start, slotCount: r.slots }];
+      })
     ),
   };
 
