@@ -440,18 +440,20 @@ function TeacherCard({
       <div className="row">
         {teacher.dayOff && (
           <span className="tag warn">
-            {t("off")} {tDay(teacher.dayOff)}
+            {t("off")} {tDay(teacher.dayOff)} · {t("cantWork")}
           </span>
         )}
-        {teacher.unavailable.map((w, i) => (
-          <span
-            key={i}
-            className={`tag ${w.hard === false ? "muted" : "warn"}`}
-            title={w.hard === false ? t("preferNot") : t("cantWork")}
-          >
-            {formatWindow(w, tDay, t("allDay"))}
-          </span>
-        ))}
+        {teacher.unavailable.map((w, i) => {
+          const isSoft = w.hard === false;
+          return (
+            <span
+              key={i}
+              className={`tag ${isSoft ? "muted" : "warn"}`}
+            >
+              {formatWindow(w, tDay, t("allDay"))} · {isSoft ? t("preferNot") : t("cantWork")}
+            </span>
+          );
+        })}
         {teacher.canBeDefault === false && (
           <span className="tag muted">{t("canBeDefaultLabel")}: —</span>
         )}

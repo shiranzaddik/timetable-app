@@ -17,6 +17,9 @@ const STRINGS = {
     // toolbar / header
     generate: "Generate Timetable",
     solving: "Solving…",
+    clearAll: "Clear all (delete demo)",
+    confirmClearAll:
+      "Delete every teacher, class and room? This wipes your saved data and starts you with an empty school.",
     signOut: "Sign out",
     loading: "Loading…",
     saving: "Saving…",
@@ -192,6 +195,9 @@ const STRINGS = {
 
     generate: "צור מערכת שעות",
     solving: "מחשב…",
+    clearAll: "מחק הכל (מחיקת הדמו)",
+    confirmClearAll:
+      "למחוק את כל המורים, הכיתות והחדרים? פעולה זו מוחקת את הנתונים השמורים ומשאירה בית-ספר ריק.",
     signOut: "התנתק",
     loading: "טוען…",
     saving: "שומר…",

@@ -120,6 +120,19 @@ export default function App() {
     setDirty(true);
   };
 
+  const clearAll = () => {
+    if (!input) return;
+    if (!window.confirm(t("confirmClearAll"))) return;
+    setInput({
+      ...input,
+      teachers: [],
+      classes: [],
+      rooms: [],
+    });
+    setResult(null);
+    setDirty(true);
+  };
+
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setAuth({ authEnabled: true, user: null });
@@ -201,6 +214,13 @@ export default function App() {
       <div className="toolbar">
         <button onClick={runSolver} disabled={loading || input.classes.length === 0}>
           {loading ? t("solving") : t("generate")}
+        </button>
+        <button
+          className="secondary"
+          onClick={clearAll}
+          disabled={input.teachers.length + input.classes.length + input.rooms.length === 0}
+        >
+          {t("clearAll")}
         </button>
         {result?.success && (
           <span className="banner success">
