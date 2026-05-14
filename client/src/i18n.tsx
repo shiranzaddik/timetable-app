@@ -175,7 +175,7 @@ const STRINGS = {
   he: {
     appTitle: "בונה מערכת שעות בית-ספרית",
     appSubtitle:
-      "הגדירו מורים וכיתות, וייצרו מערכת שעות שבועית העונה על כל האילוצים.",
+      "הגדירו מורים וכיתות, וצרו מערכת שעות שבועית העונה על כל האילוצים.",
 
     generate: "צור מערכת שעות",
     solving: "מחשב…",
@@ -268,7 +268,7 @@ const STRINGS = {
     editClass: "עריכת כיתה {id}",
     fieldGrade: "שכבה",
     fieldSection: "מספר",
-    fieldDefaultTeacher: "מורה ברירת מחדל",
+    fieldDefaultTeacher: "מחנך",
     selectDots: "בחרו…",
     noDefaultTeacher: "(ללא ברירת מחדל — הפותר יבחר)",
     fieldRoomName: "מיקום הכיתה (חדר)",
@@ -302,7 +302,7 @@ const STRINGS = {
     saveGradeSubjects: "שמור מקצועות",
     gradeBadgePrefix: "שכבה",
     classesInGrade: "{n} כיתות",
-    errSelectTeacher: "יש לבחור מורה ברירת מחדל",
+    errSelectTeacher: "יש לבחור מחנך",
     errClassExists: 'כיתה "{id}" כבר קיימת',
     errSetHours: "יש להגדיר שעות לפחות למקצוע אחד",
 

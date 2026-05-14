@@ -52,7 +52,7 @@ export default function GradeForm({
   };
 
   return (
-    <div className="form-card" style={{ gridColumn: "1 / -1" }}>
+    <div className="form-card">
       <strong style={{ fontSize: 14 }}>
         {t("editGradeSubjects", { grade })}
       </strong>
