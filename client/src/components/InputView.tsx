@@ -53,9 +53,6 @@ export default function InputView({ input, onChange }: Props) {
   const presentTrendKeys = Array.from(
     new Set(input.classes.map((c) => trendKeyOf(c.grade, c.trendName)))
   ).sort();
-  const presentGrades = Array.from(
-    new Set(input.classes.map((c) => c.grade))
-  ).sort() as Grade[];
 
   /** Trend chips offered to teachers — one per trend the school actually has. */
   const availableTrends: TrendChoice[] = presentTrendKeys.map((key) => {
