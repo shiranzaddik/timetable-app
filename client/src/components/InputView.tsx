@@ -4,6 +4,7 @@ import {
   Grade,
   RoomType,
   type ClassSubject,
+  type Room,
   type SchoolClass,
   type SchoolInput,
   type Teacher,
@@ -12,6 +13,7 @@ import {
 import TeacherForm from "./TeacherForm";
 import ClassForm, { type ClassFormResult } from "./ClassForm";
 import GradeForm, { defaultGradeSubjects } from "./GradeForm";
+import RoomForm from "./RoomForm";
 
 interface Props {
   input: SchoolInput;
@@ -25,6 +27,8 @@ export default function InputView({ input, onChange }: Props) {
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingGrade, setEditingGrade] = useState<Grade | null>(null);
+  const [addingRoom, setAddingRoom] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 
   const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
@@ -71,68 +75,52 @@ export default function InputView({ input, onChange }: Props) {
     setEditingTeacherId(null);
   };
 
-  const addClass = ({ cls, roomName }: ClassFormResult) => {
-    const room = {
-      id: `room-${cls.id}`,
-      name: roomName,
-      type: RoomType.Regular,
-    };
+  const addClass = ({ cls }: ClassFormResult) => {
     const fullCls: SchoolClass = {
       ...cls,
-      defaultRoomId: room.id,
       subjects: subjectsForGrade(cls.grade),
     };
-    onChange({
-      ...input,
-      classes: [...input.classes, fullCls],
-      rooms: input.rooms.some((r) => r.id === room.id)
-        ? input.rooms.map((r) => (r.id === room.id ? room : r))
-        : [...input.rooms, room],
-    });
+    onChange({ ...input, classes: [...input.classes, fullCls] });
     setAddingClass(false);
   };
 
-  const updateClass = ({ cls, roomName }: ClassFormResult) => {
+  const updateClass = ({ cls }: ClassFormResult) => {
     const oldClass = input.classes.find((x) => x.id === editingClassId);
     if (!oldClass) {
       setEditingClassId(null);
       return;
     }
-    const newRoomId = `room-${cls.id}`;
-    const idChanged = oldClass.id !== cls.id;
-    let rooms = input.rooms;
-    if (idChanged) {
-      const oldRoomId = `room-${oldClass.id}`;
-      rooms = input.rooms.filter((r) => r.id !== oldRoomId);
-    }
-    const existingIdx = rooms.findIndex((r) => r.id === newRoomId);
-    if (existingIdx >= 0) {
-      rooms = rooms.map((r, i) =>
-        i === existingIdx ? { ...r, name: roomName } : r
-      );
-    } else {
-      rooms = [
-        ...rooms,
-        { id: newRoomId, name: roomName, type: RoomType.Regular },
-      ];
-    }
     const gradeChanged = oldClass.grade !== cls.grade;
     const subjects = gradeChanged
       ? subjectsForGrade(cls.grade)
       : oldClass.subjects;
-    const updatedCls: SchoolClass = {
-      ...cls,
-      defaultRoomId: newRoomId,
-      subjects,
-    };
+    const updatedCls: SchoolClass = { ...cls, subjects };
     onChange({
       ...input,
       classes: input.classes.map((existing) =>
         existing.id === oldClass.id ? updatedCls : existing
       ),
-      rooms,
     });
     setEditingClassId(null);
+  };
+
+  const addRoom = (room: Room) => {
+    onChange({ ...input, rooms: [...input.rooms, room] });
+    setAddingRoom(false);
+  };
+
+  const updateRoom = (room: Room) => {
+    onChange({
+      ...input,
+      rooms: input.rooms.map((r) => (r.id === room.id ? room : r)),
+    });
+    setEditingRoomId(null);
+  };
+
+  const removeRoom = (id: string) => {
+    const inUse = input.classes.some((c) => c.defaultRoomId === id);
+    if (inUse && !confirm(t("confirmRemoveRoom"))) return;
+    onChange({ ...input, rooms: input.rooms.filter((r) => r.id !== id) });
   };
 
   const saveGradeSubjects = (grade: Grade, subjects: ClassSubject[]) => {
@@ -193,6 +181,54 @@ export default function InputView({ input, onChange }: Props) {
                 teacher={teacher}
                 onEdit={() => setEditingTeacherId(teacher.id)}
                 onDelete={() => removeTeacher(teacher.id)}
+              />
+            )
+          )}
+        </div>
+      </div>
+
+      {/* ROOMS */}
+      <div className="section">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">{t("roomsSection")}</h3>
+            <div className="section-meta">
+              {input.rooms.length}{" "}
+              {input.rooms.length === 1 ? t("countRoomsOne") : t("countRoomsMany")}
+            </div>
+          </div>
+          {!addingRoom && !editingRoomId && (
+            <button className="add-btn" onClick={() => setAddingRoom(true)}>
+              {t("addRoom")}
+            </button>
+          )}
+        </div>
+        {input.rooms.length === 0 && !addingRoom && (
+          <div className="empty-state">{t("emptyRooms")}</div>
+        )}
+        <div className="card-grid">
+          {addingRoom && (
+            <RoomForm
+              onSave={addRoom}
+              onCancel={() => setAddingRoom(false)}
+              existingIds={input.rooms.map((r) => r.id)}
+            />
+          )}
+          {input.rooms.map((room) =>
+            editingRoomId === room.id ? (
+              <RoomForm
+                key={room.id}
+                initial={room}
+                onSave={updateRoom}
+                onCancel={() => setEditingRoomId(null)}
+                existingIds={input.rooms.map((r) => r.id)}
+              />
+            ) : (
+              <RoomCard
+                key={room.id}
+                room={room}
+                onEdit={() => setEditingRoomId(room.id)}
+                onDelete={() => removeRoom(room.id)}
               />
             )
           )}
@@ -276,6 +312,7 @@ export default function InputView({ input, onChange }: Props) {
               onSave={addClass}
               onCancel={() => setAddingClass(false)}
               teachers={input.teachers}
+              rooms={input.rooms}
               existingIds={input.classes.map((c) => c.id)}
             />
           )}
@@ -284,10 +321,8 @@ export default function InputView({ input, onChange }: Props) {
               <ClassForm
                 key={c.id}
                 initial={c}
-                initialRoomName={
-                  input.rooms.find((r) => r.id === c.defaultRoomId)?.name
-                }
                 teachers={input.teachers}
+                rooms={input.rooms}
                 existingIds={input.classes.map((x) => x.id)}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
@@ -493,6 +528,55 @@ function ClassCard({
         <span className="tag muted">
           {t("roomLabel")}: {defaultRoomName}
         </span>
+      </div>
+    </div>
+  );
+}
+
+function RoomCard({
+  room,
+  onEdit,
+  onDelete,
+}: {
+  room: Room;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { t } = useT();
+  const typeKey =
+    room.type === RoomType.Sport
+      ? "roomTypeSport"
+      : room.type === RoomType.Computer
+      ? "roomTypeComputer"
+      : room.type === RoomType.Music
+      ? "roomTypeMusic"
+      : "roomTypeRegular";
+  return (
+    <div className="card class-card compact">
+      <div className="head">
+        <div
+          className="grade-badge"
+          style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+        >
+          R
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p className="teacher-name">{room.name}</p>
+          <p className="teacher-role">{t(typeKey)}</p>
+        </div>
+        <div className="card-actions">
+          <button className="icon-btn" onClick={onEdit} title={t("edit")} aria-label={t("edit")}>
+            ✎
+          </button>
+          <button
+            className="icon-btn danger"
+            onClick={onDelete}
+            title={t("delete")}
+            aria-label={t("delete")}
+          >
+            ×
+          </button>
+        </div>
       </div>
     </div>
   );

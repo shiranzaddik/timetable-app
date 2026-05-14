@@ -1,32 +1,36 @@
 import { useState } from "react";
 import { useT } from "../i18n";
-import { Grade, type SchoolClass, type Teacher } from "../types";
+import {
+  Grade,
+  RoomType,
+  type Room,
+  type SchoolClass,
+  type Teacher,
+} from "../types";
 
 export interface ClassFormResult {
   /** New/edited class meta — subjects are filled in by the parent from the
    *  grade-level template. */
   cls: Omit<SchoolClass, "subjects">;
-  roomName: string;
 }
 
 interface Props {
   teachers: Teacher[];
+  rooms: Room[];
   existingIds: string[];
   onSave: (result: ClassFormResult) => void;
   onCancel: () => void;
   /** When provided, edit this class instead of creating a new one. */
   initial?: SchoolClass;
-  /** Existing display name of the class's room (for editing). */
-  initialRoomName?: string;
 }
 
 export default function ClassForm({
   teachers,
+  rooms,
   existingIds,
   onSave,
   onCancel,
   initial,
-  initialRoomName,
 }: Props) {
   const { t } = useT();
   const isEdit = !!initial;
@@ -35,9 +39,12 @@ export default function ClassForm({
   const [defaultTeacherId, setDefaultTeacherId] = useState<string>(
     initial?.defaultTeacherId ?? ""
   );
-  const [roomName, setRoomName] = useState<string>(
-    initialRoomName ?? `Room ${initial?.id ?? `${Grade.A}1`}`
+
+  const regularRooms = rooms.filter((r) => r.type === RoomType.Regular);
+  const [defaultRoomId, setDefaultRoomId] = useState<string>(
+    initial?.defaultRoomId ?? regularRooms[0]?.id ?? ""
   );
+
   const [error, setError] = useState<string | null>(null);
 
   const id = `${grade}${section}`;
@@ -46,6 +53,7 @@ export default function ClassForm({
 
   const submit = () => {
     if (idCollides) return setError(t("errClassExists", { id }));
+    if (!defaultRoomId) return setError(t("addRoomsFirst"));
     onSave({
       cls: {
         id,
@@ -53,9 +61,8 @@ export default function ClassForm({
         section,
         name: `Class ${id}`,
         defaultTeacherId: defaultTeacherId || null,
-        defaultRoomId: `room-${id}`,
+        defaultRoomId,
       },
-      roomName: roomName.trim() || `Room ${id}`,
     });
   };
 
@@ -110,18 +117,31 @@ export default function ClassForm({
 
       <div className="form-row">
         <label>{t("fieldRoomName")}</label>
-        <input
-          type="text"
-          value={roomName}
-          placeholder={t("roomPlaceholder")}
-          onChange={(e) => setRoomName(e.target.value)}
-        />
+        {regularRooms.length === 0 ? (
+          <div className="banner error" style={{ fontSize: 12 }}>
+            {t("addRoomsFirst")}
+          </div>
+        ) : (
+          <select
+            value={defaultRoomId}
+            onChange={(e) => setDefaultRoomId(e.target.value)}
+          >
+            <option value="" disabled>
+              {t("pickRoom")}
+            </option>
+            {regularRooms.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {error && <div className="banner error">{error}</div>}
 
       <div className="form-actions">
-        <button onClick={submit}>
+        <button onClick={submit} disabled={regularRooms.length === 0}>
           {isEdit
             ? t("saveChangesToId", { id })
             : t("saveClassWithId", { id })}

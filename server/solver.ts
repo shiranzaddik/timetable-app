@@ -65,7 +65,8 @@ interface Assignment {
 interface SolveState {
   teacherBusy: Record<string, boolean[][]>;
   classBusy: Record<string, boolean[][]>;
-  specialRoomBusy: Set<string>;
+  /** Per-room (special AND regular) contention. Keyed by `${roomId}:${day}:${slot}`. */
+  roomBusy: Set<string>;
   assignments: Assignment[];
   classesById: Record<string, SchoolClass>;
   rooms: Room[];
@@ -257,15 +258,15 @@ function canPlace(
   )
     return false;
 
+  const cls = state.classesById[block.classId];
+  const room = roomForBlock(block, cls, state.rooms);
+
   for (let i = 0; i < block.duration; i++) {
     const slot = startSlot + i;
     if (!state.teacherAvail[teacher.id][day][slot]) return false;
     if (state.teacherBusy[teacher.id][day][slot]) return false;
     if (state.classBusy[block.classId][day][slot]) return false;
-    if (block.requiredRoomType) {
-      const key = `${block.requiredRoomType}:${day}:${slot}`;
-      if (state.specialRoomBusy.has(key)) return false;
-    }
+    if (state.roomBusy.has(`${room.id}:${day}:${slot}`)) return false;
   }
   return true;
 }
@@ -299,9 +300,7 @@ function place(
     const slot = startSlot + i;
     state.teacherBusy[teacher.id][day][slot] = true;
     state.classBusy[block.classId][day][slot] = true;
-    if (block.requiredRoomType) {
-      state.specialRoomBusy.add(`${block.requiredRoomType}:${day}:${slot}`);
-    }
+    state.roomBusy.add(`${room.id}:${day}:${slot}`);
     state.assignments.push({
       blockId: block.id,
       classId: block.classId,
@@ -332,13 +331,13 @@ function unplace(
   state: SolveState,
   prev: { prevMin: number; prevMax: number }
 ): void {
+  const cls = state.classesById[block.classId];
+  const room = roomForBlock(block, cls, state.rooms);
   for (let i = 0; i < block.duration; i++) {
     const slot = startSlot + i;
     state.teacherBusy[teacher.id][day][slot] = false;
     state.classBusy[block.classId][day][slot] = false;
-    if (block.requiredRoomType) {
-      state.specialRoomBusy.delete(`${block.requiredRoomType}:${day}:${slot}`);
-    }
+    state.roomBusy.delete(`${room.id}:${day}:${slot}`);
   }
   state.assignments.splice(state.assignments.length - block.duration, block.duration);
   state.classDayHoursLeft[block.classId][day] += block.duration;
@@ -556,7 +555,7 @@ function solveOnce(
     classBusy: Object.fromEntries(
       classes.map((c) => [c.id, buildEmptyMatrix(days, slots)])
     ),
-    specialRoomBusy: new Set<string>(),
+    roomBusy: new Set<string>(),
     assignments: [],
     classesById,
     rooms,
