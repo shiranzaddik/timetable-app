@@ -16,6 +16,7 @@
 import {
   RoomType,
   Subject,
+  type AssignedHomeroom,
   type ClassId,
   type Config,
   type DayOffSuggestion,
@@ -433,6 +434,55 @@ function buildOutput(input: SchoolInput, assignments: Assignment[]): Timetables 
   return { byClass, byTeacher };
 }
 
+/** For each class without an explicit defaultTeacherId, pick a homeroom
+ *  teacher: the one (not already someone else's homeroom) who can teach
+ *  the most weekly hours of the class's mandatory subjects. Returns the
+ *  augmented class list plus the list of assignments made. */
+function assignHomerooms(input: SchoolInput): {
+  classes: SchoolClass[];
+  assignments: AssignedHomeroom[];
+} {
+  const usedTeachers = new Set<string>(
+    input.classes
+      .map((c) => c.defaultTeacherId)
+      .filter((id): id is string => id !== null && id !== undefined)
+  );
+  const assignments: AssignedHomeroom[] = [];
+  const newClasses = input.classes.map((c) => {
+    if (c.defaultTeacherId) return c;
+
+    const eligible = input.teachers.filter(
+      (t) => t.grades.includes(c.grade) && !usedTeachers.has(t.id)
+    );
+
+    let best: Teacher | null = null;
+    let bestHours = -1;
+    for (const t of eligible) {
+      let hours = 0;
+      for (const s of c.subjects) {
+        if (s.mandatory === false) continue;
+        if (t.subjects.includes(s.subject)) hours += s.hoursPerWeek;
+      }
+      if (hours > bestHours) {
+        bestHours = hours;
+        best = t;
+      }
+    }
+    if (best) {
+      usedTeachers.add(best.id);
+      assignments.push({
+        classId: c.id,
+        className: c.name,
+        teacherId: best.id,
+        teacherName: best.name,
+      });
+      return { ...c, defaultTeacherId: best.id };
+    }
+    return c;
+  });
+  return { classes: newClasses, assignments };
+}
+
 /** Greedy first-fit placement for non-mandatory blocks. Returns true if placed. */
 function greedyPlace(block: Block, state: SolveState, ctx: SolveContext): boolean {
   const cls = ctx.classesById[block.classId];
@@ -451,11 +501,16 @@ function greedyPlace(block: Block, state: SolveState, ctx: SolveContext): boolea
 }
 
 function solveOnce(
-  input: SchoolInput,
+  rawInput: SchoolInput,
   classOrder?: string[],
   deadlineMs?: number,
   requireMorningStart: boolean = false
 ): SolveResult {
+  // Auto-assign homeroom teachers to classes whose defaultTeacherId is null.
+  const { classes: assignedClasses, assignments: assignedHomerooms } =
+    assignHomerooms(rawInput);
+  const input: SchoolInput = { ...rawInput, classes: assignedClasses };
+
   const { config, rooms, teachers, classes } = input;
   const classesById = Object.fromEntries(classes.map((c) => [c.id, c]));
 
@@ -559,6 +614,7 @@ function solveOnce(
     timetables: buildOutput(input, state.assignments),
     blockCount: mandatoryBlocks.length + (optionalBlocks.length - droppedRaw.length),
     droppedBlocks: droppedBlocks.length > 0 ? droppedBlocks : undefined,
+    assignedHomerooms: assignedHomerooms.length > 0 ? assignedHomerooms : undefined,
   };
 }
 

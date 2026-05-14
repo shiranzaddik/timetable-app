@@ -117,6 +117,10 @@ const STRINGS = {
       "Moving these teachers to a different day off would have placed more lessons.",
     dayOffSuggestionLine:
       "{teacherName}: change day off from {currentDay} to {suggestedDay} (+{count} blocks)",
+    assignedHomeroomsHeading: "Auto-assigned homeroom teachers",
+    assignedHomeroomsHint:
+      "These classes had no default (homeroom) teacher — the solver picked the best fit.",
+    assignedHomeroomLine: "{className}: {teacherName}",
     saveClassWithId: "Save class ({id})",
     saveChangesToId: "Save changes to {id}",
     editGradeSubjects: "Edit subjects for grade {grade}",
@@ -244,6 +248,10 @@ const STRINGS = {
       "שינוי יום החופש למורים הבאים היה מאפשר לשבץ עוד שיעורים.",
     dayOffSuggestionLine:
       "{teacherName}: לשנות יום חופש מ-{currentDay} ל-{suggestedDay} (+{count} שיעורים)",
+    assignedHomeroomsHeading: "מחנכים שהוקצו אוטומטית",
+    assignedHomeroomsHint:
+      "לכיתות הבאות לא הוגדר מחנך — הפותר בחר מחנך מתאים על פי המקצועות שהוא מלמד.",
+    assignedHomeroomLine: "{className}: {teacherName}",
     saveClassWithId: "שמור כיתה ({id})",
     saveChangesToId: "שמור שינויים לכיתה {id}",
     editGradeSubjects: "ערוך מקצועות לשכבה {grade}",

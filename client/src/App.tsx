@@ -265,6 +265,27 @@ export default function App() {
         </div>
       )}
 
+      {result?.success && result.assignedHomerooms && result.assignedHomerooms.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title">{t("assignedHomeroomsHeading")}</h3>
+              <div className="section-meta">{t("assignedHomeroomsHint")}</div>
+            </div>
+          </div>
+          <ul style={{ margin: 0, paddingInlineStart: 22 }}>
+            {result.assignedHomerooms.map((a) => (
+              <li key={a.classId} style={{ marginBottom: 4 }}>
+                {t("assignedHomeroomLine", {
+                  className: a.className,
+                  teacherName: a.teacherName,
+                })}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {result?.success && result.unusedTeachers && result.unusedTeachers.length > 0 && (
         <div className="section">
           <div className="section-header">

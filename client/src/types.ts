@@ -130,6 +130,13 @@ export interface DayOffSuggestion {
   improvesBlocksBy: number;
 }
 
+export interface AssignedHomeroom {
+  classId: string;
+  className: string;
+  teacherId: string;
+  teacherName: string;
+}
+
 export interface SolveResult {
   success: boolean;
   error?: string;
@@ -139,4 +146,5 @@ export interface SolveResult {
   droppedBlocks?: DroppedBlock[];
   unusedTeachers?: TeacherRef[];
   dayOffSuggestions?: DayOffSuggestion[];
+  assignedHomerooms?: AssignedHomeroom[];
 }

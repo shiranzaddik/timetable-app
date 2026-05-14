@@ -146,6 +146,13 @@ export interface DayOffSuggestion {
   improvesBlocksBy: number;
 }
 
+export interface AssignedHomeroom {
+  classId: string;
+  className: string;
+  teacherId: string;
+  teacherName: string;
+}
+
 export interface SolveResult {
   success: boolean;
   error?: string;
@@ -162,4 +169,7 @@ export interface SolveResult {
    *  for the teachers of those subjects and reports any that would have
    *  reduced the dropped count. */
   dayOffSuggestions?: DayOffSuggestion[];
+  /** Classes whose defaultTeacherId was null in the input — the solver
+   *  picked a homeroom teacher for each based on subject coverage. */
+  assignedHomerooms?: AssignedHomeroom[];
 }
