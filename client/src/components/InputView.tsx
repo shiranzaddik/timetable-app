@@ -328,21 +328,24 @@ export default function InputView({ input, onChange }: Props) {
                 onCancel={() => setEditingClassId(null)}
               />
             ) : (
-              <ClassCard
-                key={c.id}
-                cls={c}
-                defaultTeacherName={
-                  c.defaultTeacherId
-                    ? teacherById[c.defaultTeacherId]?.name ?? "—"
-                    : ""
-                }
-                defaultRoomName={
-                  input.rooms.find((r) => r.id === c.defaultRoomId)?.name ??
-                  c.defaultRoomId
-                }
-                onEdit={() => setEditingClassId(c.id)}
-                onDelete={() => removeClass(c.id)}
-              />
+              (() => {
+                const room = input.rooms.find((r) => r.id === c.defaultRoomId);
+                return (
+                  <ClassCard
+                    key={c.id}
+                    cls={c}
+                    defaultTeacherName={
+                      c.defaultTeacherId
+                        ? teacherById[c.defaultTeacherId]?.name ?? "—"
+                        : ""
+                    }
+                    defaultRoomName={room?.name ?? c.defaultRoomId}
+                    defaultRoomType={room?.type}
+                    onEdit={() => setEditingClassId(c.id)}
+                    onDelete={() => removeClass(c.id)}
+                  />
+                );
+              })()
             )
           )}
         </div>
@@ -477,16 +480,28 @@ function ClassCard({
   cls,
   defaultTeacherName,
   defaultRoomName,
+  defaultRoomType,
   onEdit,
   onDelete,
 }: {
   cls: SchoolClass;
   defaultTeacherName: string;
   defaultRoomName: string;
+  defaultRoomType?: RoomType;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const { t, tClassName } = useT();
+  const typeLabel =
+    defaultRoomType === RoomType.Sport
+      ? t("roomTypeSport")
+      : defaultRoomType === RoomType.Computer
+      ? t("roomTypeComputer")
+      : defaultRoomType === RoomType.Music
+      ? t("roomTypeMusic")
+      : defaultRoomType === RoomType.Regular
+      ? t("roomTypeRegular")
+      : null;
   return (
     <div className="card class-card compact">
       <div className="head">
@@ -527,6 +542,7 @@ function ClassCard({
         )}
         <span className="tag muted">
           {t("roomLabel")}: {defaultRoomName}
+          {typeLabel ? ` · ${typeLabel}` : ""}
         </span>
       </div>
     </div>
