@@ -63,6 +63,9 @@ export interface Teacher {
   /** Subjects this teacher can teach — Subject enum values OR custom names. */
   subjects: string[];
   grades: Grade[];
+  /** Per-subject grade restrictions. When defined for a subject, overrides
+   *  the fallback `grades` list. */
+  gradesPerSubject?: Record<string, Grade[]>;
   dayOff: Day;
   unavailable: UnavailabilityWindow[];
 }

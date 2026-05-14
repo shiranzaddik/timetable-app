@@ -75,7 +75,12 @@ const STRINGS = {
     fieldNamePlaceholder: "e.g. Ms. Smith",
     fieldSubjects: "Subjects",
     fieldGrades: "Grades they can teach",
-    fieldDayOff: "Day off",
+    fieldGradesPerSubject: "Grades per subject",
+    perSubjectGradesHint:
+      "By default, the teacher teaches each chosen subject to every grade. Uncheck a grade to restrict that subject.",
+    fieldDayOff: "Day off *",
+    dayOffSoftNote:
+      "* We try to honor the day off but may schedule lessons here if no other slot fits.",
     fieldUnavailable: "Other unavailable windows",
     optional: "(optional)",
     addWindow: "+ Window",
@@ -207,7 +212,12 @@ const STRINGS = {
     fieldNamePlaceholder: "לדוגמה, גב' כהן",
     fieldSubjects: "מקצועות",
     fieldGrades: "שכבות שאפשר ללמד",
-    fieldDayOff: "יום חופש",
+    fieldGradesPerSubject: "שכבות לכל מקצוע",
+    perSubjectGradesHint:
+      "כברירת מחדל, המורה מלמד כל מקצוע שנבחר בכל השכבות. ניתן להסיר שכבה כדי לצמצם.",
+    fieldDayOff: "יום חופש *",
+    dayOffSoftNote:
+      "* ננסה לכבד את יום החופש, אבל ייתכן שיוקצו שיעורים גם בו אם לא יימצאו זמנים אחרים.",
     fieldUnavailable: "חלונות זמן נוספים שאינם זמינים",
     optional: "(אופציונלי)",
     addWindow: "+ חלון",

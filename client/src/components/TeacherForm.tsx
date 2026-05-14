@@ -11,13 +11,12 @@ import {
 interface Props {
   onSave: (teacher: Teacher) => void;
   onCancel: () => void;
-  /** Existing ids — used for collision detection when adding a new teacher. */
   existingIds: string[];
-  /** When provided, the form edits this teacher instead of creating a new one. */
   initial?: Teacher;
 }
 
 const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
+const ALL_GRADES: Grade[] = Object.values(Grade);
 
 export default function TeacherForm({ onSave, onCancel, existingIds, initial }: Props) {
   const { t, tDay, tSubject } = useT();
@@ -25,22 +24,73 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
   const [name, setName] = useState(initial?.name ?? "");
   const [subjects, setSubjects] = useState<string[]>(initial?.subjects ?? []);
   const [customDraft, setCustomDraft] = useState("");
-  const [grades, setGrades] = useState<Grade[]>(initial?.grades ?? []);
+  /** Per-subject grade list. Initialised from initial.gradesPerSubject OR
+   *  from initial.grades for legacy data. When the user adds a subject the
+   *  grades default to every Grade enum value. */
+  const [gradesPerSubject, setGradesPerSubject] = useState<Record<string, Grade[]>>(() => {
+    const out: Record<string, Grade[]> = {};
+    for (const s of initial?.subjects ?? []) {
+      out[s] = initial?.gradesPerSubject?.[s] ?? initial?.grades ?? [...ALL_GRADES];
+    }
+    return out;
+  });
   const [dayOff, setDayOff] = useState<Day>(initial?.dayOff ?? Day.Sunday);
   const [unavailable, setUnavailable] = useState<UnavailabilityWindow[]>(
     initial?.unavailable ?? []
   );
   const [error, setError] = useState<string | null>(null);
 
-  const toggle = <T,>(arr: T[], value: T): T[] =>
-    arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
+  const toggleGradeForSubject = (subject: string, grade: Grade) => {
+    setGradesPerSubject((prev) => {
+      const list = prev[subject] ?? [...ALL_GRADES];
+      const next = list.includes(grade)
+        ? list.filter((g) => g !== grade)
+        : [...list, grade];
+      return { ...prev, [subject]: next };
+    });
+  };
+
+  const addSubject = (s: string) => {
+    if (subjects.includes(s)) return;
+    setSubjects([...subjects, s]);
+    setGradesPerSubject((prev) => ({
+      ...prev,
+      [s]: prev[s] ?? [...ALL_GRADES],
+    }));
+  };
+
+  const removeSubject = (s: string) => {
+    setSubjects(subjects.filter((x) => x !== s));
+    setGradesPerSubject((prev) => {
+      const next = { ...prev };
+      delete next[s];
+      return next;
+    });
+  };
 
   const submit = () => {
     if (!name.trim()) return setError(t("errNameRequired"));
     if (subjects.length === 0) return setError(t("errPickSubject"));
-    if (grades.length === 0) return setError(t("errPickGrade"));
+    // Each subject must have at least one grade.
+    for (const s of subjects) {
+      if ((gradesPerSubject[s]?.length ?? 0) === 0) {
+        return setError(t("errPickGrade"));
+      }
+    }
     const id = isEdit ? initial!.id : makeId(name, existingIds);
-    onSave({ id, name: name.trim(), subjects, grades, dayOff, unavailable });
+    // Union of all per-subject grades populates the legacy `grades` field.
+    const overallGrades = Array.from(
+      new Set(subjects.flatMap((s) => gradesPerSubject[s] ?? []))
+    );
+    onSave({
+      id,
+      name: name.trim(),
+      subjects,
+      grades: overallGrades,
+      gradesPerSubject,
+      dayOff,
+      unavailable,
+    });
   };
 
   return (
@@ -59,38 +109,53 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
       </div>
 
       <div className="form-row">
-        <label>{t("fieldSubjects")}</label>
+        <label>{t("fieldGradesPerSubject")}</label>
+        <small style={{ color: "var(--text-muted)", marginBottom: 4 }}>
+          {t("perSubjectGradesHint")}
+        </small>
+
+        {/* Well-known subject toggles */}
         <div className="checkbox-grid">
           {WELL_KNOWN_SUBJECTS.map((s) => (
             <label key={s} className={subjects.includes(s) ? "checked" : ""}>
               <input
                 type="checkbox"
                 checked={subjects.includes(s)}
-                onChange={() => setSubjects(toggle(subjects, s))}
+                onChange={() =>
+                  subjects.includes(s) ? removeSubject(s) : addSubject(s)
+                }
               />
               {tSubject(s)}
             </label>
           ))}
         </div>
-        {/* Custom subjects */}
-        <div className="row" style={{ marginTop: 8 }}>
-          {subjects
-            .filter((s) => !WELL_KNOWN_SUBJECTS.includes(s))
-            .map((s) => (
-              <span key={s} className="tag">
-                {s}
-                <button
-                  type="button"
-                  className="tag-remove"
-                  aria-label={t("delete")}
-                  onClick={() => setSubjects(subjects.filter((x) => x !== s))}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-        </div>
-        <div className="window-row" style={{ marginTop: 4, gridTemplateColumns: "1fr auto" }}>
+
+        {/* Custom subjects already selected */}
+        {subjects.filter((s) => !WELL_KNOWN_SUBJECTS.includes(s)).length > 0 && (
+          <div className="row" style={{ marginTop: 6 }}>
+            {subjects
+              .filter((s) => !WELL_KNOWN_SUBJECTS.includes(s))
+              .map((s) => (
+                <span key={s} className="tag">
+                  {s}
+                  <button
+                    type="button"
+                    className="tag-remove"
+                    aria-label={t("delete")}
+                    onClick={() => removeSubject(s)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+          </div>
+        )}
+
+        {/* Add custom subject */}
+        <div
+          className="window-row"
+          style={{ marginTop: 4, gridTemplateColumns: "1fr auto" }}
+        >
           <input
             type="text"
             value={customDraft}
@@ -100,7 +165,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
               if (e.key === "Enter") {
                 e.preventDefault();
                 const v = customDraft.trim().toLowerCase();
-                if (v && !subjects.includes(v)) setSubjects([...subjects, v]);
+                if (v) addSubject(v);
                 setCustomDraft("");
               }
             }}
@@ -110,29 +175,44 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
             className="add-btn"
             onClick={() => {
               const v = customDraft.trim().toLowerCase();
-              if (v && !subjects.includes(v)) setSubjects([...subjects, v]);
+              if (v) addSubject(v);
               setCustomDraft("");
             }}
           >
             {t("addSubject")}
           </button>
         </div>
-      </div>
 
-      <div className="form-row">
-        <label>{t("fieldGrades")}</label>
-        <div className="checkbox-grid">
-          {Object.values(Grade).map((g) => (
-            <label key={g} className={grades.includes(g) ? "checked" : ""}>
-              <input
-                type="checkbox"
-                checked={grades.includes(g)}
-                onChange={() => setGrades(toggle(grades, g))}
-              />
-              {t("gradePrefix")} {g}
-            </label>
-          ))}
-        </div>
+        {/* Per-subject grade pickers */}
+        {subjects.length > 0 && (
+          <div className="per-subject-grades">
+            {subjects.map((s) => {
+              const selected = gradesPerSubject[s] ?? [];
+              return (
+                <div key={s} className="per-subject-grades-row">
+                  <span className={`tag subj-${s}`} style={{ alignSelf: "center" }}>
+                    {tSubject(s)}
+                  </span>
+                  <div className="grade-chip-row">
+                    {ALL_GRADES.map((g) => {
+                      const on = selected.includes(g);
+                      return (
+                        <button
+                          key={g}
+                          type="button"
+                          className={`grade-chip ${on ? "on" : ""}`}
+                          onClick={() => toggleGradeForSubject(s, g)}
+                        >
+                          {g}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="form-row">
@@ -144,6 +224,7 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
             </option>
           ))}
         </select>
+        <small style={{ color: "var(--text-muted)" }}>{t("dayOffSoftNote")}</small>
       </div>
 
       <div className="form-row">
@@ -222,7 +303,12 @@ export default function TeacherForm({ onSave, onCancel, existingIds, initial }: 
 }
 
 function makeId(name: string, existing: string[]): string {
-  const base = "t-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const base =
+    "t-" +
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   let id = base || `t-${Date.now()}`;
   let n = 2;
   while (existing.includes(id)) id = `${base}-${n++}`;

@@ -147,6 +147,15 @@ function buildBlocks(classes: SchoolClass[]): Block[] {
   return blocks;
 }
 
+/** Whether a teacher is allowed to teach a given (subject, grade). Uses
+ *  gradesPerSubject when present, otherwise falls back to the overall grades. */
+function teacherEligible(teacher: Teacher, subject: string, grade: string): boolean {
+  if (!teacher.subjects.includes(subject)) return false;
+  const subjectGrades = teacher.gradesPerSubject?.[subject];
+  const grades = subjectGrades ?? teacher.grades;
+  return grades.includes(grade as never);
+}
+
 function candidateTeachers(
   block: Block,
   cls: SchoolClass,
@@ -154,17 +163,14 @@ function candidateTeachers(
 ): Teacher[] {
   if (cls.defaultTeacherId) {
     const defaultTeacher = teachers.find((t) => t.id === cls.defaultTeacherId);
-    const defaultCanTeach =
-      !!defaultTeacher &&
-      defaultTeacher.subjects.includes(block.subject) &&
-      defaultTeacher.grades.includes(cls.grade);
-
-    if (defaultCanTeach && defaultTeacher) return [defaultTeacher];
+    if (
+      defaultTeacher &&
+      teacherEligible(defaultTeacher, block.subject, cls.grade)
+    ) {
+      return [defaultTeacher];
+    }
   }
-
-  return teachers.filter(
-    (t) => t.subjects.includes(block.subject) && t.grades.includes(cls.grade)
-  );
+  return teachers.filter((t) => teacherEligible(t, block.subject, cls.grade));
 }
 
 // Schedule one class fully before moving to the next. Within a class, place
@@ -451,9 +457,7 @@ function assignHomerooms(input: SchoolInput): {
   const newClasses = input.classes.map((c) => {
     if (c.defaultTeacherId) return c;
 
-    const eligible = input.teachers.filter(
-      (t) => t.grades.includes(c.grade) && !usedTeachers.has(t.id)
-    );
+    const eligible = input.teachers.filter((t) => !usedTeachers.has(t.id));
 
     let best: Teacher | null = null;
     let bestHours = -1;
@@ -461,7 +465,8 @@ function assignHomerooms(input: SchoolInput): {
       let hours = 0;
       for (const s of c.subjects) {
         if (s.mandatory === false) continue;
-        if (t.subjects.includes(s.subject)) hours += s.hoursPerWeek;
+        if (!teacherEligible(t, s.subject, c.grade)) continue;
+        hours += s.hoursPerWeek;
       }
       if (hours > bestHours) {
         bestHours = hours;

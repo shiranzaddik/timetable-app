@@ -69,9 +69,15 @@ export interface Teacher {
   /** Subjects this teacher can teach. Well-known values come from the Subject
    *  enum; custom strings are also allowed for school-specific subjects. */
   subjects: string[];
-  /** Grade letters this teacher can teach (e.g., [A, B] means any A* or B* class). */
+  /** Fallback list of grades this teacher can teach when a subject has no
+   *  per-subject grade list. Kept for back-compat with older inputs. */
   grades: Grade[];
-  /** Required default day off — the teacher does not work this day. */
+  /** Per-subject grade restrictions. When set, overrides `grades` for that
+   *  subject. Default UX: when adding a subject in the form, this list is
+   *  initialised to every grade — the user can then narrow it. */
+  gradesPerSubject?: Record<string, Grade[]>;
+  /** Soft preference — the solver tries to honor this day off but may still
+   *  schedule lessons here if no other slot fits. */
   dayOff: Day;
   /** Additional unavailable windows on top of dayOff. */
   unavailable: UnavailabilityWindow[];
