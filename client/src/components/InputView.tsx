@@ -578,7 +578,6 @@ function RoomCard({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{room.name}</p>
-          <p className="teacher-role">{t(typeKey)}</p>
         </div>
         <div className="card-actions">
           <button className="icon-btn" onClick={onEdit} title={t("edit")} aria-label={t("edit")}>
@@ -593,6 +592,12 @@ function RoomCard({
             ×
           </button>
         </div>
+      </div>
+
+      <div className="row">
+        <span className={`tag ${room.type === RoomType.Regular ? "muted" : "warn"}`}>
+          {t(typeKey)}
+        </span>
       </div>
     </div>
   );

@@ -8,6 +8,16 @@ import {
   type Teacher,
 } from "../types";
 
+const ROOM_TYPE_LABEL_KEY: Record<
+  RoomType,
+  "roomTypeRegular" | "roomTypeSport" | "roomTypeComputer" | "roomTypeMusic"
+> = {
+  [RoomType.Regular]: "roomTypeRegular",
+  [RoomType.Sport]: "roomTypeSport",
+  [RoomType.Computer]: "roomTypeComputer",
+  [RoomType.Music]: "roomTypeMusic",
+};
+
 export interface ClassFormResult {
   /** New/edited class meta — subjects are filled in by the parent from the
    *  grade-level template. */
@@ -131,7 +141,7 @@ export default function ClassForm({
             </option>
             {regularRooms.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.name}
+                {r.name} — {t(ROOM_TYPE_LABEL_KEY[r.type])}
               </option>
             ))}
           </select>
