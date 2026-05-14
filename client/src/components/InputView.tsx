@@ -89,12 +89,25 @@ export default function InputView({ input, onChange }: Props) {
     setEditingTeacherId(null);
   };
 
+  /** Make sure the per-class room exists in input.rooms. */
+  const ensureRoom = (roomId: string, classId: string): Room[] => {
+    if (input.rooms.some((r) => r.id === roomId)) return input.rooms;
+    return [
+      ...input.rooms,
+      { id: roomId, name: `Room ${classId}`, type: RoomType.Regular },
+    ];
+  };
+
   const addClass = ({ cls }: ClassFormResult) => {
     const fullCls: SchoolClass = {
       ...cls,
       subjects: subjectsForTrend(cls.grade, cls.trendName),
     };
-    onChange({ ...input, classes: [...input.classes, fullCls] });
+    onChange({
+      ...input,
+      classes: [...input.classes, fullCls],
+      rooms: ensureRoom(cls.defaultRoomId, cls.id),
+    });
     setAddingClass(false);
   };
 
@@ -116,6 +129,7 @@ export default function InputView({ input, onChange }: Props) {
       classes: input.classes.map((existing) =>
         existing.id === oldClass.id ? updatedCls : existing
       ),
+      rooms: ensureRoom(cls.defaultRoomId, cls.id),
     });
     setEditingClassId(null);
   };
@@ -281,12 +295,11 @@ export default function InputView({ input, onChange }: Props) {
                 (c) =>
                   c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
               ).length;
-              const label = trendName ? `${grade} ${trendName}` : `${grade}`;
               return editingTrendKey === key ? (
                 <GradeForm
                   key={key}
                   grade={grade}
-                  trendLabel={label}
+                  trendName={trendName}
                   initialSubjects={subjects}
                   onSave={(s) => saveTrendSubjects(grade, trendName, s)}
                   onCancel={() => setEditingTrendKey(null)}
@@ -295,7 +308,7 @@ export default function InputView({ input, onChange }: Props) {
                 <GradeCard
                   key={key}
                   grade={grade}
-                  trendLabel={label}
+                  trendName={trendName}
                   subjects={subjects}
                   classCount={classCount}
                   onEdit={() => setEditingTrendKey(key)}
@@ -345,7 +358,6 @@ export default function InputView({ input, onChange }: Props) {
               onSave={addClass}
               onCancel={() => setAddingClass(false)}
               teachers={input.teachers}
-              rooms={input.rooms}
               existingIds={input.classes.map((c) => c.id)}
             />
           )}
@@ -355,7 +367,6 @@ export default function InputView({ input, onChange }: Props) {
                 key={c.id}
                 initial={c}
                 teachers={input.teachers}
-                rooms={input.rooms}
                 existingIds={input.classes.map((x) => x.id)}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
@@ -464,14 +475,15 @@ function TeacherCard({
 
 function GradeCard({
   grade,
-  trendLabel,
+  trendName,
   subjects,
   classCount,
   onEdit,
   tSubject,
 }: {
   grade: Grade;
-  trendLabel?: string;
+  /** Specialization name (e.g., "science"). Empty/undefined = the regular trend. */
+  trendName?: string;
   subjects: ClassSubject[];
   classCount: number;
   onEdit: () => void;
@@ -479,14 +491,14 @@ function GradeCard({
 }) {
   const { t } = useT();
   const total = subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
-  const title = trendLabel ?? `${grade}`;
   return (
     <div className="card class-card compact">
       <div className="head">
         <div className={`grade-badge grade-${grade}`}>{grade}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">
-            {t("gradeBadgePrefix")} {title}
+            {t("gradeBadgePrefix")} {grade}
+            {trendName ? ` · ${trendName}` : ""}
           </p>
           <p className="teacher-role">
             {t("classesInGrade", { n: classCount })} · {total}h / {t("statHours")}

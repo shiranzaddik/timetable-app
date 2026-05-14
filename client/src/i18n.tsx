@@ -168,6 +168,8 @@ const STRINGS = {
     trendPlaceholder: "e.g. science, sport, computers",
     trendSpecializationHint:
       "Leave empty for the regular trend. Classes that share the same grade + specialization share one subjects list.",
+    roomAutoLinked:
+      "Auto-linked to {roomName}. Rename or change its type in the Rooms section.",
     errSelectTeacher: "Select a default teacher",
     errClassExists: 'Class "{id}" already exists',
     errSetHours: "Set hours/week for at least one subject",
@@ -340,6 +342,8 @@ const STRINGS = {
     trendPlaceholder: "לדוגמה: מדעים, ספורט, מחשבים",
     trendSpecializationHint:
       "השאירו ריק למסלול הרגיל. כיתות עם אותה שכבה + התמחות חולקות אותו ערך מקצועות.",
+    roomAutoLinked:
+      "מקושר אוטומטית ל-{roomName}. אפשר לשנות שם או סוג בקטע 'חדרים'.",
     errSelectTeacher: "יש לבחור מחנך",
     errClassExists: 'כיתה "{id}" כבר קיימת',
     errSetHours: "יש להגדיר שעות לפחות למקצוע אחד",
@@ -405,7 +409,7 @@ const SUBJECT_NAMES: Record<Lang, Record<string, string>> = {
     [Subject.Computer]: "מחשבים",
     art: "אמנות",
     history: "היסטוריה",
-    geography: "גיאוגרפיה",
+    geography: "גאוגרפיה",
     bible: 'תנ"ך',
   },
 };

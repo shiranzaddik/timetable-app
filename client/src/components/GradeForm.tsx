@@ -4,8 +4,8 @@ import { Subject, type ClassSubject, type Grade } from "../types";
 
 interface Props {
   grade: Grade;
-  /** Human-readable label for the trend, e.g., "A" or "A science". */
-  trendLabel?: string;
+  /** Specialization name within the grade (e.g., "science"). Undefined = regular. */
+  trendName?: string;
   initialSubjects: ClassSubject[];
   onSave: (subjects: ClassSubject[]) => void;
   onCancel: () => void;
@@ -35,7 +35,7 @@ export function defaultGradeSubjects(): ClassSubject[] {
 
 export default function GradeForm({
   grade,
-  trendLabel,
+  trendName,
   initialSubjects,
   onSave,
   onCancel,
@@ -43,6 +43,7 @@ export default function GradeForm({
   const { t, tSubject } = useT();
   const [subjects, setSubjects] = useState<ClassSubject[]>(initialSubjects);
   const [error, setError] = useState<string | null>(null);
+  const headerLabel = trendName ? `${grade} · ${trendName}` : `${grade}`;
 
   const submit = () => {
     const filtered = subjects
@@ -59,7 +60,7 @@ export default function GradeForm({
   return (
     <div className="form-card">
       <strong style={{ fontSize: 14 }}>
-        {t("editGradeSubjects", { grade: trendLabel ?? grade })}
+        {t("editGradeSubjects", { grade: headerLabel })}
       </strong>
 
       <div className="form-row">

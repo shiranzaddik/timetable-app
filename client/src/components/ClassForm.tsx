@@ -1,22 +1,6 @@
 import { useState } from "react";
 import { useT } from "../i18n";
-import {
-  Grade,
-  RoomType,
-  type Room,
-  type SchoolClass,
-  type Teacher,
-} from "../types";
-
-const ROOM_TYPE_LABEL_KEY: Record<
-  RoomType,
-  "roomTypeRegular" | "roomTypeSport" | "roomTypeComputer" | "roomTypeMusic"
-> = {
-  [RoomType.Regular]: "roomTypeRegular",
-  [RoomType.Sport]: "roomTypeSport",
-  [RoomType.Computer]: "roomTypeComputer",
-  [RoomType.Music]: "roomTypeMusic",
-};
+import { Grade, type SchoolClass, type Teacher } from "../types";
 
 export interface ClassFormResult {
   /** New/edited class meta — subjects are filled in by the parent from the
@@ -26,7 +10,6 @@ export interface ClassFormResult {
 
 interface Props {
   teachers: Teacher[];
-  rooms: Room[];
   existingIds: string[];
   onSave: (result: ClassFormResult) => void;
   onCancel: () => void;
@@ -36,7 +19,6 @@ interface Props {
 
 export default function ClassForm({
   teachers,
-  rooms,
   existingIds,
   onSave,
   onCancel,
@@ -50,21 +32,16 @@ export default function ClassForm({
   const [defaultTeacherId, setDefaultTeacherId] = useState<string>(
     initial?.defaultTeacherId ?? ""
   );
-
-  const regularRooms = rooms.filter((r) => r.type === RoomType.Regular);
-  const [defaultRoomId, setDefaultRoomId] = useState<string>(
-    initial?.defaultRoomId ?? regularRooms[0]?.id ?? ""
-  );
-
   const [error, setError] = useState<string | null>(null);
 
   const id = `${grade}${section}`;
   const idCollides =
     existingIds.includes(id) && (!isEdit || id !== initial?.id);
+  // Room is always derived from the class id — one per class.
+  const defaultRoomId = `room-${id}`;
 
   const submit = () => {
     if (idCollides) return setError(t("errClassExists", { id }));
-    if (!defaultRoomId) return setError(t("addRoomsFirst"));
     const cleanTrend = trendName.trim().toLowerCase();
     onSave({
       cls: {
@@ -143,31 +120,15 @@ export default function ClassForm({
 
       <div className="form-row">
         <label>{t("fieldRoomName")}</label>
-        {regularRooms.length === 0 ? (
-          <div className="banner error" style={{ fontSize: 12 }}>
-            {t("addRoomsFirst")}
-          </div>
-        ) : (
-          <select
-            value={defaultRoomId}
-            onChange={(e) => setDefaultRoomId(e.target.value)}
-          >
-            <option value="" disabled>
-              {t("pickRoom")}
-            </option>
-            {regularRooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} — {t(ROOM_TYPE_LABEL_KEY[r.type])}
-              </option>
-            ))}
-          </select>
-        )}
+        <small style={{ color: "var(--text-muted)" }}>
+          {t("roomAutoLinked", { roomName: `Room ${id}` })}
+        </small>
       </div>
 
       {error && <div className="banner error">{error}</div>}
 
       <div className="form-actions">
-        <button onClick={submit} disabled={regularRooms.length === 0}>
+        <button onClick={submit}>
           {isEdit
             ? t("saveChangesToId", { id })
             : t("saveClassWithId", { id })}
