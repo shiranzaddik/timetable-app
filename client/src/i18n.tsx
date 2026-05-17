@@ -69,6 +69,10 @@ const STRINGS = {
     addRoomsFirst: "Add at least one room first",
     confirmRemoveRoom: "This room is in use by one or more classes. Remove anyway?",
 
+    sortBy: "Sort by",
+    sortByName: "Name",
+    sortBySubject: "Subject",
+    sortByGrade: "Grade",
     addTeacher: "+ Add teacher",
     addClass: "+ Add class",
     addTeacherFirst: "Add at least one teacher first",
@@ -299,6 +303,10 @@ const STRINGS = {
     addRoomsFirst: "יש להוסיף חדרים תחילה",
     confirmRemoveRoom: "החדר משוייך לכיתה אחת או יותר. למחוק בכל זאת?",
 
+    sortBy: "מיון לפי",
+    sortByName: "שם",
+    sortBySubject: "מקצוע",
+    sortByGrade: "שכבה",
     addTeacher: "+ הוסף מורה",
     addClass: "+ הוסף כיתה",
     addTeacherFirst: "יש להוסיף לפחות מורה אחד תחילה",

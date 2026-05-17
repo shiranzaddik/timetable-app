@@ -24,6 +24,9 @@ export default function InputView({ input, onChange }: Props) {
   const { t, tSubject } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
+  const [teacherSort, setTeacherSort] = useState<"name" | "subject" | "grade">(
+    "name"
+  );
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
@@ -231,46 +234,98 @@ export default function InputView({ input, onChange }: Props) {
                 : t("countTeachersMany")}
             </div>
           </div>
-          {!addingTeacher && !editingTeacherId && (
-            <button className="add-btn" onClick={() => setAddingTeacher(true)}>
-              {t("addTeacher")}
-            </button>
-          )}
+          <div className="section-actions">
+            <label className="sort-control">
+              <span>{t("sortBy")}</span>
+              <select
+                value={teacherSort}
+                onChange={(e) =>
+                  setTeacherSort(e.target.value as typeof teacherSort)
+                }
+              >
+                <option value="name">{t("sortByName")}</option>
+                <option value="subject">{t("sortBySubject")}</option>
+                <option value="grade">{t("sortByGrade")}</option>
+              </select>
+            </label>
+            {!addingTeacher && !editingTeacherId && (
+              <button className="add-btn" onClick={() => setAddingTeacher(true)}>
+                {t("addTeacher")}
+              </button>
+            )}
+          </div>
         </div>
 
         {input.teachers.length === 0 && !addingTeacher && (
           <div className="empty-state">{t("emptyTeachers")}</div>
         )}
 
-        <div className="card-grid">
-          {addingTeacher && (
+        {addingTeacher && (
+          <div className="card-grid">
             <TeacherForm
               onSave={addTeacher}
               onCancel={() => setAddingTeacher(false)}
               existingIds={input.teachers.map((teacher) => teacher.id)}
               availableTrends={availableTrends}
             />
-          )}
-          {input.teachers.map((teacher) =>
-            editingTeacherId === teacher.id ? (
-              <TeacherForm
-                key={teacher.id}
-                initial={teacher}
-                onSave={updateTeacher}
-                onCancel={() => setEditingTeacherId(null)}
-                existingIds={input.teachers.map((x) => x.id)}
-                availableTrends={availableTrends}
-              />
-            ) : (
-              <TeacherCard
-                key={teacher.id}
-                teacher={teacher}
-                onEdit={() => setEditingTeacherId(teacher.id)}
-                onDelete={() => removeTeacher(teacher.id)}
-              />
-            )
-          )}
-        </div>
+          </div>
+        )}
+
+        {teacherSort === "name" ? (
+          <div className="card-grid">
+            {sortedByName(input.teachers).map((teacher) =>
+              editingTeacherId === teacher.id ? (
+                <TeacherForm
+                  key={teacher.id}
+                  initial={teacher}
+                  onSave={updateTeacher}
+                  onCancel={() => setEditingTeacherId(null)}
+                  existingIds={input.teachers.map((x) => x.id)}
+                  availableTrends={availableTrends}
+                />
+              ) : (
+                <TeacherCard
+                  key={teacher.id}
+                  teacher={teacher}
+                  onEdit={() => setEditingTeacherId(teacher.id)}
+                  onDelete={() => removeTeacher(teacher.id)}
+                />
+              )
+            )}
+          </div>
+        ) : (
+          groupTeachersBy(
+            input.teachers,
+            teacherSort,
+            tSubject,
+            t("grades")
+          ).map(({ key, label, teachers }) => (
+            <div key={key} className="teacher-group">
+              <h4 className="teacher-group-title">{label}</h4>
+              <div className="card-grid">
+                {teachers.map((teacher) =>
+                  editingTeacherId === teacher.id ? (
+                    <TeacherForm
+                      key={teacher.id}
+                      initial={teacher}
+                      onSave={updateTeacher}
+                      onCancel={() => setEditingTeacherId(null)}
+                      existingIds={input.teachers.map((x) => x.id)}
+                      availableTrends={availableTrends}
+                    />
+                  ) : (
+                    <TeacherCard
+                      key={teacher.id}
+                      teacher={teacher}
+                      onEdit={() => setEditingTeacherId(teacher.id)}
+                      onDelete={() => removeTeacher(teacher.id)}
+                    />
+                  )
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* TRENDS (subjects per grade + specialization) */}
@@ -652,4 +707,38 @@ function formatWindow(
   const from = w.fromTime ?? "…";
   const to = w.toTime ?? "…";
   return `${day} ${from}–${to}`;
+}
+
+function sortedByName(teachers: Teacher[]): Teacher[] {
+  return [...teachers].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Build subject- or grade-grouped views for the teachers section.
+ *  A teacher appears once per group key they belong to (a math+hebrew
+ *  teacher shows up in both the math and the hebrew group). */
+function groupTeachersBy(
+  teachers: Teacher[],
+  by: "subject" | "grade",
+  tSubject: (s: string) => string,
+  gradesLabel: string
+): { key: string; label: string; teachers: Teacher[] }[] {
+  const groups: Map<string, { label: string; teachers: Teacher[] }> = new Map();
+  for (const teacher of teachers) {
+    const keys =
+      by === "subject"
+        ? teacher.subjects
+        : teacher.grades.map((g) => `${gradesLabel} ${g}`);
+    for (const key of keys) {
+      const label = by === "subject" ? tSubject(key) : key;
+      if (!groups.has(key)) groups.set(key, { label, teachers: [] });
+      groups.get(key)!.teachers.push(teacher);
+    }
+  }
+  return Array.from(groups.entries())
+    .sort(([, a], [, b]) => a.label.localeCompare(b.label))
+    .map(([key, { label, teachers }]) => ({
+      key,
+      label,
+      teachers: [...teachers].sort((a, b) => a.name.localeCompare(b.name)),
+    }));
 }
