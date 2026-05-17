@@ -8,12 +8,12 @@ import {
   type SchoolClass,
   type SchoolInput,
   type Teacher,
+  type Trend,
   type UnavailabilityWindow,
 } from "../types";
 import TeacherForm, { type TrendChoice } from "./TeacherForm";
 import ClassForm, { type ClassFormResult } from "./ClassForm";
 import GradeForm, { defaultGradeSubjects, type GradeFormResult } from "./GradeForm";
-import RoomForm from "./RoomForm";
 
 interface Props {
   input: SchoolInput;
@@ -27,8 +27,6 @@ export default function InputView({ input, onChange }: Props) {
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
-  const [addingRoom, setAddingRoom] = useState(false);
-  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 
   const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
@@ -41,18 +39,35 @@ export default function InputView({ input, onChange }: Props) {
     return { grade: g as Grade, trendName: t || undefined };
   };
 
-  // Subjects for a (grade, trendName) tuple — taken from any class with that combo.
+  // Subjects for a (grade, trendName) tuple — taken from the registered trend.
   const subjectsForTrend = (grade: Grade, trendName?: string): ClassSubject[] => {
-    const cls = input.classes.find(
-      (c) => c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+    const trend = input.trends.find(
+      (tr) => tr.grade === grade && (tr.trendName ?? "") === (trendName ?? "")
     );
-    return cls ? cls.subjects : defaultGradeSubjects();
+    return trend ? trend.subjects : defaultGradeSubjects();
   };
 
-  // Trends that have at least one class, sorted.
+  // All registered trends, sorted — independent of whether any class uses them.
   const presentTrendKeys = Array.from(
-    new Set(input.classes.map((c) => trendKeyOf(c.grade, c.trendName)))
+    new Set(input.trends.map((tr) => trendKeyOf(tr.grade, tr.trendName)))
   ).sort();
+
+  // For each grade, the list of trend names available to assign to a class.
+  // The empty string represents the regular (unnamed) trend, which is always
+  // offered even when no trend has been registered yet so it can be the form's
+  // default.
+  const trendsByGrade: Record<Grade, string[]> = Object.values(Grade).reduce(
+    (acc, g) => {
+      acc[g as Grade] = [""];
+      return acc;
+    },
+    {} as Record<Grade, string[]>
+  );
+  input.trends.forEach((tr) => {
+    const list = trendsByGrade[tr.grade];
+    const name = tr.trendName ?? "";
+    if (!list.includes(name)) list.push(name);
+  });
 
   const configStartHour =
     input.config.startHour ??
@@ -111,15 +126,31 @@ export default function InputView({ input, onChange }: Props) {
     ];
   };
 
+  /** Make sure the (grade, trendName) trend is registered. New trends inherit
+   *  the default subjects template so the user has something to edit. */
+  const ensureTrend = (grade: Grade, trendName?: string): Trend[] => {
+    const exists = input.trends.some(
+      (tr) => tr.grade === grade && (tr.trendName ?? "") === (trendName ?? "")
+    );
+    if (exists) return input.trends;
+    return [
+      ...input.trends,
+      { grade, trendName, subjects: defaultGradeSubjects() },
+    ];
+  };
+
   const addClass = ({ cls }: ClassFormResult) => {
-    const fullCls: SchoolClass = {
-      ...cls,
-      subjects: subjectsForTrend(cls.grade, cls.trendName),
-    };
+    const trends = ensureTrend(cls.grade, cls.trendName);
+    const subjects =
+      trends.find(
+        (tr) => tr.grade === cls.grade && (tr.trendName ?? "") === (cls.trendName ?? "")
+      )?.subjects ?? defaultGradeSubjects();
+    const fullCls: SchoolClass = { ...cls, subjects };
     onChange({
       ...input,
       classes: [...input.classes, fullCls],
       rooms: ensureRoom(cls.defaultRoomId, cls.id),
+      trends,
     });
     setAddingClass(false);
   };
@@ -133,8 +164,12 @@ export default function InputView({ input, onChange }: Props) {
     const oldKey = trendKeyOf(oldClass.grade, oldClass.trendName);
     const newKey = trendKeyOf(cls.grade, cls.trendName);
     const trendChanged = oldKey !== newKey;
+    const trends = ensureTrend(cls.grade, cls.trendName);
     const subjects = trendChanged
-      ? subjectsForTrend(cls.grade, cls.trendName)
+      ? trends.find(
+          (tr) =>
+            tr.grade === cls.grade && (tr.trendName ?? "") === (cls.trendName ?? "")
+        )?.subjects ?? oldClass.subjects
       : oldClass.subjects;
     const updatedCls: SchoolClass = { ...cls, subjects };
     onChange({
@@ -143,27 +178,9 @@ export default function InputView({ input, onChange }: Props) {
         existing.id === oldClass.id ? updatedCls : existing
       ),
       rooms: ensureRoom(cls.defaultRoomId, cls.id),
+      trends,
     });
     setEditingClassId(null);
-  };
-
-  const addRoom = (room: Room) => {
-    onChange({ ...input, rooms: [...input.rooms, room] });
-    setAddingRoom(false);
-  };
-
-  const updateRoom = (room: Room) => {
-    onChange({
-      ...input,
-      rooms: input.rooms.map((r) => (r.id === room.id ? room : r)),
-    });
-    setEditingRoomId(null);
-  };
-
-  const removeRoom = (id: string) => {
-    const inUse = input.classes.some((c) => c.defaultRoomId === id);
-    if (inUse && !confirm(t("confirmRemoveRoom"))) return;
-    onChange({ ...input, rooms: input.rooms.filter((r) => r.id !== id) });
   };
 
   const saveTrendSubjects = (
@@ -173,6 +190,11 @@ export default function InputView({ input, onChange }: Props) {
   ) => {
     onChange({
       ...input,
+      trends: input.trends.map((tr) =>
+        tr.grade === grade && (tr.trendName ?? "") === (trendName ?? "")
+          ? { ...tr, subjects: result.subjects }
+          : tr
+      ),
       classes: input.classes.map((c) =>
         c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
           ? { ...c, subjects: result.subjects }
@@ -182,10 +204,23 @@ export default function InputView({ input, onChange }: Props) {
     setEditingTrendKey(null);
   };
 
+  const removeTrend = (grade: Grade, trendName: string | undefined) => {
+    const stillUsed = input.classes.some(
+      (c) => c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+    );
+    if (stillUsed) return;
+    onChange({
+      ...input,
+      trends: input.trends.filter(
+        (tr) => !(tr.grade === grade && (tr.trendName ?? "") === (trendName ?? ""))
+      ),
+    });
+  };
+
   return (
     <>
       {/* TEACHERS */}
-      <div className="section">
+      <div className="section" id="section-teachers">
         <div className="section-header">
           <div>
             <h3 className="section-title">{t("teachersSection")}</h3>
@@ -238,57 +273,9 @@ export default function InputView({ input, onChange }: Props) {
         </div>
       </div>
 
-      {/* ROOMS */}
-      <div className="section">
-        <div className="section-header">
-          <div>
-            <h3 className="section-title">{t("roomsSection")}</h3>
-            <div className="section-meta">
-              {input.rooms.length}{" "}
-              {input.rooms.length === 1 ? t("countRoomsOne") : t("countRoomsMany")}
-            </div>
-          </div>
-          {!addingRoom && !editingRoomId && (
-            <button className="add-btn" onClick={() => setAddingRoom(true)}>
-              {t("addRoom")}
-            </button>
-          )}
-        </div>
-        {input.rooms.length === 0 && !addingRoom && (
-          <div className="empty-state">{t("emptyRooms")}</div>
-        )}
-        <div className="card-grid">
-          {addingRoom && (
-            <RoomForm
-              onSave={addRoom}
-              onCancel={() => setAddingRoom(false)}
-              existingIds={input.rooms.map((r) => r.id)}
-            />
-          )}
-          {input.rooms.map((room) =>
-            editingRoomId === room.id ? (
-              <RoomForm
-                key={room.id}
-                initial={room}
-                onSave={updateRoom}
-                onCancel={() => setEditingRoomId(null)}
-                existingIds={input.rooms.map((r) => r.id)}
-              />
-            ) : (
-              <RoomCard
-                key={room.id}
-                room={room}
-                onEdit={() => setEditingRoomId(room.id)}
-                onDelete={() => removeRoom(room.id)}
-              />
-            )
-          )}
-        </div>
-      </div>
-
       {/* TRENDS (subjects per grade + specialization) */}
       {presentTrendKeys.length > 0 && (
-        <div className="section">
+        <div className="section" id="section-trends">
           <div className="section-header">
             <div>
               <h3 className="section-title">{t("gradesSection")}</h3>
@@ -304,10 +291,13 @@ export default function InputView({ input, onChange }: Props) {
             {presentTrendKeys.map((key) => {
               const { grade, trendName } = parseTrendKey(key);
               const subjects = subjectsForTrend(grade, trendName);
-              const classCount = input.classes.filter(
-                (c) =>
-                  c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
-              ).length;
+              const classIds = input.classes
+                .filter(
+                  (c) =>
+                    c.grade === grade &&
+                    (c.trendName ?? "") === (trendName ?? "")
+                )
+                .map((c) => c.id);
               return editingTrendKey === key ? (
                 <GradeForm
                   key={key}
@@ -323,8 +313,13 @@ export default function InputView({ input, onChange }: Props) {
                   grade={grade}
                   trendName={trendName}
                   subjects={subjects}
-                  classCount={classCount}
+                  classIds={classIds}
                   onEdit={() => setEditingTrendKey(key)}
+                  onDelete={
+                    classIds.length === 0
+                      ? () => removeTrend(grade, trendName)
+                      : undefined
+                  }
                   tSubject={tSubject}
                 />
               );
@@ -334,7 +329,7 @@ export default function InputView({ input, onChange }: Props) {
       )}
 
       {/* CLASSES */}
-      <div className="section">
+      <div className="section" id="section-classes">
         <div className="section-header">
           <div>
             <h3 className="section-title">{t("classesSection")}</h3>
@@ -374,6 +369,7 @@ export default function InputView({ input, onChange }: Props) {
               existingIds={input.classes.map((c) => c.id)}
               defaultStartHour={configStartHour}
               defaultEndHour={configEndHour}
+              trendsByGrade={trendsByGrade}
             />
           )}
           {input.classes.map((c) =>
@@ -385,30 +381,24 @@ export default function InputView({ input, onChange }: Props) {
                 existingIds={input.classes.map((x) => x.id)}
                 defaultStartHour={configStartHour}
                 defaultEndHour={configEndHour}
+                trendsByGrade={trendsByGrade}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
               />
             ) : (
-              (() => {
-                const room = input.rooms.find((r) => r.id === c.defaultRoomId);
-                return (
-                  <ClassCard
-                    key={c.id}
-                    cls={c}
-                    defaultTeacherName={
-                      c.defaultTeacherId
-                        ? teacherById[c.defaultTeacherId]?.name ?? "—"
-                        : ""
-                    }
-                    defaultRoomName={room?.name ?? c.defaultRoomId}
-                    defaultRoomType={room?.type}
-                    startHour={c.startHour ?? configStartHour}
-                    endHour={c.endHour ?? configEndHour}
-                    onEdit={() => setEditingClassId(c.id)}
-                    onDelete={() => removeClass(c.id)}
-                  />
-                );
-              })()
+              <ClassCard
+                key={c.id}
+                cls={c}
+                defaultTeacherName={
+                  c.defaultTeacherId
+                    ? teacherById[c.defaultTeacherId]?.name ?? "—"
+                    : ""
+                }
+                startHour={c.startHour ?? configStartHour}
+                endHour={c.endHour ?? configEndHour}
+                onEdit={() => setEditingClassId(c.id)}
+                onDelete={() => removeClass(c.id)}
+              />
             )
           )}
         </div>
@@ -430,7 +420,7 @@ function TeacherCard({
 }) {
   const { t, tDay, tSubject } = useT();
   return (
-    <div className="card teacher-card compact">
+    <div className="card teacher-card compact" id={`teacher-${teacher.id}`}>
       <div className="head">
         <div className="avatar">{initials(teacher.name)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -441,7 +431,7 @@ function TeacherCard({
         </div>
         <div className="card-actions">
           <button
-            className="icon-btn"
+            className="icon-btn edit-trigger"
             onClick={onEdit}
             aria-label={t("edit")}
             title={t("edit")}
@@ -496,22 +486,27 @@ function GradeCard({
   grade,
   trendName,
   subjects,
-  classCount,
+  classIds,
   onEdit,
+  onDelete,
   tSubject,
 }: {
   grade: Grade;
   /** Specialization name (e.g., "science"). Empty/undefined = the regular trend. */
   trendName?: string;
   subjects: ClassSubject[];
-  classCount: number;
+  classIds: string[];
   onEdit: () => void;
+  /** Provided only when the trend is empty — otherwise deletion is blocked. */
+  onDelete?: () => void;
   tSubject: (s: string) => string;
 }) {
   const { t } = useT();
   const total = subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
+  const classList = classIds.join(", ");
+  const trendKey = trendName ? `${grade}:${trendName}` : `${grade}`;
   return (
-    <div className="card class-card compact">
+    <div className="card class-card compact" id={`trend-${trendKey}`}>
       <div className="head">
         <div className={`grade-badge grade-${grade}`}>{grade}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -520,18 +515,29 @@ function GradeCard({
             {trendName ? ` · ${trendName}` : ""}
           </p>
           <p className="teacher-role">
-            {t("classesInGrade", { n: classCount })} · {total}h / {t("statHours")}
+            {t("classesInTrend", { n: classIds.length })}
+            {classList ? ` (${classList})` : ""} · {total}h / {t("statHours")}
           </p>
         </div>
         <div className="card-actions">
           <button
-            className="icon-btn"
+            className="icon-btn edit-trigger"
             onClick={onEdit}
             aria-label={t("edit")}
             title={t("edit")}
           >
             ✎
           </button>
+          {onDelete && (
+            <button
+              className="icon-btn danger"
+              onClick={onDelete}
+              aria-label={t("delete")}
+              title={t("delete")}
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 
@@ -557,8 +563,6 @@ function GradeCard({
 function ClassCard({
   cls,
   defaultTeacherName,
-  defaultRoomName,
-  defaultRoomType,
   startHour,
   endHour,
   onEdit,
@@ -566,40 +570,28 @@ function ClassCard({
 }: {
   cls: SchoolClass;
   defaultTeacherName: string;
-  defaultRoomName: string;
-  defaultRoomType?: RoomType;
   startHour: number;
   endHour: number;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const { t } = useT();
-  const typeLabel =
-    defaultRoomType === RoomType.Sport
-      ? t("roomTypeSport")
-      : defaultRoomType === RoomType.Computer
-      ? t("roomTypeComputer")
-      : defaultRoomType === RoomType.Music
-      ? t("roomTypeMusic")
-      : defaultRoomType === RoomType.Regular
-      ? t("roomTypeRegular")
-      : null;
   const trendLabel = cls.trendName
-    ? `${cls.grade} ${cls.trendName}`
+    ? `${cls.grade} · ${cls.trendName}`
     : `${cls.grade}`;
   return (
-    <div className="card class-card compact">
+    <div className="card class-card compact" id={`class-${cls.id}`}>
       <div className="head">
         <div className={`grade-badge grade-${cls.grade}`}>{cls.id}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{cls.id}</p>
           <p className="teacher-role">
-            {t("gradePrefix")} {trendLabel}
+            {t("gradeBadgePrefix")} {trendLabel}
           </p>
         </div>
         <div className="card-actions">
           <button
-            className="icon-btn"
+            className="icon-btn edit-trigger"
             onClick={onEdit}
             aria-label={t("edit")}
             title={t("edit")}
@@ -625,9 +617,8 @@ function ClassCard({
         ) : (
           <span className="tag muted">{t("noDefaultTeacher")}</span>
         )}
-        <span className="tag muted">
-          {t("roomLabel")}: {defaultRoomName}
-          {typeLabel ? ` · ${typeLabel}` : ""}
+        <span className={`tag trend trend-${cls.grade}`}>
+          {t("gradeBadgePrefix")}: {trendLabel}
         </span>
         <span className="tag muted">
           {`${pad2(startHour)}:00 → ${pad2(endHour)}:00`}
@@ -639,60 +630,6 @@ function ClassCard({
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
-}
-
-function RoomCard({
-  room,
-  onEdit,
-  onDelete,
-}: {
-  room: Room;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  const { t } = useT();
-  const typeKey =
-    room.type === RoomType.Sport
-      ? "roomTypeSport"
-      : room.type === RoomType.Computer
-      ? "roomTypeComputer"
-      : room.type === RoomType.Music
-      ? "roomTypeMusic"
-      : "roomTypeRegular";
-  return (
-    <div className="card class-card compact">
-      <div className="head">
-        <div
-          className="grade-badge"
-          style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
-        >
-          R
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">{room.name}</p>
-        </div>
-        <div className="card-actions">
-          <button className="icon-btn" onClick={onEdit} title={t("edit")} aria-label={t("edit")}>
-            ✎
-          </button>
-          <button
-            className="icon-btn danger"
-            onClick={onDelete}
-            title={t("delete")}
-            aria-label={t("delete")}
-          >
-            ×
-          </button>
-        </div>
-      </div>
-
-      <div className="row">
-        <span className={`tag ${room.type === RoomType.Regular ? "muted" : "warn"}`}>
-          {t(typeKey)}
-        </span>
-      </div>
-    </div>
-  );
 }
 
 function initials(name: string): string {

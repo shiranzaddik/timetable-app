@@ -4,7 +4,29 @@ import LanguageSwitcher from "./components/LanguageSwitcher";
 import Login from "./components/Login";
 import TimetableView from "./components/TimetableView";
 import { useT } from "./i18n";
-import { Day, type SchoolInput, type SolveResult } from "./types";
+import {
+  Day,
+  type ScheduleRecommendation,
+  type SchoolInput,
+  type SolveResult,
+  type Trend,
+} from "./types";
+
+/** Older saved configs didn't have a `trends` field — derive it from the
+ *  classes so the trends list works as before. New edits will persist
+ *  trends explicitly going forward. */
+function normalizeInput(input: SchoolInput): SchoolInput {
+  if (input.trends && input.trends.length > 0) return input;
+  const seen = new Set<string>();
+  const trends: Trend[] = [];
+  for (const c of input.classes) {
+    const key = `${c.grade}:${c.trendName ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    trends.push({ grade: c.grade, trendName: c.trendName, subjects: c.subjects });
+  }
+  return { ...input, trends };
+}
 
 type View = "byClass" | "byTeacher";
 
@@ -63,7 +85,7 @@ export default function App() {
     Promise.all([api<SchoolInput>("/api/demo"), api<SchoolState>("/api/school")])
       .then(([demoData, saved]) => {
         setPersisted(saved.persisted);
-        setInput(saved.config ?? demoData);
+        setInput(normalizeInput(saved.config ?? demoData));
       })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : String(e))
@@ -128,6 +150,7 @@ export default function App() {
       teachers: [],
       classes: [],
       rooms: [],
+      trends: [],
     });
     setResult(null);
     setDirty(true);
@@ -137,7 +160,7 @@ export default function App() {
     if (!window.confirm(t("confirmLoadDemo"))) return;
     try {
       const demo = await api<SchoolInput>("/api/demo");
-      setInput(demo);
+      setInput(normalizeInput(demo));
       setResult(null);
       setDirty(true);
     } catch (e) {
@@ -251,20 +274,20 @@ export default function App() {
 
       <InputView input={input} onChange={handleInputChange} />
 
-      {result?.success && result.warnings && result.warnings.length > 0 && (
+      {result?.success && result.recommendations && result.recommendations.length > 0 && (
         <div className="section">
           <div className="section-header">
             <div>
               <h3 className="section-title" style={{ color: "var(--warn)" }}>
-                Recommendations
+                {t("recommendationsHeading")}
               </h3>
             </div>
           </div>
-          <ul style={{ margin: 0, paddingInlineStart: 22 }}>
-            {result.warnings.map((w, i) => (
-              <li key={i} style={{ marginBottom: 4 }}>{w}</li>
+          <div className="card-grid">
+            {result.recommendations.map((rec, i) => (
+              <RecommendationCard key={i} rec={rec} />
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
@@ -383,6 +406,177 @@ export default function App() {
           <TimetableView input={input} result={result} mode={view} />
         </div>
       )}
+    </div>
+  );
+}
+
+function jumpToCard(anchorId: string) {
+  const el = document.getElementById(anchorId);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  // Briefly highlight the target card so the user sees what was opened.
+  el.classList.add("card-flash");
+  window.setTimeout(() => el.classList.remove("card-flash"), 1500);
+  // Also click the edit button inside, if any, so the form opens.
+  const editBtn = el.querySelector<HTMLButtonElement>(".edit-trigger");
+  editBtn?.click();
+}
+
+function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
+  const { t } = useT();
+  if (rec.kind === "mandatoryOverflow") {
+    return (
+      <div className="card recommendation-card">
+        <div className="rec-header">{t("recMandatoryOverflowHeader")}</div>
+        <ol className="rec-options">
+          <li>
+            <span className="rec-row">
+              <span>{t("recMandatoryOption1")}</span>
+              <button
+                className="rec-link"
+                onClick={() => jumpToCard("section-teachers")}
+              >
+                {t("recOpenTeachers")}
+              </button>
+            </span>
+          </li>
+          <li>
+            <span className="rec-row">
+              <span>
+                {rec.busiestTeacherName
+                  ? t("recMandatoryOption2Named", {
+                      teacher: rec.busiestTeacherName,
+                    })
+                  : t("recMandatoryOption2")}
+              </span>
+              <button
+                className="rec-link"
+                onClick={() =>
+                  jumpToCard(
+                    rec.busiestTeacherId
+                      ? `teacher-${rec.busiestTeacherId}`
+                      : "section-teachers"
+                  )
+                }
+              >
+                {rec.busiestTeacherName
+                  ? t("recEditTeacher", { teacher: rec.busiestTeacherName })
+                  : t("recOpenTeachers")}
+              </button>
+            </span>
+          </li>
+          <li>
+            <span className="rec-row">
+              <span>{t("recMandatoryOption3")}</span>
+              <button
+                className="rec-link"
+                onClick={() => jumpToCard("section-teachers")}
+              >
+                {t("recOpenTeachers")}
+              </button>
+            </span>
+          </li>
+          <li>
+            <span className="rec-row">
+              <span>{t("recMandatoryOption4")}</span>
+              <button
+                className="rec-link"
+                onClick={() => jumpToCard("section-trends")}
+              >
+                {t("recOpenTrends")}
+              </button>
+            </span>
+          </li>
+          <li>
+            <span className="rec-row">
+              <span>{t("recMandatoryOption5")}</span>
+              <button
+                className="rec-link"
+                onClick={() => jumpToCard("section-classes")}
+              >
+                {t("recOpenClasses")}
+              </button>
+            </span>
+          </li>
+          <li>
+            <span className="rec-row">
+              <span>{t("recMandatoryOption6")}</span>
+              <button
+                className="rec-link"
+                onClick={() => jumpToCard("section-teachers")}
+              >
+                {t("recOpenTeachers")}
+              </button>
+            </span>
+          </li>
+        </ol>
+      </div>
+    );
+  }
+  const trendAnchor = `trend-${rec.trendKey}`;
+  const classAnchor = `class-${rec.classId}`;
+  const missing = rec.targetHours - rec.totalHours;
+  const dailyMinutes = (rec.targetHours / rec.daysPerWeek) * 60;
+  const totalDailyMinutes = (rec.totalHours / rec.daysPerWeek) * 60;
+  const fmtMinutes = (m: number) =>
+    `${Math.floor(m / 60)}h ${Math.round(m % 60)}m`;
+  return (
+    <div className="card recommendation-card">
+      <div className="rec-header">
+        {t("recClassUnderfilledHeader", {
+          className: rec.className,
+          total: rec.totalHours,
+          target: rec.targetHours,
+          start: String(rec.startHour).padStart(2, "0"),
+          end: String(rec.endHour).padStart(2, "0"),
+        })}
+      </div>
+      <div className="rec-detail">
+        {t("recClassUnderfilledDetail", {
+          have: fmtMinutes(totalDailyMinutes),
+          need: fmtMinutes(dailyMinutes),
+          missing,
+        })}
+      </div>
+      <ol className="rec-options">
+        <li>
+          <span className="rec-row">
+            <span>
+              {t("recAddHoursToTrend", { trend: rec.trendLabel, missing })}
+            </span>
+            <button
+              className="rec-link"
+              onClick={() => jumpToCard(trendAnchor)}
+            >
+              {t("recEditTrend", { trend: rec.trendLabel })}
+            </button>
+          </span>
+        </li>
+        <li>
+          <span className="rec-row">
+            <span>{t("recShortenSchoolDay", { className: rec.className })}</span>
+            <button
+              className="rec-link"
+              onClick={() => jumpToCard(classAnchor)}
+            >
+              {t("recEditClass", { className: rec.className })}
+            </button>
+          </span>
+        </li>
+        <li>
+          <span className="rec-row">
+            <span>
+              {t("recLowerMandatoryRange", { className: rec.className })}
+            </span>
+            <button
+              className="rec-link"
+              onClick={() => jumpToCard(classAnchor)}
+            >
+              {t("recEditClass", { className: rec.className })}
+            </button>
+          </span>
+        </li>
+      </ol>
     </div>
   );
 }

@@ -100,11 +100,23 @@ export interface SchoolClass {
   subjects: ClassSubject[];
 }
 
+/** A trend within a grade. Stored independently of classes so a trend
+ *  survives when no class is currently assigned to it. The subjects here
+ *  are the source of truth — each class's `subjects` field is kept in
+ *  sync as a denormalized copy so the solver doesn't need a join. */
+export interface Trend {
+  grade: Grade;
+  /** Empty/undefined = the regular trend of the grade. */
+  trendName?: string;
+  subjects: ClassSubject[];
+}
+
 export interface SchoolInput {
   config: Config;
   rooms: Room[];
   teachers: Teacher[];
   classes: SchoolClass[];
+  trends: Trend[];
 }
 
 export interface TimetableCell {
@@ -151,6 +163,25 @@ export interface AssignedHomeroom {
   teacherName: string;
 }
 
+export type ScheduleRecommendation =
+  | {
+      kind: "classDayUnderfilled";
+      classId: string;
+      className: string;
+      trendKey: string;
+      trendLabel: string;
+      totalHours: number;
+      targetHours: number;
+      startHour: number;
+      endHour: number;
+      daysPerWeek: number;
+    }
+  | {
+      kind: "mandatoryOverflow";
+      busiestTeacherId?: string;
+      busiestTeacherName?: string;
+    };
+
 export interface SolveResult {
   success: boolean;
   error?: string;
@@ -161,5 +192,5 @@ export interface SolveResult {
   unusedTeachers?: TeacherRef[];
   dayOffSuggestions?: DayOffSuggestion[];
   assignedHomerooms?: AssignedHomeroom[];
-  warnings?: string[];
+  recommendations?: ScheduleRecommendation[];
 }

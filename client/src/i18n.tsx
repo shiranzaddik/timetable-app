@@ -176,11 +176,44 @@ const STRINGS = {
     trendHoursHint:
       "Default is the global school day (set at the top). Use a smaller window if this trend ends earlier than the rest.",
     gradeBadgePrefix: "Trend",
-    classesInGrade: "{n} classes",
-    fieldTrendSpecialization: "Trend specialization (optional)",
+    classesInTrend: "{n} classes in this trend",
+    fieldTrendSpecialization: "Trend",
     trendPlaceholder: "e.g. science, sport, computers",
     trendSpecializationHint:
-      "Leave empty for the regular trend. Classes that share the same grade + specialization share one subjects list.",
+      "Pick the trend this class belongs to. Classes that share a trend share one subjects list.",
+    trendAddNew: "+ New trend…",
+    errTrendNameRequired: "Enter a name for the new trend",
+
+    // recommendations
+    recommendationsHeading: "Recommendations",
+    recClassUnderfilledHeader:
+      "{className}: subjects don't fill the {start}:00–{end}:00 school day ({total}h / {target}h needed)",
+    recClassUnderfilledDetail:
+      "Currently averaging {have}/day vs the {need}/day needed. {missing}h missing per week.",
+    recAddHoursToTrend:
+      "Add {missing} more hours to Trend {trend}'s subjects.",
+    recShortenSchoolDay:
+      "Shorten {className}'s school day (raise start or lower end).",
+    recLowerMandatoryRange:
+      "Decrease the mandatory hours range for {className}.",
+    recEditTrend: "Edit Trend {trend}",
+    recEditClass: "Edit Class {className}",
+    recOpenTeachers: "Open Teachers",
+    recOpenTrends: "Open Trends",
+    recOpenClasses: "Open Classes",
+    recMandatoryOverflowHeader:
+      "Some mandatory subjects couldn't be scheduled. Try these in order:",
+    recMandatoryOption1: "Give existing teachers more subjects/grades.",
+    recMandatoryOption2: "Cancel a day off for the busiest teacher.",
+    recMandatoryOption2Named:
+      "Cancel a day off for the busiest teacher ({teacher}).",
+    recEditTeacher: "Edit {teacher}",
+    recMandatoryOption3: "Add more teachers.",
+    recMandatoryOption4: "Mark some subjects as optional.",
+    recMandatoryOption5:
+      "Decrease the mandatory hours range for the class (raise start or lower end on the affected class).",
+    recMandatoryOption6:
+      "Remove or relax some teachers' time-off windows so they can teach in more slots.",
     roomAutoLinked:
       "Auto-linked to {roomName}. Rename or change its type in the Rooms section.",
     errSelectTeacher: "Select a default teacher",
@@ -363,11 +396,42 @@ const STRINGS = {
     trendHoursHint:
       "ברירת המחדל היא יום הלימודים הכללי (למעלה). שנו אם המסלול הזה מסתיים מוקדם יותר משאר המסלולים.",
     gradeBadgePrefix: "מסלול",
-    classesInGrade: "{n} כיתות",
-    fieldTrendSpecialization: "התמחות במסלול (אופציונלי)",
+    classesInTrend: "{n} כיתות במסלול",
+    fieldTrendSpecialization: "מסלול",
     trendPlaceholder: "לדוגמה: מדעים, ספורט, מחשבים",
     trendSpecializationHint:
-      "השאירו ריק למסלול הרגיל. כיתות עם אותה שכבה + התמחות חולקות אותו ערך מקצועות.",
+      "בחרו את המסלול של הכיתה. כיתות באותו מסלול חולקות את אותם מקצועות.",
+    trendAddNew: "+ מסלול חדש…",
+    errTrendNameRequired: "יש להזין שם למסלול החדש",
+
+    recommendationsHeading: "המלצות",
+    recClassUnderfilledHeader:
+      "{className}: המקצועות לא ממלאים את יום הלימודים {start}:00–{end}:00 ({total} שעות מתוך {target} נדרשות)",
+    recClassUnderfilledDetail:
+      "ממוצע נוכחי {have} ביום מול {need} ביום נדרש. חסרות {missing} שעות בשבוע.",
+    recAddHoursToTrend:
+      "הוסיפו {missing} שעות נוספות למקצועות של מסלול {trend}.",
+    recShortenSchoolDay: "קצרו את יום הלימודים של {className} (הזיזו את ההתחלה או הסיום).",
+    recLowerMandatoryRange:
+      "הקטינו את טווח שעות החובה של {className}.",
+    recEditTrend: "עריכת מסלול {trend}",
+    recEditClass: "עריכת כיתה {className}",
+    recOpenTeachers: "פתח מורים",
+    recOpenTrends: "פתח מסלולים",
+    recOpenClasses: "פתח כיתות",
+    recMandatoryOverflowHeader:
+      "לא ניתן היה לשבץ את כל מקצועות החובה. נסו לפי הסדר:",
+    recMandatoryOption1: "תנו למורים הקיימים עוד מקצועות/שכבות.",
+    recMandatoryOption2: "בטלו יום חופש למורה העמוס ביותר.",
+    recMandatoryOption2Named:
+      "בטלו יום חופש למורה העמוס ביותר ({teacher}).",
+    recEditTeacher: "ערוך את {teacher}",
+    recMandatoryOption3: "הוסיפו מורים נוספים.",
+    recMandatoryOption4: "סמנו חלק מהמקצועות כלא-חובה.",
+    recMandatoryOption5:
+      "הקטינו את טווח שעות החובה של הכיתה (הזיזו את ההתחלה או הסיום של הכיתה הרלוונטית).",
+    recMandatoryOption6:
+      "הסירו או הקלו על חלונות זמן-חופש של מורים, כדי שיוכלו ללמד ביותר משבצות.",
     roomAutoLinked:
       "מקושר אוטומטית ל-{roomName}. אפשר לשנות שם או סוג בקטע 'חדרים'.",
     errSelectTeacher: "יש לבחור מחנך",

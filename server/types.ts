@@ -128,11 +128,23 @@ export interface SchoolClass {
   subjects: ClassSubject[];
 }
 
+/** A trend within a grade. Stored independently of classes so a trend
+ *  survives when no class is currently assigned to it. The subjects here
+ *  are the source of truth — each class's `subjects` field is kept in
+ *  sync as a denormalized copy so the solver doesn't need a join. */
+export interface Trend {
+  grade: Grade;
+  /** Empty/undefined = the regular trend of the grade. */
+  trendName?: string;
+  subjects: ClassSubject[];
+}
+
 export interface SchoolInput {
   config: Config;
   rooms: Room[];
   teachers: Teacher[];
   classes: SchoolClass[];
+  trends: Trend[];
 }
 
 export interface TimetableCell {
@@ -181,6 +193,38 @@ export interface AssignedHomeroom {
   teacherName: string;
 }
 
+/** A structured recommendation surfaced after a successful solve. */
+export type ScheduleRecommendation =
+  | {
+      kind: "classDayUnderfilled";
+      classId: string;
+      className: string;
+      /** "A" or "A:science" — same shape as the InputView trend key, so the
+       *  client can scroll to the matching trend card. */
+      trendKey: string;
+      /** Human-readable trend, e.g., "A" or "A · science". */
+      trendLabel: string;
+      /** Total hours/week summed across the trend's subjects. */
+      totalHours: number;
+      /** Hours needed to fill the class's minimum school day. */
+      targetHours: number;
+      /** Class minimum school day. */
+      startHour: number;
+      endHour: number;
+      /** Days in the configured week. */
+      daysPerWeek: number;
+    }
+  | {
+      /** Solver couldn't fit every mandatory subject — generic guidance.
+       *  If we managed to identify a "busiest" teacher (most assignments in
+       *  the partial schedule), their id/name is included so the client can
+       *  link option 2 ("cancel a day off for the busiest teacher") straight
+       *  to that teacher's edit form. */
+      kind: "mandatoryOverflow";
+      busiestTeacherId?: string;
+      busiestTeacherName?: string;
+    };
+
 export interface SolveResult {
   success: boolean;
   error?: string;
@@ -200,8 +244,8 @@ export interface SolveResult {
   /** Classes whose defaultTeacherId was null in the input — the solver
    *  picked a homeroom teacher for each based on subject coverage. */
   assignedHomerooms?: AssignedHomeroom[];
-  /** Free-text warnings / recommendations (e.g., "Class A1 has 12h but needs
-   *  25h to fill the school day"). Always returned alongside a timetable —
-   *  the schedule is never withheld from the user. */
-  warnings?: string[];
+  /** Structured recommendations (the client renders these with edit-links
+   *  back to the class/trend that triggered the issue). Always returned
+   *  alongside a timetable — the schedule is never withheld from the user. */
+  recommendations?: ScheduleRecommendation[];
 }

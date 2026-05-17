@@ -70,17 +70,16 @@ export default function GradeForm({
       <div className="form-row">
         <label>{t("fieldSubjectsHours")}</label>
         {subjects.map((row, i) => {
-          const isKnown = WELL_KNOWN_SUBJECTS.includes(row.subject);
           const isMandatory = row.mandatory ?? true;
+          // Subjects keep an editable name only while the row is still empty
+          // (i.e., the user just clicked "+ Add subject" and hasn't typed yet).
+          // Once a name is set — whether a built-in like "math" or a custom
+          // like "art" — show it as a read-only label so every row looks the
+          // same. To rename, delete the row and re-add it.
+          const isNew = row.subject.trim() === "";
           return (
             <div key={i} className="subject-hours-row mandatory-row">
-              {isKnown ? (
-                <span
-                  style={{ textTransform: "capitalize", fontSize: 13, alignSelf: "center" }}
-                >
-                  {tSubject(row.subject)}
-                </span>
-              ) : (
+              {isNew ? (
                 <input
                   type="text"
                   value={row.subject}
@@ -91,6 +90,16 @@ export default function GradeForm({
                     setSubjects(next);
                   }}
                 />
+              ) : (
+                <span
+                  style={{
+                    textTransform: "capitalize",
+                    fontSize: 13,
+                    alignSelf: "center",
+                  }}
+                >
+                  {tSubject(row.subject)}
+                </span>
               )}
               <input
                 type="number"

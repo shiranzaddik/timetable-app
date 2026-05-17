@@ -57,6 +57,14 @@ interface GridProps {
   mode: Mode;
 }
 
+/** Turn an "HH:MM" slot start into "HH:MM-HH+1:MM" — slots are always 1h. */
+function slotRangeLabel(start: string): string {
+  const [hStr, mStr = "00"] = start.split(":");
+  const h = Number.parseInt(hStr, 10);
+  const end = `${String(h + 1).padStart(2, "0")}:${mStr}`;
+  return `${start}-${end}`;
+}
+
 function GridTable({ input, grid, mode }: GridProps) {
   const { tDay, tSubject, tClassName } = useT();
   const { days, slotLabels } = input.config;
@@ -75,7 +83,7 @@ function GridTable({ input, grid, mode }: GridProps) {
         <tbody>
           {slotLabels.map((label, slotIdx) => (
             <tr key={slotIdx}>
-              <td className="slot-label">{label}</td>
+              <td className="slot-label">{slotRangeLabel(label)}</td>
               {days.map((_, dayIdx) => {
                 const cell = grid[dayIdx][slotIdx];
                 if (!cell)

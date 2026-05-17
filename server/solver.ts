@@ -575,8 +575,8 @@ function solveOnce(
     };
   };
 
-  // Hours warnings: each class needs as many subject hours as its own minimum.
-  const warnings: string[] = [];
+  // Hours recommendations: each class needs as many subject hours as its own minimum.
+  const recommendations: import("./types.js").ScheduleRecommendation[] = [];
   for (const c of rawInput.classes) {
     const { minSlots } = classSlotRange(c);
     const target = minSlots * daysCount;
@@ -584,9 +584,20 @@ function solveOnce(
     if (total < target) {
       const cStart = c.startHour ?? globalStartHour;
       const cEnd = c.endHour ?? globalEndHour;
-      warnings.push(
-        `${c.name} has ${total}h/week but its minimum school day ${cStart}:00–${cEnd}:00 needs ${target}h. Add hours to this trend's subjects, or shorten the minimum.`
-      );
+      const trendKey = c.trendName ? `${c.grade}:${c.trendName}` : `${c.grade}`;
+      const trendLabel = c.trendName ? `${c.grade} · ${c.trendName}` : `${c.grade}`;
+      recommendations.push({
+        kind: "classDayUnderfilled",
+        classId: c.id,
+        className: c.name,
+        trendKey,
+        trendLabel,
+        totalHours: total,
+        targetHours: target,
+        startHour: cStart,
+        endHour: cEnd,
+        daysPerWeek: daysCount,
+      });
     }
   }
 
@@ -683,12 +694,7 @@ function solveOnce(
     for (const block of orderedMandatory) {
       if (!greedyPlace(block, state, ctx)) droppedRaw.push(block);
     }
-    warnings.push(
-      "Couldn't fit every mandatory subject. Try one of these in order: " +
-        "(1) give existing teachers more subjects/grades, (2) cancel a day off " +
-        "for the busiest teacher, (3) add more teachers, " +
-        "(4) mark some subjects as optional."
-    );
+    recommendations.push({ kind: "mandatoryOverflow" });
   }
 
   // Phase 2: greedily add optional blocks on top.
@@ -712,13 +718,39 @@ function solveOnce(
   }
   const droppedBlocks = Object.values(droppedAgg);
 
+  // If we emitted a "mandatoryOverflow" recommendation, attach the busiest
+  // teacher (most assignments in the partial schedule) so the client can link
+  // option 2 ("cancel a day off") directly to that teacher's edit form.
+  const overflow = recommendations.find((r) => r.kind === "mandatoryOverflow");
+  if (overflow) {
+    const counts = new Map<string, number>();
+    for (const a of state.assignments) {
+      counts.set(a.teacherId, (counts.get(a.teacherId) ?? 0) + 1);
+    }
+    let busiestId: string | undefined;
+    let busiestCount = -1;
+    for (const [id, n] of counts) {
+      if (n > busiestCount) {
+        busiestCount = n;
+        busiestId = id;
+      }
+    }
+    if (busiestId) {
+      const teacher = teachers.find((t) => t.id === busiestId);
+      if (teacher) {
+        overflow.busiestTeacherId = teacher.id;
+        overflow.busiestTeacherName = teacher.name;
+      }
+    }
+  }
+
   return {
     success: true,
     timetables: buildOutput(input, state.assignments),
     blockCount: allBlocks.length - droppedRaw.length,
     droppedBlocks: droppedBlocks.length > 0 ? droppedBlocks : undefined,
     assignedHomerooms: assignedHomerooms.length > 0 ? assignedHomerooms : undefined,
-    warnings: warnings.length > 0 ? warnings : undefined,
+    recommendations: recommendations.length > 0 ? recommendations : undefined,
   };
 }
 
