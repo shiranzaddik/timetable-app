@@ -39,8 +39,10 @@ export interface Config {
   days: Day[];
   /** School day starting hour (24h), e.g., 8 for 08:00. */
   startHour: number;
-  /** School day ending hour (exclusive). */
+  /** Latest end hour across all days — the global cap. */
   endHour: number;
+  /** Per-day end-hour override. Empty/missing days use endHour. */
+  endHourByDay?: Partial<Record<Day, number>>;
   /** Derived from startHour/endHour. */
   slotLabels: string[];
 }

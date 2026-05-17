@@ -41,8 +41,13 @@ export interface Config {
   days: Day[];
   /** School day starting hour (24h), e.g., 8 for 08:00. */
   startHour: number;
-  /** School day ending hour (exclusive), e.g., 13 means the last slot is 12:00→13:00. */
+  /** Global school day ending hour (exclusive) — the latest a class may go
+   *  on ANY day. e.g., 16 means slots 08:00–16:00 are allowed. */
   endHour: number;
+  /** Per-day end-hour override. When set for a day, that day cannot extend
+   *  past the given hour even if a class's subjects would otherwise need
+   *  more time. Days absent from this map use the global endHour. */
+  endHourByDay?: Partial<Record<Day, number>>;
   /** Hourly slot start times derived from startHour/endHour, e.g. ["08:00", "09:00", ...]. */
   slotLabels: string[];
 }

@@ -885,6 +885,47 @@ td.subj-bible     { background: #fefce8; }
   align-self: flex-end;
 }
 
+/* Per-day school-day overrides */
+.school-day-stat {
+  align-self: stretch;
+}
+.school-day-toggle {
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+.per-day-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 6px;
+}
+.per-day-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+.per-day-label {
+  min-width: 56px;
+}
+.per-day-field input {
+  width: 44px;
+  padding: 2px 4px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+.per-day-suffix {
+  color: var(--text-dim);
+}
+
 /* Recommendations */
 .recommendation-card {
   display: flex;

@@ -605,11 +605,13 @@ function SchoolDayStat({
   input: SchoolInput;
   onChange: (next: SchoolInput) => void;
 }) {
-  const { t } = useT();
+  const { t, tDay } = useT();
+  const [expanded, setExpanded] = useState(false);
   const startHour = input.config.startHour ?? 8;
   const endHour = input.config.endHour ?? startHour + input.config.slotLabels.length;
+  const endByDay = input.config.endHourByDay ?? {};
 
-  const update = (nextStart: number, nextEnd: number) => {
+  const updateStartEnd = (nextStart: number, nextEnd: number) => {
     if (nextEnd <= nextStart) return;
     if (nextStart < 0 || nextEnd > 24) return;
     onChange({
@@ -623,16 +625,25 @@ function SchoolDayStat({
     });
   };
 
+  const updateDayEnd = (day: Day, nextEnd: number) => {
+    if (nextEnd <= startHour || nextEnd > endHour) return;
+    const next = { ...endByDay, [day]: nextEnd };
+    onChange({
+      ...input,
+      config: { ...input.config, endHourByDay: next },
+    });
+  };
+
   return (
-    <div className="stat">
-      <div className="stat-label">{t("statSchoolDay")}</div>
+    <div className="stat school-day-stat">
+      <div className="stat-label">{t("statSchoolDayMax")}</div>
       <div className="school-day-inputs">
         <input
           type="number"
           min={0}
           max={23}
           value={startHour}
-          onChange={(e) => update(Number(e.target.value), endHour)}
+          onChange={(e) => updateStartEnd(Number(e.target.value), endHour)}
           aria-label="start hour"
         />
         <span>→</span>
@@ -641,10 +652,37 @@ function SchoolDayStat({
           min={1}
           max={24}
           value={endHour}
-          onChange={(e) => update(startHour, Number(e.target.value))}
+          onChange={(e) => updateStartEnd(startHour, Number(e.target.value))}
           aria-label="end hour"
         />
+        <button
+          type="button"
+          className="secondary school-day-toggle"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? t("perDayHide") : t("perDayShow")}
+        </button>
       </div>
+      {expanded && (
+        <div className="per-day-grid">
+          {input.config.days.map((d) => {
+            const v = endByDay[d] ?? endHour;
+            return (
+              <label key={d} className="per-day-field">
+                <span className="per-day-label">{tDay(d)}</span>
+                <input
+                  type="number"
+                  min={startHour + 1}
+                  max={endHour}
+                  value={v}
+                  onChange={(e) => updateDayEnd(d, Number(e.target.value))}
+                />
+                <span className="per-day-suffix">:00</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

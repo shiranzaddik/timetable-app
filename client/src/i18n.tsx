@@ -37,6 +37,9 @@ const STRINGS = {
     statDays: "Days",
     statSlots: "Hourly slots / day",
     statSchoolDay: "School day",
+    statSchoolDayMax: "School day (max)",
+    perDayShow: "Per-day…",
+    perDayHide: "Done",
 
     // sections
     teachersSection: "Teachers",
@@ -265,6 +268,9 @@ const STRINGS = {
     statDays: "ימים",
     statSlots: "משבצות בשעה ביום",
     statSchoolDay: "יום לימודים",
+    statSchoolDayMax: "יום לימודים (מקסימום)",
+    perDayShow: "לכל יום…",
+    perDayHide: "סיום",
 
     teachersSection: "מורים",
     classesSection: "כיתות",

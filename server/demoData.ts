@@ -36,6 +36,14 @@ export const config: Config = {
   days: [Day.Sunday, Day.Monday, Day.Tuesday, Day.Wednesday, Day.Thursday],
   startHour: DEFAULT_START_HOUR,
   endHour: DEFAULT_END_HOUR,
+  // Different weekdays end at different times — Thursday short, Tuesday long.
+  endHourByDay: {
+    [Day.Sunday]: 15,
+    [Day.Monday]: 14,
+    [Day.Tuesday]: 16,
+    [Day.Wednesday]: 15,
+    [Day.Thursday]: 13,
+  },
   slotLabels: makeSlotLabels(DEFAULT_START_HOUR, DEFAULT_END_HOUR),
 };
 
@@ -232,16 +240,17 @@ const longerSubjects: ClassSubject[] = [
   { subject: "bible", hoursPerWeek: 3 },
 ];
 
-// Grade B extended trend — 35h, extends to ~15:00.
+// Grade B extended trend — 33h, fits inside the weekly per-day cap sum
+// (Sun 7 + Mon 6 + Tue 8 + Wed 7 + Thu 5 = 33 slots).
 const extendedSubjects: ClassSubject[] = [
   { subject: Subject.Math, hoursPerWeek: 6 },
-  { subject: Subject.Hebrew, hoursPerWeek: 6 },
+  { subject: Subject.Hebrew, hoursPerWeek: 5 },
   { subject: Subject.English, hoursPerWeek: 5 },
   { subject: Subject.Science, hoursPerWeek: 4 },
   { subject: Subject.Sport, hoursPerWeek: 1 },
   { subject: Subject.Music, hoursPerWeek: 1 },
   { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 3 },
+  { subject: "art", hoursPerWeek: 2 },
   { subject: "history", hoursPerWeek: 2 },
   { subject: "geography", hoursPerWeek: 2 },
   { subject: "bible", hoursPerWeek: 4 },

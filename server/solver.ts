@@ -77,8 +77,10 @@ interface SolveState {
   classDayMin: Record<string, number[]>;
   classDayMax: Record<string, number[]>;
   /** [classId] → permissible slot range. The first slot index the class may
-   *  use is `startSlot`; the last (inclusive) is `startSlot + slotCount - 1`. */
-  classSlotRange: Record<string, { startSlot: number; slotCount: number }>;
+   *  use is `startSlot`; `slotsByDay[d]` is the (non-inclusive) end slot for
+   *  day d, accounting for both the class's own endHour minimum and the
+   *  global per-day endHour cap. */
+  classSlotRange: Record<string, { startSlot: number; slotsByDay: number[] }>;
 }
 
 interface SolveContext {
@@ -230,13 +232,25 @@ function orderBlocks(
   });
 }
 
-/** Distribute total weekly hours across days, biggest-first, each day ≥ 1. */
-function buildDayQuotas(totalHours: number, dayCount: number): number[] {
-  if (dayCount === 0) return [];
-  const base = Math.floor(totalHours / dayCount);
-  const extra = totalHours % dayCount;
-  // Days with the extra hour come first so totals like 19 over 5 days → [4,4,4,4,3].
-  return Array.from({ length: dayCount }, (_, i) => base + (i < extra ? 1 : 0));
+/** Water-fill `total` hours across days, capping each at `caps[d]`. Each day
+ *  takes one hour per pass until either total is exhausted or all days are
+ *  full. Used when days have different max-end hours, so even distribution
+ *  can't apply uniformly. */
+function distributeWithCaps(total: number, caps: number[]): number[] {
+  const quotas = caps.map(() => 0);
+  let remaining = total;
+  while (remaining > 0) {
+    let assigned = 0;
+    for (let i = 0; i < caps.length && remaining > 0; i++) {
+      if (quotas[i] < caps[i]) {
+        quotas[i]++;
+        remaining--;
+        assigned++;
+      }
+    }
+    if (assigned === 0) break; // all days at cap
+  }
+  return quotas;
 }
 
 /** True if placing `[start, start+duration)` keeps the class's day contiguous.
@@ -271,11 +285,11 @@ function canPlace(
   requireMorningStart: boolean
 ): boolean {
   if (state.classDayHoursLeft[block.classId][day] < block.duration) return false;
-  // Respect this class's own school-day window.
+  // Respect this class's own school-day window AND the global per-day cap.
   const range = state.classSlotRange[block.classId];
   if (
     startSlot < range.startSlot ||
-    startSlot + block.duration > range.startSlot + range.slotCount
+    startSlot + block.duration > range.startSlot + range.slotsByDay[day]
   )
     return false;
   if (
@@ -558,20 +572,29 @@ function solveOnce(
   const globalEndHour =
     rawInput.config.endHour ?? globalStartHour + slotsPerDay;
 
-  /** Per-class slot bounds. `minSlots` is the school day the user committed
-   *  to (used to warn when subjects can't fill it). `maxSlots` is the global
-   *  upper bound the day may extend to if there are more subject hours than
-   *  the minimum requires. */
+  /** Per-class slot bounds. `minSlots` is the per-day minimum the user
+   *  committed to. `slotsByDay` is the per-day max — the smaller of the
+   *  class's max (slotsPerDay - start) and any global per-day endHour cap. */
   const classSlotRange = (
     c: SchoolClass
-  ): { start: number; minSlots: number; maxSlots: number } => {
+  ): {
+    start: number;
+    minSlots: number;
+    slotsByDay: number[];
+  } => {
     const cStart = c.startHour ?? globalStartHour;
     const cEnd = c.endHour ?? globalEndHour;
     const start = cStart - globalStartHour;
+    const classMaxSlots = Math.max(0, slotsPerDay - start);
+    const dayCaps = rawInput.config.days.map((d) => {
+      const dayEnd = rawInput.config.endHourByDay?.[d] ?? globalEndHour;
+      return Math.max(0, dayEnd - cStart);
+    });
+    const slotsByDay = dayCaps.map((dc) => Math.min(classMaxSlots, dc));
     return {
       start,
       minSlots: Math.max(0, cEnd - cStart),
-      maxSlots: Math.max(0, slotsPerDay - start),
+      slotsByDay,
     };
   };
 
@@ -635,12 +658,10 @@ function solveOnce(
   const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
     classes.map((c) => {
       const total = c.subjects.reduce((sum, s) => sum + s.hoursPerWeek, 0);
-      // Cap per-day quota at the class's MAX slot count (global), so the day
-      // may extend beyond the minimum if there are more subject hours.
-      const { maxSlots } = classSlotRange(c);
-      const quotas = buildDayQuotas(total, days).map((q) =>
-        Math.min(q, maxSlots)
-      );
+      const { slotsByDay } = classSlotRange(c);
+      // Distribute total hours across days, capped per-day by slotsByDay so
+      // days with an earlier endHour don't get over-allocated.
+      const quotas = distributeWithCaps(total, slotsByDay);
       return [c.id, quotas];
     })
   );
@@ -667,7 +688,7 @@ function solveOnce(
     classSlotRange: Object.fromEntries(
       classes.map((c) => {
         const r = classSlotRange(c);
-        return [c.id, { startSlot: r.start, slotCount: r.maxSlots }];
+        return [c.id, { startSlot: r.start, slotsByDay: r.slotsByDay }];
       })
     ),
   };
