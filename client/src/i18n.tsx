@@ -73,6 +73,8 @@ const STRINGS = {
     sortByName: "Name",
     sortBySubject: "Subject",
     sortByGrade: "Grade",
+    teacherSearchPlaceholder: "Search name, subject, grade…",
+    teacherSearchEmpty: "No teachers match your search.",
     addTeacher: "+ Add teacher",
     addClass: "+ Add class",
     addTeacherFirst: "Add at least one teacher first",
@@ -234,6 +236,12 @@ const STRINGS = {
     generated: "Generated Timetable",
     byClass: "By class",
     byTeacher: "By teacher",
+    print: "Print / PDF",
+    printHint: "Use your browser's print dialog to save as PDF or send to a printer.",
+    editingClickFirst: "Click any cell to start a swap.",
+    editingClickSecond:
+      "Now click the cell you want to swap with (or click the same cell again to cancel).",
+    cellConflict: "Conflict",
 
     // login
     loginTagline:
@@ -307,6 +315,8 @@ const STRINGS = {
     sortByName: "שם",
     sortBySubject: "מקצוע",
     sortByGrade: "שכבה",
+    teacherSearchPlaceholder: "חיפוש לפי שם, מקצוע או שכבה…",
+    teacherSearchEmpty: "אין מורים שתואמים לחיפוש.",
     addTeacher: "+ הוסף מורה",
     addClass: "+ הוסף כיתה",
     addTeacherFirst: "יש להוסיף לפחות מורה אחד תחילה",
@@ -457,6 +467,12 @@ const STRINGS = {
     generated: "מערכת השעות שנוצרה",
     byClass: "לפי כיתה",
     byTeacher: "לפי מורה",
+    print: "הדפס / PDF",
+    printHint: "השתמשו בחלון ההדפסה של הדפדפן כדי לשמור כ-PDF או להדפיס.",
+    editingClickFirst: "לחצו על תא כדי להתחיל החלפה.",
+    editingClickSecond:
+      "כעת לחצו על התא שאליו תרצו להחליף (או לחצו שוב על אותו תא לביטול).",
+    cellConflict: "התנגשות",
 
     loginTagline:
       "צרו מערכת שעות שבועית ללא התנגשויות, עבור כל כיתה וכל מורה, תוך שניות.",

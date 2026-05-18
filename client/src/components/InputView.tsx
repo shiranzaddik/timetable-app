@@ -27,6 +27,7 @@ export default function InputView({ input, onChange }: Props) {
   const [teacherSort, setTeacherSort] = useState<"name" | "subject" | "grade">(
     "name"
   );
+  const [teacherQuery, setTeacherQuery] = useState("");
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
@@ -235,6 +236,13 @@ export default function InputView({ input, onChange }: Props) {
             </div>
           </div>
           <div className="section-actions">
+            <input
+              type="search"
+              className="teacher-search"
+              placeholder={t("teacherSearchPlaceholder")}
+              value={teacherQuery}
+              onChange={(e) => setTeacherQuery(e.target.value)}
+            />
             <label className="sort-control">
               <span>{t("sortBy")}</span>
               <select
@@ -271,35 +279,46 @@ export default function InputView({ input, onChange }: Props) {
           </div>
         )}
 
-        {teacherSort === "name" ? (
-          <div className="card-grid">
-            {sortedByName(input.teachers).map((teacher) =>
-              editingTeacherId === teacher.id ? (
-                <TeacherForm
-                  key={teacher.id}
-                  initial={teacher}
-                  onSave={updateTeacher}
-                  onCancel={() => setEditingTeacherId(null)}
-                  existingIds={input.teachers.map((x) => x.id)}
-                  availableTrends={availableTrends}
-                />
-              ) : (
-                <TeacherCard
-                  key={teacher.id}
-                  teacher={teacher}
-                  onEdit={() => setEditingTeacherId(teacher.id)}
-                  onDelete={() => removeTeacher(teacher.id)}
-                />
-              )
-            )}
-          </div>
-        ) : (
-          groupTeachersBy(
+        {(() => {
+          const filteredTeachers = filterTeachers(
             input.teachers,
-            teacherSort,
-            tSubject,
-            t("grades")
-          ).map(({ key, label, teachers }) => (
+            teacherQuery,
+            tSubject
+          );
+          if (filteredTeachers.length === 0 && teacherQuery.trim()) {
+            return (
+              <div className="empty-state">{t("teacherSearchEmpty")}</div>
+            );
+          }
+          return teacherSort === "name" ? (
+            <div className="card-grid">
+              {sortedByName(filteredTeachers).map((teacher) =>
+                editingTeacherId === teacher.id ? (
+                  <TeacherForm
+                    key={teacher.id}
+                    initial={teacher}
+                    onSave={updateTeacher}
+                    onCancel={() => setEditingTeacherId(null)}
+                    existingIds={input.teachers.map((x) => x.id)}
+                    availableTrends={availableTrends}
+                  />
+                ) : (
+                  <TeacherCard
+                    key={teacher.id}
+                    teacher={teacher}
+                    onEdit={() => setEditingTeacherId(teacher.id)}
+                    onDelete={() => removeTeacher(teacher.id)}
+                  />
+                )
+              )}
+            </div>
+          ) : (
+            groupTeachersBy(
+              filteredTeachers,
+              teacherSort,
+              tSubject,
+              t("grades")
+            ).map(({ key, label, teachers }) => (
             <div key={key} className="teacher-group">
               <h4 className="teacher-group-title">{label}</h4>
               <div className="card-grid">
@@ -324,8 +343,9 @@ export default function InputView({ input, onChange }: Props) {
                 )}
               </div>
             </div>
-          ))
-        )}
+            ))
+          );
+        })()}
       </div>
 
       {/* TRENDS (subjects per grade + specialization) */}
@@ -711,6 +731,28 @@ function formatWindow(
 
 function sortedByName(teachers: Teacher[]): Teacher[] {
   return [...teachers].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Case-insensitive substring match against name, subjects (raw + translated),
+ *  and grades. Empty query returns the list unchanged. */
+function filterTeachers(
+  teachers: Teacher[],
+  query: string,
+  tSubject: (s: string) => string
+): Teacher[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return teachers;
+  return teachers.filter((teacher) => {
+    if (teacher.name.toLowerCase().includes(q)) return true;
+    for (const s of teacher.subjects) {
+      if (s.toLowerCase().includes(q)) return true;
+      if (tSubject(s).toLowerCase().includes(q)) return true;
+    }
+    for (const g of teacher.grades) {
+      if (g.toLowerCase().includes(q)) return true;
+    }
+    return false;
+  });
 }
 
 /** Build subject- or grade-grouped views for the teachers section.

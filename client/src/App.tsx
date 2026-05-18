@@ -380,7 +380,7 @@ export default function App() {
       )}
 
       {result?.success && (
-        <div className="section">
+        <div className="section section-timetable">
           <div className="section-header">
             <div>
               <h3 className="section-title">{t("generated")}</h3>
@@ -388,6 +388,13 @@ export default function App() {
                 {result.blockCount} · {result.elapsedMs} ms
               </div>
             </div>
+            <button
+              className="secondary print-btn"
+              onClick={() => window.print()}
+              title={t("printHint")}
+            >
+              {t("print")}
+            </button>
           </div>
           <div className="tabs">
             <button
@@ -403,7 +410,12 @@ export default function App() {
               {t("byTeacher")}
             </button>
           </div>
-          <TimetableView input={input} result={result} mode={view} />
+          <TimetableView
+            input={input}
+            result={result}
+            mode={view}
+            onResultChange={setResult}
+          />
         </div>
       )}
     </div>
