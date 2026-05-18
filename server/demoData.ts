@@ -118,7 +118,7 @@ export const teachers: Teacher[] = [
     name: "Ms. Mira",
     subjects: [Subject.Music],
     grades: allGrades,
-    dayOff: Day.Wednesday,
+    dayOff: Day.Sunday,
     unavailable: [],
   },
   {
