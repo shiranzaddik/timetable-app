@@ -210,7 +210,8 @@ function orderBlocks(
   blocks: Block[],
   classesById: Record<string, SchoolClass>,
   teachers: Teacher[],
-  classOrder?: string[]
+  classOrder?: string[],
+  rng: () => number = () => 0
 ): Block[] {
   const innerScore = (block: Block): number => {
     const cls = classesById[block.classId];
@@ -219,6 +220,10 @@ function orderBlocks(
     if (block.requiredRoomType) s += 1000; // specials last
     s -= block.duration * 100; // longer first
     s += ts.length * 10; // tight teacher options first
+    // Tiny random tiebreaker so consecutive Generate clicks (each with its own
+    // seeded RNG) can produce different schedules even when the core score
+    // would be identical.
+    s += rng();
     return s;
   };
   const classRank = classOrder
@@ -231,6 +236,19 @@ function orderBlocks(
     }
     return innerScore(a) - innerScore(b);
   });
+}
+
+/** Small fast PRNG (mulberry32) so the solver can be made deterministic per
+ *  call yet produce different results across calls when the seed changes. */
+function makeRng(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 /** Water-fill `total` hours across days, capping each at `caps[d]`. Each day
@@ -562,7 +580,8 @@ function solveOnce(
   rawInput: SchoolInput,
   classOrder?: string[],
   deadlineMs?: number,
-  requireMorningStart: boolean = false
+  requireMorningStart: boolean = false,
+  rng: () => number = () => 0
 ): SolveResult {
   const slotsPerDay = rawInput.config.slotLabels.length;
   const daysCount = rawInput.config.days.length;
@@ -647,13 +666,15 @@ function solveOnce(
     mandatoryBlocks,
     classesById,
     teachers,
-    classOrder
+    classOrder,
+    rng
   );
   const orderedOptional = orderBlocks(
     optionalBlocks,
     classesById,
     teachers,
-    classOrder
+    classOrder,
+    rng
   );
 
   const classDayHoursLeft: Record<string, number[]> = Object.fromEntries(
@@ -861,8 +882,14 @@ function morningStartScore(result: SolveResult, input: SchoolInput): number {
   return count;
 }
 
-/** Produce a set of class orderings to try. Each class gets a turn going first. */
-function classOrderingsToTry(classIds: string[]): string[][] {
+/** Produce a set of class orderings to try. Each class gets a turn going
+ *  first. When `rng` is provided the orderings list is shuffled and one
+ *  random permutation is prepended, so different seeds explore the search
+ *  space in a different order and tend to produce different schedules. */
+function classOrderingsToTry(
+  classIds: string[],
+  rng: () => number = () => 0
+): string[][] {
   const out: string[][] = [];
   const seen = new Set<string>();
   const add = (order: string[]) => {
@@ -871,6 +898,15 @@ function classOrderingsToTry(classIds: string[]): string[][] {
     seen.add(key);
     out.push(order);
   };
+  // Random permutation first so a fresh seed gets its own attempt right away.
+  if (rng !== (() => 0)) {
+    const shuffled = [...classIds];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    add(shuffled);
+  }
   add([...classIds]); // alphabetical baseline
   // Rotate each class to the front
   for (let i = 0; i < classIds.length; i++) {
@@ -879,6 +915,14 @@ function classOrderingsToTry(classIds: string[]): string[][] {
     add([first, ...arr]);
   }
   add([...classIds].reverse()); // reverse alphabetical
+  // Shuffle the remaining attempt order so re-clicks pick a different first
+  // success instead of always converging on the alphabetical one.
+  if (rng !== (() => 0) && out.length > 1) {
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+  }
   return out;
 }
 
@@ -897,13 +941,16 @@ function classOrderingsToTry(classIds: string[]): string[][] {
  * Each individual attempt has its own deadline so a slow search can't
  * monopolize the budget.
  */
-export function solve(input: SchoolInput): SolveResult {
+export function solve(input: SchoolInput, seed?: number): SolveResult {
   const classIds = input.classes.map((c) => c.id);
+  // Seed defaults to 0 (no randomness), so callers that don't pass one keep
+  // the old deterministic behavior.
+  const rng = seed && seed > 0 ? makeRng(seed) : (() => 0);
   if (classIds.length === 0) {
     return solveOnce(input);
   }
 
-  const orderings = classOrderingsToTry(classIds);
+  const orderings = classOrderingsToTry(classIds, rng);
   const totalBudgetMs = 8000;
   const perAttemptMs = 1000;
   const startedAt = Date.now();
@@ -921,7 +968,13 @@ export function solve(input: SchoolInput): SolveResult {
       const remaining = phaseDeadline - Date.now();
       const attemptBudget = Math.min(perAttemptMs, remaining);
       if (attemptBudget < 50) break;
-      const result = solveOnce(input, ordering, Date.now() + attemptBudget, require);
+      const result = solveOnce(
+        input,
+        ordering,
+        Date.now() + attemptBudget,
+        require,
+        rng
+      );
       if (!result.success) continue;
       if (!firstSuccess) firstSuccess = result;
       // Higher score = more blocks placed + more morning starts.

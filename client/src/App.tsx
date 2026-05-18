@@ -110,7 +110,10 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api<SolveResult>("/api/solve", {
+      // Fresh seed per click so re-clicking Generate explores a different
+      // variant of the schedule (good for the snapshot/compare flow).
+      const seed = Math.floor(Math.random() * 0x7fffffff) + 1;
+      const data = await api<SolveResult>(`/api/solve?seed=${seed}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),

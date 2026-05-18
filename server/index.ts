@@ -127,9 +127,13 @@ app.post("/api/solve", requireAuth, (req: Request, res: Response) => {
   const body = req.body as Partial<SchoolInput> | undefined;
   const input: SchoolInput =
     body && Object.keys(body).length > 0 ? (body as SchoolInput) : demoInput;
+  // Optional seed query param lets the client request a different variant of
+  // a schedule on each Generate click. Missing/zero/negative = deterministic.
+  const rawSeed = Number(req.query.seed);
+  const seed = Number.isFinite(rawSeed) && rawSeed > 0 ? rawSeed : undefined;
   try {
     const start = Date.now();
-    const result = solve(input);
+    const result = solve(input, seed);
     res.json({ ...result, elapsedMs: Date.now() - start });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
