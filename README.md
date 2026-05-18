@@ -20,6 +20,8 @@ React + Node.js app that generates a weekly school timetable from a description 
 - **Solver** (backtracking with greedy fallback)
   - Two-pass strategy: first tries every class day starting at slot 0; falls back to best-effort if no all-morning solution exists.
   - Multiple class orderings tried within an 8-second budget.
+  - **Seeded randomization** — each Generate click sends a fresh seed, so re-clicking explores a different ordering of class permutations and produces a different valid schedule.
+  - **Per-subject block size** — each subject in a trend has a 1h or 2h consecutive-block setting (e.g. math in 2-hour pairs, music in single hours).
   - Returns a partial schedule + structured **recommendations** when something doesn't fit (e.g. "class A1 underfilled → edit Trend A or shorten the school day"). Each recommendation includes deep-links to the relevant trend/class/teacher.
   - Auto-assigns a homeroom teacher to classes that don't specify one.
 - **UI**
@@ -28,7 +30,8 @@ React + Node.js app that generates a weekly school timetable from a description 
   - **Per-day school-day** editor — set a different max end hour per weekday.
   - Generated timetable in two views (by class / by teacher).
   - **Click-to-swap manual editing** in the by-class view, with automatic conflict detection (red outline + "Conflict" badge when a teacher/room ends up double-booked).
-  - **Print / PDF** button — uses a media-print stylesheet so only the timetable hits the page.
+  - **Snapshots + Compare** — save the current schedule as a named snapshot, then open a side-by-side compare view that highlights every cell that differs between two snapshots.
+  - **Print** — two buttons in the timetable header: *Print current* (selected class only) and *Print all classes* (one page per class). A media-print stylesheet hides the editor chrome.
   - English + Hebrew (RTL) UI, switchable at runtime.
 - **Auth & persistence** (optional, off-by-default)
   - Google OAuth sign-in. When enabled, each user's school config auto-saves to Postgres.
@@ -71,14 +74,14 @@ timetable-app/
 
 ### Solver (`server/solver.ts`)
 
-The solver is a single ~970-line file with a backtracking search at its core.
+The solver is a single ~1000-line file with a backtracking search at its core.
 
-1. **Block building** (`buildBlocks`): each class's `subjects[]` is expanded into atomic `Block`s. Most subjects use 2-hour blocks (so a 5h subject becomes `[2, 2, 1]`); Sport and Music use 1-hour blocks. Each block records whether it's mandatory and what (if any) special room it requires.
+1. **Block building** (`buildBlocks`): each class's `subjects[]` is expanded into atomic `Block`s using `subject.blockSize ?? legacyDefault` (legacy default = 1h for sport/music, 2h for everything else). A 5h math subject with blockSize 2 becomes `[2, 2, 1]`; with blockSize 1 it becomes `[1, 1, 1, 1, 1]`. Each block records whether it's mandatory and what (if any) special room it requires.
 2. **Per-class slot range** (`classSlotRange`): for each class, computes the range of allowed slots per day — `slotsByDay[d] = min(classMaxFromEndHour, globalEndHourByDay[d] - startHour)`. This is what enforces the **per-day school-day cap**.
 3. **State** (`SolveState`): bitmaps for teacher / class / room busy status, per-day hours-left quotas, per-class first/last used slot (for the contiguous-day constraint), and the slot-range data above.
 4. **Search** (`search`): standard backtracking. At each step it picks the next ordered block, iterates eligible (day, slot, teacher) candidates filtered by `canPlace`, places it (`commit`), recurses, undoes on failure (`uncommit`).
 5. **Greedy fallback**: if the backtracking exhausts without success, blocks are placed greedily; anything that couldn't be placed becomes a `droppedBlock` and triggers a `mandatoryOverflow` recommendation that names the busiest teacher.
-6. **Public entry** (`solve`): tries `classOrderingsToTry` permutations, first in **morning-start required** mode (60% of budget), then **best-effort** mode. Returns the highest-scoring result it found.
+6. **Public entry** (`solve(input, seed?)`): when a seed is provided, a mulberry32 PRNG drives two randomization points so re-runs produce different schedules — (a) `classOrderingsToTry` prepends a random class permutation and shuffles the rest of the attempt list, and (b) `orderBlocks` adds a tiny random tiebreaker to the inner score so equal-priority blocks resolve in a different order. Without a seed, behavior is fully deterministic. The function tries the orderings first in **morning-start required** mode (60% of budget), then **best-effort** mode, and returns the highest-scoring result.
 7. **Enrichment**: after a success, computes `unusedTeachers`, probes `findDayOffSuggestions` (mini-runs that move a teacher's day off to see if it lets more blocks fit), and packages all of this into `SolveResult`.
 
 ### Types (`server/types.ts` / `client/src/types.ts`)
@@ -88,6 +91,7 @@ Two parallel files; the client mirrors the server so JSON crosses the wire clean
 - `Config` — `days[]`, `startHour`, `endHour` (global max), `endHourByDay?` (per-day overrides), `slotLabels[]`.
 - `Teacher` — `subjects[]`, `grades[]` (fallback), `gradesPerSubject?`, `trendsPerSubject?` (per-subject trend restrictions), `unavailable[]` (typed "can't" / "prefer-not" windows), `canBeDefault?`.
 - `SchoolClass` — `grade`, `section`, `trendName?`, per-class `startHour?`/`endHour?` (the class minimum), `defaultTeacherId`, `defaultRoomId`, `subjects[]` (kept in sync with the trend's subjects).
+- `ClassSubject` — `subject`, `hoursPerWeek`, `mandatory?`, `blockSize?` (1 or 2 — controls how the solver chunks the weekly hours).
 - `Trend` — `{ grade, trendName?, subjects[] }`. Stored on `SchoolInput.trends` so a trend survives even when no class is currently assigned to it.
 - `ScheduleRecommendation` — discriminated union: `classDayUnderfilled` (per-class hours hint with `trendKey`, `classId`, etc.) and `mandatoryOverflow` (generic guidance with `busiestTeacherId` so the UI can deep-link).
 - `SolveResult` — `success`, `timetables.byClass` / `.byTeacher` (both populated), `droppedBlocks?`, `unusedTeachers?`, `dayOffSuggestions?`, `assignedHomerooms?`, `recommendations?`.
@@ -99,25 +103,27 @@ Two parallel files; the client mirrors the server so JSON crosses the wire clean
 - `POST /api/auth/logout` — clears the cookie.
 - `GET /api/school` / `PUT /api/school` / `DELETE /api/school` — per-user persisted school config (Postgres, when configured).
 - `GET /api/demo` — returns `demoInput`.
-- `POST /api/solve` — runs `solve(input)` and returns `SolveResult` + `elapsedMs`. The body can be empty to run the demo.
+- `POST /api/solve?seed=N` — runs `solve(input, seed)` and returns `SolveResult` + `elapsedMs`. The body can be empty to run the demo. Without a seed (or `seed=0`) the solver is deterministic; with a positive seed it randomizes class-ordering attempts and block tiebreakers so different seeds produce different valid schedules.
 
 In production the server also serves the built React bundle from `client/dist/`.
 
 ### Client (`client/src/`)
 
-- **`App.tsx`** owns the top-level `input: SchoolInput` and `result: SolveResult` state. Handles the auth-check flow, debounced auto-save (1s after the last edit), the demo / clear / sign-out toolbar, the **Recommendations** card list, and the print / generated-timetable section. The `jumpToCard` helper drives recommendation deep-links — it scrolls a matching `id="trend-A"` / `id="class-A1"` / `id="teacher-t-cohen"` into view, flashes the card, and synthesizes a click on its `.edit-trigger` ✎ button.
+- **`App.tsx`** owns the top-level `input: SchoolInput` and `result: SolveResult` state, plus the in-memory `snapshots[]` list and the current `compareIds` selection. Handles the auth-check flow, debounced auto-save (1s after the last edit), the demo / clear / sign-out toolbar, the **Recommendations** card list, the print / save-snapshot / generated-timetable section, the **Snapshots** list, and the side-by-side **Compare** view. The `jumpToCard` helper drives recommendation deep-links — it scrolls a matching `id="trend-A"` / `id="class-A1"` / `id="teacher-t-cohen"` into view, flashes the card, and synthesizes a click on its `.edit-trigger` ✎ button. `printAllClasses()` toggles a `body.print-mode-all` class so the @media print CSS swaps the interactive grid for a hidden one-per-class block with `page-break-after`. `runSolver()` mints a fresh `Math.random()` seed each click and passes it on the `/api/solve?seed=N` URL.
 - **`InputView.tsx`** renders the **Teachers**, **Trends**, and **Classes** sections. Teachers section has a search input + sort dropdown that work together (filter first, then sort/group). Trends are derived from `input.trends` (with a fallback that recovers them from classes for legacy data). Editing a trend's subjects mirrors the change down to every class in that trend.
-- **`TimetableView.tsx`** renders the generated grid. In by-class mode every cell is clickable: the first click marks a "pending" cell, the second swaps. After the swap the `byTeacher` grid is rebuilt from `byClass`, then `computeConflicts` flags any (teacher, day, slot) or (room, day, slot) that's now used by more than one class. Conflicting cells get a red outline + "Conflict" badge but are still rendered — manual edits aren't blocked.
+- **`GradeForm.tsx`** edits a single trend's subjects. Each row exposes the subject name (read-only once set), hours/week, **block size** (1h or 2h), and the **mandatory** checkbox. The block-size select falls back to the legacy default for the subject when the value is undefined.
+- **`TimetableView.tsx`** renders the generated grid. In by-class mode every cell is clickable: the first click marks a "pending" cell, the second swaps. After the swap the `byTeacher` grid is rebuilt from `byClass`, then `computeConflicts` flags any (teacher, day, slot) or (room, day, slot) that's now used by more than one class. Conflicting cells get a red outline + "Conflict" badge but are still rendered — manual edits aren't blocked. The component also renders a hidden one-per-class block (`.print-all-classes`) that the print stylesheet surfaces when "Print all classes" is used.
 - **`i18n.tsx`** is a tiny React context with `t(key, vars)`, `tDay`, `tSubject`, and `tClassName`. Switching language flips `document.documentElement.dir` for RTL Hebrew.
 
 ### Demo data (`server/demoData.ts`)
 
 An elementary school: 4 grades (1st–4th), 17 teachers, 6 trends, 8 classes. The demo intentionally has:
-- A non-uniform week — Sunday 8–15, Monday 8–14, Tuesday 8–16, Wednesday 8–15, Thursday 8–13.
+- A non-uniform week — global day 08:00–16:00, per-day overrides: Sunday 15, Monday 14, Tuesday 16, Wednesday 15, Thursday 13.
 - Different subject loads per grade (25h for 1st grade, up to 33h for the 4th-grade "music" trend), so different classes end at different hours.
 - Two specialty trends — Grade C science (extra science) and Grade D music (extra music).
+- Days off spread across the week so no single weekday is a teacher shortage.
 
-It solves cleanly with no dropped blocks and no recommendations, so the demo is always a "happy path" the user can mutate.
+It solves cleanly with no dropped blocks and no recommendations, so the demo is always a "happy path" the user can mutate. Because each Generate click now passes a fresh seed, re-running on the unmodified demo produces a different valid schedule each time — useful for trying out the Save snapshot → Compare flow.
 
 ## Run it locally
 
@@ -163,4 +169,4 @@ See [DEPLOY.md](DEPLOY.md) for one-click deployment to Render. The repo's `build
 | GET | `/api/school` | ✓ | — | `{ persisted, config }` |
 | PUT | `/api/school` | ✓ | `SchoolInput` | `{ ok: true }` |
 | DELETE | `/api/school` | ✓ | — | `{ ok: true }` |
-| POST | `/api/solve` | ✓ | `SchoolInput` (optional) | `SolveResult` |
+| POST | `/api/solve?seed=N` | ✓ | `SchoolInput` (optional) | `SolveResult` — seed is optional; omit for deterministic, pass a positive integer to vary the result |
