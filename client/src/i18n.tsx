@@ -161,6 +161,10 @@ const STRINGS = {
     subjectPlaceholder: "Subject name",
     mandatoryLabel: "Mandatory",
     mandatoryGradeNote: "Applies to every class in this grade.",
+    blockSizeLabel: "Block",
+    blockSizeHint:
+      "How many consecutive hours the solver schedules in one go. 2h = paired (e.g., a 5h subject becomes 2+2+1). 1h = each hour stands alone.",
+    blockSizeTooltip: "Block: {size}h",
     droppedHeading: "Subjects the solver couldn't schedule",
     droppedHint:
       "Mark them mandatory only if you add more teachers — otherwise they will keep being skipped.",
@@ -417,6 +421,10 @@ const STRINGS = {
     subjectPlaceholder: "שם המקצוע",
     mandatoryLabel: "חובה",
     mandatoryGradeNote: "החל על כל הכיתות בשכבה זו.",
+    blockSizeLabel: "בלוק",
+    blockSizeHint:
+      "כמה שעות רצופות הפותר משבץ בכל פעם. 2h = מזווג (לדוגמה, מקצוע 5 שעות מתפצל ל-2+2+1). 1h = כל שעה עומדת בנפרד.",
+    blockSizeTooltip: "בלוק: {size}h",
     droppedHeading: "מקצועות שלא ניתן היה לשבץ",
     droppedHint:
       "סמנו כחובה רק אם תוסיפו מורים נוספים — אחרת המקצועות הללו ימשיכו להידלג.",

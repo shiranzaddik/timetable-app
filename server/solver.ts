@@ -141,9 +141,10 @@ function buildBlocks(classes: SchoolClass[]): Block[] {
   const blocks: Block[] = [];
   let blockId = 0;
   for (const cls of classes) {
-    for (const { subject, hoursPerWeek, mandatory } of cls.subjects) {
-      const isOneHour = ONE_HOUR_SUBJECTS.has(subject);
-      const blockDuration = isOneHour ? 1 : 2;
+    for (const { subject, hoursPerWeek, mandatory, blockSize } of cls.subjects) {
+      // Per-subject blockSize overrides the legacy "sport+music = 1h, rest = 2h" rule.
+      const blockDuration =
+        blockSize ?? (ONE_HOUR_SUBJECTS.has(subject) ? 1 : 2);
       let remaining = hoursPerWeek;
       while (remaining > 0) {
         const duration = Math.min(blockDuration, remaining);

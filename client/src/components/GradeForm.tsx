@@ -17,6 +17,15 @@ interface Props {
 
 const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
 
+/** Mirror of the solver's legacy default. Sport and music are short-block
+ *  subjects; everything else is paired into 2-hour blocks. */
+const ONE_HOUR_SUBJECTS = new Set<string>([Subject.Sport, Subject.Music]);
+
+function effectiveBlockSize(row: ClassSubject): 1 | 2 {
+  if (row.blockSize === 1 || row.blockSize === 2) return row.blockSize;
+  return ONE_HOUR_SUBJECTS.has(row.subject) ? 1 : 2;
+}
+
 /** Default hours/week per subject — totals 25h so every class fills a 5-hour
  *  school day across 5 weekdays (08:00 → 13:00). The user can adjust. */
 const DEFAULT_HOURS: Record<string, number> = {
@@ -55,6 +64,7 @@ export default function GradeForm({
         subject: s.subject.trim().toLowerCase(),
         hoursPerWeek: s.hoursPerWeek,
         mandatory: s.mandatory ?? true,
+        blockSize: effectiveBlockSize(s),
       }))
       .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
@@ -114,6 +124,23 @@ export default function GradeForm({
                   setSubjects(next);
                 }}
               />
+              <label className="block-size-control" title={t("blockSizeHint")}>
+                <span>{t("blockSizeLabel")}</span>
+                <select
+                  value={effectiveBlockSize(row)}
+                  onChange={(e) => {
+                    const next = [...subjects];
+                    next[i] = {
+                      ...next[i],
+                      blockSize: Number(e.target.value) as 1 | 2,
+                    };
+                    setSubjects(next);
+                  }}
+                >
+                  <option value={1}>1h</option>
+                  <option value={2}>2h</option>
+                </select>
+              </label>
               <label className="mandatory-toggle">
                 <input
                   type="checkbox"

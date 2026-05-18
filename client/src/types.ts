@@ -84,6 +84,10 @@ export interface ClassSubject {
   hoursPerWeek: number;
   /** When false, the solver may skip this subject if it can't fit. Default true. */
   mandatory?: boolean;
+  /** 1 = independent 1-hour slots; 2 = paired into consecutive 2-hour blocks.
+   *  Undefined falls back to the legacy default (1h for sport/music, 2h
+   *  for everything else). */
+  blockSize?: 1 | 2;
 }
 
 export interface SchoolClass {

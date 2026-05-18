@@ -619,20 +619,32 @@ function GradeCard({
       <div className="row">
         {subjects.map((s) => {
           const mandatory = s.mandatory !== false;
+          const block = subjectBlockSize(s);
+          const titleParts = [];
+          if (!mandatory) titleParts.push(t("mandatoryLabel") + ": —");
+          titleParts.push(t("blockSizeTooltip", { size: block }));
           return (
             <span
               key={s.subject}
               className={`tag subj-${s.subject}`}
               style={{ opacity: mandatory ? 1 : 0.55 }}
-              title={mandatory ? undefined : t("mandatoryLabel") + ": —"}
+              title={titleParts.join(" · ")}
             >
               {tSubject(s.subject)} {s.hoursPerWeek}h
+              <span className="tag-block-size">×{block}h</span>
             </span>
           );
         })}
       </div>
     </div>
   );
+}
+
+const TREND_ONE_HOUR_SUBJECTS = new Set<string>(["sport", "music"]);
+
+function subjectBlockSize(s: ClassSubject): 1 | 2 {
+  if (s.blockSize === 1 || s.blockSize === 2) return s.blockSize;
+  return TREND_ONE_HOUR_SUBJECTS.has(s.subject) ? 1 : 2;
 }
 
 function ClassCard({

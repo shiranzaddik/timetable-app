@@ -108,6 +108,11 @@ export interface ClassSubject {
   /** When false, the solver is allowed to skip this subject if it can't fit
    *  (the dropped block appears in SolveResult.droppedBlocks). Default true. */
   mandatory?: boolean;
+  /** Consecutive-block size used when splitting the weekly hours. 2 means
+   *  the solver tries to schedule the subject in pairs (e.g., a 5h subject
+   *  becomes 2+2+1); 1 means each hour is independent. When undefined the
+   *  legacy default applies — 1h for sport/music, 2h for everything else. */
+  blockSize?: 1 | 2;
 }
 
 export interface SchoolClass {

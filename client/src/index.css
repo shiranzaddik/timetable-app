@@ -740,7 +740,7 @@ td.subj-bible     { background: #fefce8; }
   align-items: center;
 }
 .subject-hours-row.mandatory-row {
-  grid-template-columns: minmax(110px, 160px) 64px auto 32px;
+  grid-template-columns: minmax(110px, 160px) 64px auto auto 32px;
 }
 .mandatory-toggle {
   display: flex;
@@ -752,6 +752,27 @@ td.subj-bible     { background: #fefce8; }
   user-select: none;
 }
 .mandatory-toggle input[type="checkbox"] { margin: 0; }
+.block-size-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.block-size-control select {
+  padding: 2px 6px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+.tag-block-size {
+  margin-inline-start: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.7;
+}
 
 /* --- Per-subject grade picker (TeacherForm) --- */
 .per-subject-grades {
