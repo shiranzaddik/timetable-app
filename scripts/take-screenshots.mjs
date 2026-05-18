@@ -30,25 +30,36 @@ await page.goto(APP_URL, { waitUntil: "networkidle" });
 await page.waitForSelector("text=Teachers", { timeout: 10_000 });
 await page.waitForTimeout(500);
 
-const shoot = async (name) => {
+const shootFull = async (name) => {
   const path = resolve(OUT_DIR, name);
   await page.screenshot({ path, fullPage: true });
   console.log("→", path);
 };
 
-await shoot("01-input.png");
+const shootElement = async (name, selector) => {
+  const path = resolve(OUT_DIR, name);
+  const handle = await page.waitForSelector(selector, { state: "visible" });
+  await handle.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(150);
+  await handle.screenshot({ path });
+  console.log("→", path);
+};
+
+// 01: full-page editor view (teachers, trends, classes).
+await shootFull("01-input.png");
 
 // Click "Generate Timetable" and wait for the timetable section to render.
 await page.getByRole("button", { name: /Generate Timetable/i }).click();
 await page.waitForSelector("text=Generated Timetable", { timeout: 30_000 });
 await page.waitForTimeout(500);
 
-await shoot("02-timetable.png");
+// 02 + 03: just the generated-timetable section, not the editor above it.
+await shootElement("02-timetable.png", ".section-timetable");
 
 // Switch to "By teacher" view.
 await page.getByRole("button", { name: /By teacher/i }).click();
 await page.waitForTimeout(500);
-await shoot("03-timetable-by-teacher.png");
+await shootElement("03-timetable-by-teacher.png", ".section-timetable");
 
 await browser.close();
 console.log("Done.");
