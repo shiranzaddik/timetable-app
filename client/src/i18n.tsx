@@ -236,12 +236,33 @@ const STRINGS = {
     generated: "Generated Timetable",
     byClass: "By class",
     byTeacher: "By teacher",
-    print: "Print / PDF",
-    printHint: "Use your browser's print dialog to save as PDF or send to a printer.",
+    print: "Print current",
+    printAll: "Print all classes",
+    printHint: "Print the currently selected class's grid.",
+    printAllHint: "Print one page per class, in order.",
     editingClickFirst: "Click any cell to start a swap.",
     editingClickSecond:
       "Now click the cell you want to swap with (or click the same cell again to cancel).",
     cellConflict: "Conflict",
+    // snapshots / compare
+    saveSnapshot: "Save snapshot",
+    saveSnapshotHint:
+      "Save the current generated schedule so you can compare it with later runs.",
+    snapshotsHeading: "Snapshots",
+    snapshotsHint:
+      "Saved versions of your generated schedule. Load any to make it the current result, or compare two side-by-side.",
+    snapshotDefaultLabel: "Snapshot {n}",
+    snapshotRenameHint: "Click to rename",
+    snapshotLoad: "Load",
+    snapshotBlocks: "blocks",
+    snapshotDropped: "dropped",
+    compare: "Compare…",
+    compareHeading: "Compare snapshots",
+    compareHint:
+      "Pick two snapshots and a class. Cells that differ between the two are outlined.",
+    compareSnapshotA: "Snapshot A",
+    compareSnapshotB: "Snapshot B",
+    compareClose: "Close",
 
     // login
     loginTagline:
@@ -467,12 +488,32 @@ const STRINGS = {
     generated: "מערכת השעות שנוצרה",
     byClass: "לפי כיתה",
     byTeacher: "לפי מורה",
-    print: "הדפס / PDF",
-    printHint: "השתמשו בחלון ההדפסה של הדפדפן כדי לשמור כ-PDF או להדפיס.",
+    print: "הדפס את הכיתה הנוכחית",
+    printAll: "הדפס את כל הכיתות",
+    printHint: "מדפיס את הכיתה הנבחרת בלבד.",
+    printAllHint: "מדפיס דף נפרד לכל כיתה, לפי הסדר.",
     editingClickFirst: "לחצו על תא כדי להתחיל החלפה.",
     editingClickSecond:
       "כעת לחצו על התא שאליו תרצו להחליף (או לחצו שוב על אותו תא לביטול).",
     cellConflict: "התנגשות",
+    saveSnapshot: "שמור גרסה",
+    saveSnapshotHint:
+      "שומר את לוח השעות הנוכחי כדי שתוכלו להשוות אותו לריצות עתידיות.",
+    snapshotsHeading: "גרסאות שמורות",
+    snapshotsHint:
+      "גרסאות שנשמרו של לוח השעות. אפשר לטעון כל אחת כתוצאה הנוכחית, או להשוות שתיים זו לצד זו.",
+    snapshotDefaultLabel: "גרסה {n}",
+    snapshotRenameHint: "לחצו לשינוי השם",
+    snapshotLoad: "טען",
+    snapshotBlocks: "שיעורים",
+    snapshotDropped: "לא שובצו",
+    compare: "השוואה…",
+    compareHeading: "השוואת גרסאות",
+    compareHint:
+      "בחרו שתי גרסאות וכיתה. תאים שונים בין השתיים מסומנים.",
+    compareSnapshotA: "גרסה א'",
+    compareSnapshotB: "גרסה ב'",
+    compareClose: "סגור",
 
     loginTagline:
       "צרו מערכת שעות שבועית ללא התנגשויות, עבור כל כיתה וכל מורה, תוך שניות.",

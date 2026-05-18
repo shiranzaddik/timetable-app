@@ -78,6 +78,30 @@ export default function TimetableView({
         conflictMap={conflictMap}
         onSwap={handleSwap}
       />
+      {/* Hidden one-per-class block used by "Print all classes". A body class
+       *  flips the print stylesheet so this becomes the only visible content
+       *  while the regular grid above is hidden. */}
+      <div className="print-all-classes" aria-hidden="true">
+        {input.classes.map((c) => {
+          const classGrid = (
+            result.timetables.byClass as Record<string, Grid>
+          )[c.id];
+          if (!classGrid) return null;
+          return (
+            <div key={c.id} className="print-class-page">
+              <h2 className="print-class-title">{tClassName(c.id)}</h2>
+              <GridTable
+                input={input}
+                grid={classGrid}
+                mode="byClass"
+                editableEntityId={null}
+                conflictMap={conflictMap}
+                onSwap={() => {}}
+              />
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }

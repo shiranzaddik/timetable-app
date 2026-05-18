@@ -1132,3 +1132,128 @@ html[dir="rtl"] .recommendation-card .rec-link::after {
 @media print {
   .timetable-edit-hint { display: none !important; }
 }
+
+/* Snapshots + compare */
+.snapshot-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.snapshot-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.snapshot-head {
+  display: flex;
+  align-items: center;
+}
+.snapshot-label {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: start;
+}
+.snapshot-label:hover {
+  color: var(--primary);
+}
+.snapshot-rename-input {
+  width: 100%;
+  padding: 2px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+.snapshot-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.snapshot-dropped {
+  color: var(--error);
+  font-weight: 600;
+}
+.snapshot-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.snapshot-actions button {
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+}
+button.secondary.danger {
+  color: var(--error);
+  border-color: var(--error-soft);
+}
+button.secondary.danger:hover:not(:disabled) {
+  background: var(--error-soft);
+}
+
+.compare-section {
+  border: 2px solid var(--primary-soft);
+}
+.compare-pickers {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.compare-grids {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: flex-start;
+}
+.compare-grid-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.compare-grid .timetable td.diff {
+  outline: 2px dashed var(--warn);
+  outline-offset: -2px;
+  background: var(--warn-soft) !important;
+}
+@media (max-width: 1100px) {
+  .compare-grids { grid-template-columns: 1fr; }
+}
+
+/* "Print all classes": always rendered, hidden on screen, surfaced only by
+   the print stylesheet when body has the print-mode-all class. */
+.print-all-classes { display: none; }
+.print-btn-group {
+  display: inline-flex;
+  gap: 6px;
+}
+@media print {
+  body.print-mode-all .timetable-wrap:not(.print-all-classes .timetable-wrap),
+  body.print-mode-all > .app > .section-timetable > .tabs {
+    display: none !important;
+  }
+  body.print-mode-all .print-all-classes {
+    display: block !important;
+  }
+  .print-class-page {
+    page-break-after: always;
+  }
+  .print-class-page:last-child {
+    page-break-after: auto;
+  }
+  .print-class-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+}

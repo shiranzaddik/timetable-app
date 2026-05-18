@@ -6,9 +6,11 @@ import TimetableView from "./components/TimetableView";
 import { useT } from "./i18n";
 import {
   Day,
+  type Grid,
   type ScheduleRecommendation,
   type SchoolInput,
   type SolveResult,
+  type TimetableCell,
   type Trend,
 } from "./types";
 
@@ -45,6 +47,13 @@ interface SchoolState {
   config: SchoolInput | null;
 }
 
+interface Snapshot {
+  id: string;
+  label: string;
+  savedAt: number;
+  result: SolveResult;
+}
+
 const GOOGLE_CLIENT_ID =
   (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
 
@@ -66,6 +75,10 @@ export default function App() {
   const [view, setView] = useState<View>("byClass");
   const [dirty, setDirty] = useState(false);
   const saveTimerRef = useRef<number | null>(null);
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [compareIds, setCompareIds] = useState<{ a: string; b: string } | null>(
+    null
+  );
 
   // 1) Auth check on mount
   useEffect(() => {
@@ -166,6 +179,59 @@ export default function App() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  const saveSnapshot = () => {
+    if (!result || !result.success) return;
+    const id = `snap-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const next: Snapshot = {
+      id,
+      label: t("snapshotDefaultLabel", { n: snapshots.length + 1 }),
+      savedAt: Date.now(),
+      result,
+    };
+    setSnapshots((arr) => [...arr, next]);
+  };
+
+  const loadSnapshot = (id: string) => {
+    const snap = snapshots.find((s) => s.id === id);
+    if (snap) setResult(snap.result);
+  };
+
+  const deleteSnapshot = (id: string) => {
+    setSnapshots((arr) => arr.filter((s) => s.id !== id));
+    if (compareIds && (compareIds.a === id || compareIds.b === id)) {
+      setCompareIds(null);
+    }
+  };
+
+  const renameSnapshot = (id: string, label: string) => {
+    setSnapshots((arr) =>
+      arr.map((s) => (s.id === id ? { ...s, label: label || s.label } : s))
+    );
+  };
+
+  const startCompare = () => {
+    if (snapshots.length < 2) return;
+    setCompareIds({
+      a: snapshots[snapshots.length - 2].id,
+      b: snapshots[snapshots.length - 1].id,
+    });
+  };
+
+  const printAllClasses = () => {
+    document.body.classList.add("print-mode-all");
+    // Defer one frame so the browser repaints with the new layout before the
+    // print dialog snapshots the page.
+    window.requestAnimationFrame(() => {
+      window.print();
+      // Strip the class once the dialog closes. Browsers fire `afterprint`
+      // synchronously after window.print returns, but use a timeout as a
+      // belt-and-braces fallback for older engines.
+      const cleanup = () => document.body.classList.remove("print-mode-all");
+      window.addEventListener("afterprint", cleanup, { once: true });
+      window.setTimeout(cleanup, 1000);
+    });
   };
 
   const logout = async () => {
@@ -388,13 +454,29 @@ export default function App() {
                 {result.blockCount} · {result.elapsedMs} ms
               </div>
             </div>
-            <button
-              className="secondary print-btn"
-              onClick={() => window.print()}
-              title={t("printHint")}
-            >
-              {t("print")}
-            </button>
+            <div className="print-btn-group">
+              <button
+                className="secondary print-btn"
+                onClick={saveSnapshot}
+                title={t("saveSnapshotHint")}
+              >
+                {t("saveSnapshot")}
+              </button>
+              <button
+                className="secondary print-btn"
+                onClick={() => window.print()}
+                title={t("printHint")}
+              >
+                {t("print")}
+              </button>
+              <button
+                className="secondary print-btn"
+                onClick={printAllClasses}
+                title={t("printAllHint")}
+              >
+                {t("printAll")}
+              </button>
+            </div>
           </div>
           <div className="tabs">
             <button
@@ -417,6 +499,43 @@ export default function App() {
             onResultChange={setResult}
           />
         </div>
+      )}
+
+      {snapshots.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <div>
+              <h3 className="section-title">{t("snapshotsHeading")}</h3>
+              <div className="section-meta">{t("snapshotsHint")}</div>
+            </div>
+            {snapshots.length >= 2 && !compareIds && (
+              <button className="secondary" onClick={startCompare}>
+                {t("compare")}
+              </button>
+            )}
+          </div>
+          <div className="snapshot-list">
+            {snapshots.map((s) => (
+              <SnapshotCard
+                key={s.id}
+                snap={s}
+                onLoad={() => loadSnapshot(s.id)}
+                onDelete={() => deleteSnapshot(s.id)}
+                onRename={(label) => renameSnapshot(s.id, label)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {compareIds && input && (
+        <CompareSection
+          input={input}
+          snapshots={snapshots}
+          compareIds={compareIds}
+          onChange={setCompareIds}
+          onClose={() => setCompareIds(null)}
+        />
       )}
     </div>
   );
@@ -695,6 +814,268 @@ function SchoolDayStat({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function SnapshotCard({
+  snap,
+  onLoad,
+  onDelete,
+  onRename,
+}: {
+  snap: Snapshot;
+  onLoad: () => void;
+  onDelete: () => void;
+  onRename: (label: string) => void;
+}) {
+  const { t } = useT();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(snap.label);
+  const blockCount = snap.result.blockCount ?? 0;
+  const dropped = (snap.result.droppedBlocks ?? []).length;
+  const time = new Date(snap.savedAt).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return (
+    <div className="snapshot-card">
+      <div className="snapshot-head">
+        {editing ? (
+          <input
+            className="snapshot-rename-input"
+            value={draft}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              onRename(draft.trim());
+              setEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                onRename(draft.trim());
+                setEditing(false);
+              }
+              if (e.key === "Escape") {
+                setDraft(snap.label);
+                setEditing(false);
+              }
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            className="snapshot-label"
+            onClick={() => {
+              setDraft(snap.label);
+              setEditing(true);
+            }}
+            title={t("snapshotRenameHint")}
+          >
+            {snap.label} ✎
+          </button>
+        )}
+      </div>
+      <div className="snapshot-meta">
+        {time} · {blockCount} {t("snapshotBlocks")}
+        {dropped > 0 && (
+          <>
+            {" · "}
+            <span className="snapshot-dropped">
+              {dropped} {t("snapshotDropped")}
+            </span>
+          </>
+        )}
+      </div>
+      <div className="snapshot-actions">
+        <button className="secondary" onClick={onLoad}>
+          {t("snapshotLoad")}
+        </button>
+        <button className="secondary danger" onClick={onDelete}>
+          {t("delete")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CompareSection({
+  input,
+  snapshots,
+  compareIds,
+  onChange,
+  onClose,
+}: {
+  input: SchoolInput;
+  snapshots: Snapshot[];
+  compareIds: { a: string; b: string };
+  onChange: (next: { a: string; b: string } | null) => void;
+  onClose: () => void;
+}) {
+  const { t, tClassName, tDay, tSubject } = useT();
+  const snapA = snapshots.find((s) => s.id === compareIds.a);
+  const snapB = snapshots.find((s) => s.id === compareIds.b);
+  const [selectedClassId, setSelectedClassId] = useState<string>(
+    input.classes[0]?.id ?? ""
+  );
+
+  if (!snapA || !snapB) return null;
+
+  const gridA = (snapA.result.timetables.byClass as Record<string, Grid>)[
+    selectedClassId
+  ];
+  const gridB = (snapB.result.timetables.byClass as Record<string, Grid>)[
+    selectedClassId
+  ];
+
+  return (
+    <div className="section compare-section">
+      <div className="section-header">
+        <div>
+          <h3 className="section-title">{t("compareHeading")}</h3>
+          <div className="section-meta">{t("compareHint")}</div>
+        </div>
+        <button className="secondary" onClick={onClose}>
+          {t("compareClose")}
+        </button>
+      </div>
+
+      <div className="compare-pickers">
+        <label className="sort-control">
+          <span>{t("compareSnapshotA")}</span>
+          <select
+            value={compareIds.a}
+            onChange={(e) => onChange({ ...compareIds, a: e.target.value })}
+          >
+            {snapshots.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="sort-control">
+          <span>{t("compareSnapshotB")}</span>
+          <select
+            value={compareIds.b}
+            onChange={(e) => onChange({ ...compareIds, b: e.target.value })}
+          >
+            {snapshots.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="tabs">
+        {input.classes.map((c) => (
+          <button
+            key={c.id}
+            className={`tab ${selectedClassId === c.id ? "active" : ""}`}
+            onClick={() => setSelectedClassId(c.id)}
+          >
+            {tClassName(c.id)}
+          </button>
+        ))}
+      </div>
+
+      <div className="compare-grids">
+        <CompareGrid
+          title={snapA.label}
+          input={input}
+          gridSelf={gridA}
+          gridOther={gridB}
+          tDay={tDay}
+          tSubject={tSubject}
+        />
+        <CompareGrid
+          title={snapB.label}
+          input={input}
+          gridSelf={gridB}
+          gridOther={gridA}
+          tDay={tDay}
+          tSubject={tSubject}
+        />
+      </div>
+    </div>
+  );
+}
+
+function CompareGrid({
+  title,
+  input,
+  gridSelf,
+  gridOther,
+  tDay,
+  tSubject,
+}: {
+  title: string;
+  input: SchoolInput;
+  gridSelf: Grid | undefined;
+  gridOther: Grid | undefined;
+  tDay: (d: Day) => string;
+  tSubject: (s: string) => string;
+}) {
+  const { days, slotLabels } = input.config;
+  if (!gridSelf) return <div className="compare-grid">No data</div>;
+  const sameCell = (a: TimetableCell | null, b: TimetableCell | null) => {
+    if (a === null && b === null) return true;
+    if (!a || !b) return false;
+    return (
+      a.subject === b.subject &&
+      a.teacherId === b.teacherId &&
+      a.roomId === b.roomId &&
+      a.classId === b.classId
+    );
+  };
+  return (
+    <div className="compare-grid">
+      <h4 className="compare-grid-title">{title}</h4>
+      <div className="timetable-wrap">
+        <table className="timetable">
+          <thead>
+            <tr>
+              <th></th>
+              {days.map((d) => (
+                <th key={d}>{tDay(d as Day)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {slotLabels.map((label, slotIdx) => (
+              <tr key={slotIdx}>
+                <td className="slot-label">{label}</td>
+                {days.map((_, dayIdx) => {
+                  const cell = gridSelf[dayIdx][slotIdx];
+                  const otherCell = gridOther?.[dayIdx]?.[slotIdx] ?? null;
+                  const differs = !sameCell(cell, otherCell);
+                  if (!cell) {
+                    return (
+                      <td
+                        key={dayIdx}
+                        className={`empty ${differs ? "diff" : ""}`}
+                      >
+                        —
+                      </td>
+                    );
+                  }
+                  return (
+                    <td
+                      key={dayIdx}
+                      className={`subj-${cell.subject} ${differs ? "diff" : ""}`}
+                    >
+                      <div className="cell-subject">{tSubject(cell.subject)}</div>
+                      <div className="cell-meta">{cell.teacherName}</div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
