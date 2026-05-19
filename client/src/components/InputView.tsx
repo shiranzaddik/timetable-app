@@ -14,6 +14,7 @@ import {
 import TeacherForm, { type TrendChoice } from "./TeacherForm";
 import ClassForm, { type ClassFormResult } from "./ClassForm";
 import GradeForm, { defaultGradeSubjects, type GradeFormResult } from "./GradeForm";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
   input: SchoolInput;
@@ -31,6 +32,11 @@ export default function InputView({ input, onChange }: Props) {
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<{
+    teacherId: string;
+    teacherName: string;
+    classes: { id: string; name: string }[];
+  } | null>(null);
 
   const teacherById = Object.fromEntries(input.teachers.map((x) => [x.id, x]));
 
@@ -89,13 +95,46 @@ export default function InputView({ input, onChange }: Props) {
     };
   });
 
+  /** Map every teacher id → the classes they're the homeroom of. Used both
+   *  for the delete-confirmation modal and for the "Homeroom of …" badge on
+   *  the teacher card. */
+  const homeroomByTeacher: Record<string, { id: string; name: string }[]> = {};
+  for (const cls of input.classes) {
+    if (!cls.defaultTeacherId) continue;
+    if (!homeroomByTeacher[cls.defaultTeacherId])
+      homeroomByTeacher[cls.defaultTeacherId] = [];
+    homeroomByTeacher[cls.defaultTeacherId].push({ id: cls.id, name: cls.name });
+  }
+
   const removeTeacher = (id: string) => {
-    if (
-      input.classes.some((c) => c.defaultTeacherId === id) &&
-      !confirm(t("confirmRemoveTeacher"))
-    )
+    const teacher = input.teachers.find((x) => x.id === id);
+    if (!teacher) return;
+    const usedBy = homeroomByTeacher[id] ?? [];
+    if (usedBy.length > 0) {
+      setDeleteCandidate({
+        teacherId: id,
+        teacherName: teacher.name,
+        classes: usedBy,
+      });
       return;
+    }
     onChange({ ...input, teachers: input.teachers.filter((x) => x.id !== id) });
+  };
+
+  /** Confirmed deletion path. Also nulls out the teacher from any class's
+   *  defaultTeacherId so the class doesn't end up pointing at a missing id —
+   *  the solver re-assigns a homeroom for those classes on the next run. */
+  const confirmDeleteTeacher = () => {
+    if (!deleteCandidate) return;
+    const id = deleteCandidate.teacherId;
+    onChange({
+      ...input,
+      teachers: input.teachers.filter((x) => x.id !== id),
+      classes: input.classes.map((c) =>
+        c.defaultTeacherId === id ? { ...c, defaultTeacherId: null } : c
+      ),
+    });
+    setDeleteCandidate(null);
   };
 
   const removeClass = (id: string) => {
@@ -306,6 +345,7 @@ export default function InputView({ input, onChange }: Props) {
                   <TeacherCard
                     key={teacher.id}
                     teacher={teacher}
+                    homeroomOf={homeroomByTeacher[teacher.id] ?? []}
                     onEdit={() => setEditingTeacherId(teacher.id)}
                     onDelete={() => removeTeacher(teacher.id)}
                   />
@@ -336,6 +376,7 @@ export default function InputView({ input, onChange }: Props) {
                     <TeacherCard
                       key={teacher.id}
                       teacher={teacher}
+                      homeroomOf={homeroomByTeacher[teacher.id] ?? []}
                       onEdit={() => setEditingTeacherId(teacher.id)}
                       onDelete={() => removeTeacher(teacher.id)}
                     />
@@ -478,6 +519,40 @@ export default function InputView({ input, onChange }: Props) {
           )}
         </div>
       </div>
+
+      {deleteCandidate && (
+        <ConfirmDialog
+          title={t("deleteTeacherTitle", { name: deleteCandidate.teacherName })}
+          message={
+            <>
+              {t(
+                deleteCandidate.classes.length === 1
+                  ? "deleteTeacherBodyOne"
+                  : "deleteTeacherBodyMany",
+                {
+                  name: deleteCandidate.teacherName,
+                  classes: deleteCandidate.classes.map((c) => c.name).join(", "),
+                }
+              )}
+              <div className="modal-classes">
+                {deleteCandidate.classes.map((c) => (
+                  <span key={c.id} className="tag dot">
+                    {c.name}
+                  </span>
+                ))}
+              </div>
+              <div className="modal-footnote">
+                {t("deleteTeacherFootnote")}
+              </div>
+            </>
+          }
+          confirmLabel={t("deleteTeacherConfirm")}
+          cancelLabel={t("cancel")}
+          danger
+          onConfirm={confirmDeleteTeacher}
+          onCancel={() => setDeleteCandidate(null)}
+        />
+      )}
     </>
   );
 }
@@ -486,10 +561,12 @@ export default function InputView({ input, onChange }: Props) {
 
 function TeacherCard({
   teacher,
+  homeroomOf,
   onEdit,
   onDelete,
 }: {
   teacher: Teacher;
+  homeroomOf: { id: string; name: string }[];
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -502,6 +579,14 @@ function TeacherCard({
           <p className="teacher-name">{teacher.name}</p>
           <p className="teacher-role">
             {t("grades")} {teacher.grades.join(", ") || "—"}
+            {homeroomOf.length > 0 && (
+              <>
+                {" · "}
+                <span className="homeroom-inline">
+                  {t("homeroomLabel")}: {homeroomOf.map((c) => c.name).join(", ")}
+                </span>
+              </>
+            )}
           </p>
         </div>
         <div className="card-actions">
@@ -525,6 +610,11 @@ function TeacherCard({
       </div>
 
       <div className="row">
+        {homeroomOf.map((c) => (
+          <span key={c.id} className="tag homeroom-tag">
+            ★ {t("homeroomOfShort", { className: c.name })}
+          </span>
+        ))}
         {teacher.subjects.map((s) => (
           <span key={s} className={`tag subj-${s}`}>
             {tSubject(s)}

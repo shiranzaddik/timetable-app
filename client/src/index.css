@@ -1154,6 +1154,85 @@ html[dir="rtl"] .recommendation-card .rec-link::after {
   .timetable-edit-hint { display: none !important; }
 }
 
+/* Modal dialog */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+.modal-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
+  border: 1px solid var(--border);
+  animation: modalIn 0.16s ease-out;
+}
+@keyframes modalIn {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.modal-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal-body {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 20px;
+  line-height: 1.55;
+}
+.modal-classes {
+  margin-top: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.modal-footnote {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+button.modal-confirm-danger {
+  background: var(--error);
+  color: #fff;
+}
+button.modal-confirm-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+/* Homeroom badge on teacher card */
+.tag.homeroom-tag {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+.homeroom-inline {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 /* Snapshots + compare */
 .snapshot-list {
   display: grid;

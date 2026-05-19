@@ -99,6 +99,16 @@ const STRINGS = {
     // confirms
     confirmRemoveTeacher:
       "This teacher is the default teacher for one or more classes. Remove anyway?",
+    deleteTeacherTitle: "Delete {name}?",
+    deleteTeacherBodyOne:
+      "{name} is the homeroom teacher of class {classes}. Deleting will remove the homeroom assignment and the solver will pick a new homeroom on the next Generate.",
+    deleteTeacherBodyMany:
+      "{name} is the homeroom teacher of classes {classes}. Deleting will clear those homeroom assignments and the solver will pick new ones on the next Generate.",
+    deleteTeacherFootnote:
+      "The teacher's lessons (other than homeroom) will also need to be re-scheduled.",
+    deleteTeacherConfirm: "Delete teacher",
+    homeroomLabel: "Homeroom of",
+    homeroomOfShort: "Homeroom of {className}",
 
     // teacher form
     newTeacher: "New teacher",
@@ -361,6 +371,15 @@ const STRINGS = {
 
     confirmRemoveTeacher:
       "מורה זה מוגדר כברירת מחדל באחת או יותר מהכיתות. למחוק בכל זאת?",
+    deleteTeacherTitle: "למחוק את {name}?",
+    deleteTeacherBodyOne:
+      "{name} משמש/ת כמחנך/ת של כיתה {classes}. מחיקה תסיר את הקצאת המחנך והפותר יבחר מחנך חדש בריצה הבאה.",
+    deleteTeacherBodyMany:
+      "{name} משמש/ת כמחנך/ת של הכיתות {classes}. מחיקה תסיר את הקצאות המחנך והפותר יבחר חדשים בריצה הבאה.",
+    deleteTeacherFootnote: "גם השיעורים האחרים של המורה ידרשו לתזמון מחדש.",
+    deleteTeacherConfirm: "מחק מורה",
+    homeroomLabel: "מחנך/ת של",
+    homeroomOfShort: "מחנך/ת של {className}",
 
     newTeacher: "מורה חדש",
     editTeacher: "עריכת מורה",
