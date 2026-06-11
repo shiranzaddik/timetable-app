@@ -13,7 +13,7 @@ const STRINGS = {
     hoursShort: "h",
     appTitle: "The smart way to build a school timetable",
     appSubtitle:
-      "Define teachers, classes and constraints — get an optimized timetable in minutes.",
+      "Define teachers, classes and constraints — get an optimized timetable automatically in seconds.",
 
     // toolbar / header
     generate: "Generate Timetable",
@@ -309,7 +309,7 @@ const STRINGS = {
     hoursShort: "שעות",
     appTitle: "הדרך החכמה לבניית מערכת שעות לבית הספר",
     appSubtitle:
-      "הגדירו מורים, כיתות ואילוצים – וקבלו מערכת שעות אופטימלית תוך דקות",
+      "הגדירו מורים, כיתות ואילוצים – וקבלו אוטומטית מערכת שעות אופטימלית תוך שניות",
 
     generate: "צור מערכת שעות",
     solving: "מחשב…",
