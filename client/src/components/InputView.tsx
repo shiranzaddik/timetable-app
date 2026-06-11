@@ -404,17 +404,18 @@ export default function InputView({ input, onChange }: Props) {
         {availableSubjects.length === 0 && !addingSubject && (
           <div className="empty-state">{t("emptySubjects")}</div>
         )}
-        <div className="card-grid">
-          {addingSubject && (
-            <SubjectForm
-              existingSubjects={availableSubjects}
-              onSave={addSubject}
-              onCancel={() => setAddingSubject(false)}
-            />
-          )}
-          {availableSubjects.map((def) => {
-            if (editingSubjectKey === def.key) {
-              return (
+        {(addingSubject || editingSubjectKey) && (
+          <div className="card-grid">
+            {addingSubject && (
+              <SubjectForm
+                existingSubjects={availableSubjects}
+                onSave={addSubject}
+                onCancel={() => setAddingSubject(false)}
+              />
+            )}
+            {availableSubjects
+              .filter((def) => editingSubjectKey === def.key)
+              .map((def) => (
                 <SubjectForm
                   key={def.key}
                   initial={def}
@@ -422,36 +423,36 @@ export default function InputView({ input, onChange }: Props) {
                   onSave={updateSubject}
                   onCancel={() => setEditingSubjectKey(null)}
                 />
-              );
-            }
-            const inUse = subjectKeyInUse(def.key);
-            return (
-              <div key={def.key} className="card compact subject-card">
-                <div className="head">
-                  <span className={`tag subj-${def.key}`}>{tSubject(def.key)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }} />
-                  <div className="card-actions">
-                    <button
-                      className="icon-btn edit-trigger"
-                      onClick={() => setEditingSubjectKey(def.key)}
-                      aria-label={t("edit")}
-                      title={t("edit")}
-                    >
-                      ✎
-                    </button>
-                    <button
-                      className="icon-btn danger"
-                      onClick={() => removeSubject(def.key)}
-                      aria-label={t("delete")}
-                      title={inUse ? t("errCannotRemoveSubjectInUse") : t("delete")}
-                    >
-                      ×
-                    </button>
-                  </div>
+              ))}
+          </div>
+        )}
+        <div className="subjects-list">
+          {availableSubjects
+            .filter((def) => editingSubjectKey !== def.key)
+            .map((def) => {
+              const inUse = subjectKeyInUse(def.key);
+              return (
+                <div key={def.key} className={`tag subject-pill subj-${def.key}`}>
+                  <span className="subject-pill-name">{tSubject(def.key)}</span>
+                  <button
+                    className="subject-pill-btn"
+                    onClick={() => setEditingSubjectKey(def.key)}
+                    aria-label={t("edit")}
+                    title={t("edit")}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    className="subject-pill-btn danger"
+                    onClick={() => removeSubject(def.key)}
+                    aria-label={t("delete")}
+                    title={inUse ? t("errCannotRemoveSubjectInUse") : t("delete")}
+                  >
+                    ×
+                  </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
 

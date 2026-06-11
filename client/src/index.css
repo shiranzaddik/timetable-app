@@ -546,6 +546,38 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
   align-items: center;
   gap: 10px;
 }
+
+/* Compact subjects list — one pill per subject, inline-wrap layout. */
+.subjects-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.tag.subject-pill {
+  /* Inherits .tag.subj-* background/color; just tweak the spacing so the
+   * inline edit/delete buttons fit cleanly. */
+  padding: 2px 4px 2px 10px;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.subject-pill-name {
+  padding-inline-end: 4px;
+}
+.subject-pill-btn {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+}
+.subject-pill-btn:hover { opacity: 1; background: rgba(15, 23, 42, 0.12); }
+.subject-pill-btn.danger:hover { color: var(--error); background: var(--error-soft); }
 .grade-badge {
   width: 44px;
   height: 44px;
