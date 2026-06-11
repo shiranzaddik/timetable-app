@@ -65,7 +65,7 @@ export default function TeacherForm({
   availableClasses,
   initialHomeroomClassIds,
 }: Props) {
-  const { t, tDay, tSubject, tGrade } = useT();
+  const { t, tDay, tSubject, tGrade, lang } = useT();
   const isEdit = !!initial;
 
   /** Trend choices: prefer the school's actual trends. Fall back to the
@@ -88,7 +88,14 @@ export default function TeacherForm({
     });
   };
 
-  const [name, setName] = useState(initial?.name ?? "");
+  // The single name input edits the name in the *current* language. Hebrew
+  // mode edits nameHe (falling back to name when not yet set); English mode
+  // edits name. The non-edited language is preserved as-is on save.
+  const [name, setName] = useState(
+    lang === "he"
+      ? initial?.nameHe ?? initial?.name ?? ""
+      : initial?.name ?? ""
+  );
   const [subjects, setSubjects] = useState<string[]>(initial?.subjects ?? []);
   const [customDraft, setCustomDraft] = useState("");
   const [trendsPerSubject, setTrendsPerSubject] = useState<Record<string, string[]>>(() => {
@@ -161,11 +168,17 @@ export default function TeacherForm({
         )
       )
     ) as Grade[];
+    const trimmed = name.trim();
+    // Write the input into the field for the current language, preserving the
+    // other-language name as the existing value. For new teachers the
+    // non-edited language stays undefined so tTeacher falls back cleanly.
+    const nextName = lang === "he" ? initial?.name ?? trimmed : trimmed;
+    const nextNameHe = lang === "he" ? trimmed : initial?.nameHe;
     onSave(
       {
         id,
-        name: name.trim(),
-        nameHe: initial?.nameHe,
+        name: nextName,
+        nameHe: nextNameHe,
         subjects,
         grades: overallGrades,
         trendsPerSubject,
