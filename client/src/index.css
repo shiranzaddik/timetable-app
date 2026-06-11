@@ -819,12 +819,18 @@ td.subj-bible .cell-meta { color: rgba(15, 23, 42, 0.65); }
 
 .subject-hours-row {
   display: grid;
-  grid-template-columns: minmax(110px, 160px) 64px 32px;
-  gap: 8px;
+  grid-template-columns: minmax(80px, 1fr) 60px 32px;
+  gap: 6px;
   align-items: center;
 }
 .subject-hours-row.mandatory-row {
-  grid-template-columns: minmax(110px, 160px) 64px auto 32px;
+  grid-template-columns: minmax(80px, 1fr) 60px auto 32px;
+}
+.subject-hours-row > input,
+.subject-hours-row > span,
+.subject-hours-row > label,
+.subject-hours-row > button {
+  min-width: 0;
 }
 .mandatory-toggle {
   display: inline-flex;

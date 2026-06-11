@@ -69,6 +69,10 @@ export default function GradeForm({
   const [gradeState, setGradeState] = useState<Grade>(grade);
   const [trendNameState, setTrendNameState] = useState<string>(trendName ?? "");
   const [subjects, setSubjects] = useState<ClassSubject[]>(initialSubjects);
+  // Indices the user added in this session; their text input stays editable
+  // (instead of locking to a read-only label as soon as the user types the
+  // first character).
+  const [draftIndices, setDraftIndices] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const headerLabel = isNew
     ? t("newTrend")
@@ -93,6 +97,14 @@ export default function GradeForm({
       }))
       .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
+    // Refuse two rows that resolved to the same subject name.
+    const seen = new Set<string>();
+    for (const s of filtered) {
+      if (seen.has(s.subject)) {
+        return setError(t("errSubjectDuplicate", { name: s.subject }));
+      }
+      seen.add(s.subject);
+    }
     onSave(
       isNew
         ? {
@@ -149,15 +161,14 @@ export default function GradeForm({
         <label>{t("fieldSubjectsHours")}</label>
         {subjects.map((row, i) => {
           const isMandatory = row.mandatory ?? true;
-          // Subjects keep an editable name only while the row is still empty
-          // (i.e., the user just clicked "+ Add subject" and hasn't typed yet).
-          // Once a name is set — whether a built-in like "math" or a custom
-          // like "art" — show it as a read-only label so every row looks the
-          // same. To rename, delete the row and re-add it.
-          const isNew = row.subject.trim() === "";
+          // Existing rows (loaded from initialSubjects) lock the subject name
+          // to a read-only label so a typo can't accidentally rename a stored
+          // subject. Rows the user added in this session stay editable as long
+          // as the form is open.
+          const isEditing = draftIndices.has(i) || row.subject.trim() === "";
           return (
             <div key={i} className="subject-hours-row mandatory-row">
-              {isNew ? (
+              {isEditing ? (
                 <input
                   type="text"
                   value={row.subject}
@@ -209,7 +220,18 @@ export default function GradeForm({
               <button
                 type="button"
                 className="icon-btn"
-                onClick={() => setSubjects(subjects.filter((_, j) => j !== i))}
+                onClick={() => {
+                  setSubjects(subjects.filter((_, j) => j !== i));
+                  // Drop & re-key the draft index set since indices shift.
+                  setDraftIndices((prev) => {
+                    const next = new Set<number>();
+                    prev.forEach((idx) => {
+                      if (idx === i) return;
+                      next.add(idx > i ? idx - 1 : idx);
+                    });
+                    return next;
+                  });
+                }}
                 title={t("delete")}
                 aria-label={t("delete")}
               >
@@ -222,12 +244,14 @@ export default function GradeForm({
           type="button"
           className="add-btn"
           style={{ alignSelf: "flex-start", marginTop: 4 }}
-          onClick={() =>
+          onClick={() => {
+            const nextIdx = subjects.length;
             setSubjects([
               ...subjects,
               { subject: "", hoursPerWeek: 2, mandatory: true },
-            ])
-          }
+            ]);
+            setDraftIndices((prev) => new Set([...prev, nextIdx]));
+          }}
         >
           {t("addSubject")}
         </button>

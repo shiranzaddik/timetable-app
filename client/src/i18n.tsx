@@ -256,6 +256,7 @@ const STRINGS = {
     errSelectTeacher: "Select a default teacher",
     errClassExists: 'Class "{id}" already exists',
     errSetHours: "Set hours/week for at least one subject",
+    errSubjectDuplicate: "Subject \"{name}\" appears more than once.",
     errTeacherAlreadyHomeroom:
       "This teacher is already the homeroom of class {className}. Remove them from there first.",
 
@@ -539,6 +540,7 @@ const STRINGS = {
     errSelectTeacher: "יש לבחור מחנך",
     errClassExists: 'כיתה "{id}" כבר קיימת',
     errSetHours: "יש להגדיר שעות לפחות למקצוע אחד",
+    errSubjectDuplicate: "המקצוע \"{name}\" מופיע יותר מפעם אחת.",
     errTeacherAlreadyHomeroom:
       "המורה כבר מוגדר/ת כמחנך/ת של כיתה {className}. הסירו אותו משם תחילה.",
 
