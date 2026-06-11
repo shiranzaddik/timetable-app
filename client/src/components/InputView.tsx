@@ -693,6 +693,14 @@ function TeacherCard({
       <div className="row">
         {teacher.unavailable.map((w, i) => {
           const isSoft = w.hard === false;
+          const isFullDay = !w.fromTime && !w.toTime;
+          if (isFullDay && isSoft) {
+            return (
+              <span key={i} className="tag muted">
+                {t("preferOff", { day: tDay(w.day) })}
+              </span>
+            );
+          }
           return (
             <span
               key={i}

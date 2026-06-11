@@ -88,6 +88,7 @@ const STRINGS = {
     // teacher card
     grades: "Grades",
     off: "Off {day}",
+    preferOff: "Prefers off {day}",
     allDay: "all day",
 
     // class card
@@ -370,6 +371,7 @@ const STRINGS = {
 
     grades: "שכבות",
     off: "יום חופשי {day}",
+    preferOff: "מעדיף חופש ב{day}",
     allDay: "כל היום",
 
     teacherLabel: "מחנך",
