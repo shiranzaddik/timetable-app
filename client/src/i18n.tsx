@@ -162,6 +162,8 @@ const STRINGS = {
     saveChanges: "Save changes",
     cancel: "Cancel",
     errNameRequired: "Name is required",
+    errTeacherNameExists:
+      "A teacher named \"{name}\" already exists. Use a slightly different name (e.g., add a subject in parentheses).",
     errPickSubject: "Pick at least one subject",
     errPickGrade: "Pick at least one grade",
     gradePrefix: "Grade",
@@ -444,6 +446,8 @@ const STRINGS = {
     saveChanges: "שמור שינויים",
     cancel: "בטל",
     errNameRequired: "יש להזין שם",
+    errTeacherNameExists:
+      "מורה בשם \"{name}\" כבר קיים. השתמשו בשם מעט שונה (לדוגמה, ניתן להוסיף מקצוע בסוגריים).",
     errPickSubject: "יש לבחור לפחות מקצוע אחד",
     errPickGrade: "יש לבחור לפחות שכבה אחת",
     gradePrefix: "שכבה",

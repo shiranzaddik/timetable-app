@@ -402,6 +402,7 @@ export default function InputView({ input, onChange }: Props) {
               onSave={addTeacher}
               onCancel={() => setAddingTeacher(false)}
               existingIds={input.teachers.map((teacher) => teacher.id)}
+              existingTeachers={input.teachers}
               availableTrends={availableTrends}
               availableClasses={availableClasses}
               initialHomeroomClassIds={[]}
@@ -431,6 +432,7 @@ export default function InputView({ input, onChange }: Props) {
                     onSave={updateTeacher}
                     onCancel={() => setEditingTeacherId(null)}
                     existingIds={input.teachers.map((x) => x.id)}
+                    existingTeachers={input.teachers}
                     availableTrends={availableTrends}
                     availableClasses={availableClasses}
                     initialHomeroomClassIds={homeroomClassIdsForTeacher(teacher.id)}
@@ -465,6 +467,7 @@ export default function InputView({ input, onChange }: Props) {
                       onSave={updateTeacher}
                       onCancel={() => setEditingTeacherId(null)}
                       existingIds={input.teachers.map((x) => x.id)}
+                      existingTeachers={input.teachers}
                       availableTrends={availableTrends}
                       availableClasses={availableClasses}
                       initialHomeroomClassIds={homeroomClassIdsForTeacher(teacher.id)}

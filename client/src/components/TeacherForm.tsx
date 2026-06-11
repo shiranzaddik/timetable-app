@@ -29,6 +29,8 @@ interface Props {
   onSave: (teacher: Teacher, homeroomClassIds: string[]) => void;
   onCancel: () => void;
   existingIds: string[];
+  /** All teachers currently in the school (used to block duplicate names). */
+  existingTeachers: Pick<Teacher, "id" | "name" | "nameHe">[];
   initial?: Teacher;
   /** Trends that actually exist among the school's classes. Each per-subject
    *  chip toggles one trend. When omitted/empty, the form falls back to
@@ -60,6 +62,7 @@ export default function TeacherForm({
   onSave,
   onCancel,
   existingIds,
+  existingTeachers,
   initial,
   availableTrends,
   availableClasses,
@@ -157,6 +160,18 @@ export default function TeacherForm({
       if ((trendsPerSubject[s]?.length ?? 0) === 0) {
         return setError(t("errPickGrade"));
       }
+    }
+    // Case-insensitive duplicate-name check across both languages. The user's
+    // own teacher (when editing) is excluded.
+    const candidate = name.trim().toLowerCase();
+    const duplicate = existingTeachers.some((other) => {
+      if (initial && other.id === initial.id) return false;
+      const otherName = other.name?.trim().toLowerCase();
+      const otherHe = other.nameHe?.trim().toLowerCase();
+      return otherName === candidate || otherHe === candidate;
+    });
+    if (duplicate) {
+      return setError(t("errTeacherNameExists", { name: name.trim() }));
     }
     const id = isEdit ? initial!.id : makeId(name, existingIds);
     // Derive grades from selected trend keys (key form "A" or "A:science").
