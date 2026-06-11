@@ -142,8 +142,7 @@ const STRINGS = {
     colFrom: "From",
     colTo: "To",
     colType: "Type",
-    classHoursLabel: "Minimum school day for this class",
-    classHoursInlineNote: "Minimum study hours per day",
+    classHoursLabel: "At least this many study hours per day",
     classHoursHint:
       "Each day will be scheduled for at least this many hours. The solver warns you if the subjects below don't add up to the minimum.",
     classHoursFrom: "From",
@@ -421,8 +420,7 @@ const STRINGS = {
     colFrom: "מ-",
     colTo: "עד",
     colType: "סוג",
-    classHoursLabel: "מינימום שעות לימוד ביום לכיתה זו",
-    classHoursInlineNote: "שעות לימוד מינימליות ביום",
+    classHoursLabel: "לפחות שעות לימוד ביום לכיתה זו",
     classHoursHint:
       "כל יום בלוח יכלול לפחות את מספר השעות שנקבע כאן. תופיע אזהרה אם סך המקצועות לא ממלא את המינימום.",
     classHoursFrom: "מ-",

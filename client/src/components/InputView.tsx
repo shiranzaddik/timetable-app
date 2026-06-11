@@ -855,15 +855,18 @@ function ClassCard({
           <span className="tag muted">{t("noDefaultTeacher")}</span>
         )}
         <span className="tag muted">
-          {`${pad2(startHour)}:00 - ${pad2(endHour)}:00`}
+          {`${formatHourMinute(startHour)} - ${formatHourMinute(endHour)}`}
         </span>
       </div>
     </div>
   );
 }
 
-function pad2(n: number): string {
-  return n < 10 ? `0${n}` : `${n}`;
+function formatHourMinute(hour: number): string {
+  const safe = Number.isFinite(hour) ? hour : 0;
+  const h = Math.max(0, Math.min(23, Math.floor(safe)));
+  const m = Math.max(0, Math.min(59, Math.round((safe - h) * 60)));
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function formatWindow(

@@ -210,36 +210,25 @@ export default function ClassForm({
         <div className="min-hours-card">
           <label className="min-hours-field">
             <span className="min-hours-field-label">{t("classHoursFrom")}</span>
-            <div className="min-hours-input">
-              <input
-                type="number"
-                min={0}
-                max={23}
-                value={startHour}
-                onChange={(e) => setStartHour(Number(e.target.value))}
-              />
-              <span className="min-hours-suffix">:00</span>
-            </div>
+            <input
+              type="time"
+              value={hourToHHMM(startHour)}
+              onChange={(e) => setStartHour(hhmmToHour(e.target.value, startHour))}
+              className="min-hours-time"
+            />
           </label>
           <span className="min-hours-arrow">-</span>
           <label className="min-hours-field">
             <span className="min-hours-field-label">{t("classHoursTo")}</span>
-            <div className="min-hours-input">
-              <input
-                type="number"
-                min={1}
-                max={24}
-                value={endHour}
-                onChange={(e) => setEndHour(Number(e.target.value))}
-              />
-              <span className="min-hours-suffix">:00</span>
-            </div>
+            <input
+              type="time"
+              value={hourToHHMM(endHour)}
+              onChange={(e) => setEndHour(hhmmToHour(e.target.value, endHour))}
+              className="min-hours-time"
+            />
           </label>
           <span className="min-hours-total">
-            = {Math.max(0, endHour - startHour)}h
-          </span>
-          <span className="min-hours-inline-note">
-            {t("classHoursInlineNote")}
+            = {formatDuration(Math.max(0, endHour - startHour))}
           </span>
         </div>
         <small style={{ color: "var(--text-muted)" }}>{t("classHoursHint")}</small>
@@ -259,4 +248,30 @@ export default function ClassForm({
       </div>
     </div>
   );
+}
+
+/** Convert a (possibly fractional) hour to "HH:MM". 8 → "08:00", 8.5 → "08:30". */
+function hourToHHMM(hour: number): string {
+  const safe = Number.isFinite(hour) ? hour : 0;
+  const h = Math.max(0, Math.min(23, Math.floor(safe)));
+  const m = Math.max(0, Math.min(59, Math.round((safe - h) * 60)));
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** Parse "HH:MM" into a fractional hour. Falls back to the previous value
+ *  when the string is empty (some browsers fire onChange with "" mid-edit). */
+function hhmmToHour(value: string, fallback: number): number {
+  if (!value) return fallback;
+  const [h, m] = value.split(":").map((n) => Number.parseInt(n, 10));
+  if (Number.isNaN(h)) return fallback;
+  return h + (Number.isNaN(m) ? 0 : m / 60);
+}
+
+/** Render a (fractional) hour count as e.g. "5h 30m" or "5h". */
+function formatDuration(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }

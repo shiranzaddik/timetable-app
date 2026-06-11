@@ -929,30 +929,15 @@ td.subj-bible     { background: #fefce8; }
   color: var(--text);
   font-weight: 600;
 }
-.min-hours-input {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.min-hours-input input {
-  width: 56px;
+.min-hours-time {
+  width: 110px;
   text-align: center;
-}
-.min-hours-suffix {
-  color: var(--text-muted);
-  font-size: 13px;
+  direction: ltr;
 }
 .min-hours-arrow {
   color: var(--text-muted);
   font-size: 16px;
   padding-bottom: 8px;
-}
-.min-hours-inline-note {
-  flex-basis: 100%;
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-style: italic;
 }
 .min-hours-total {
   margin-inline-start: auto;

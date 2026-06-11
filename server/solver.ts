@@ -604,16 +604,19 @@ function solveOnce(
   } => {
     const cStart = c.startHour ?? globalStartHour;
     const cEnd = c.endHour ?? globalEndHour;
-    const start = cStart - globalStartHour;
-    const classMaxSlots = Math.max(0, slotsPerDay - start);
+    // Slot grid is at integer-hour resolution; fractional class bounds (e.g.
+    // 8:30) shift to the next/previous slot boundary so the solver only ever
+    // touches whole-hour slots that fall inside the class's window.
+    const start = Math.max(0, Math.ceil(cStart - globalStartHour));
+    const slotsAvailable = Math.max(0, Math.floor(cEnd - globalStartHour) - start);
     const dayCaps = rawInput.config.days.map((d) => {
       const dayEnd = rawInput.config.endHourByDay?.[d] ?? globalEndHour;
-      return Math.max(0, dayEnd - cStart);
+      return Math.max(0, Math.floor(dayEnd - globalStartHour) - start);
     });
-    const slotsByDay = dayCaps.map((dc) => Math.min(classMaxSlots, dc));
+    const slotsByDay = dayCaps.map((dc) => Math.min(slotsAvailable, dc));
     return {
       start,
-      minSlots: Math.max(0, cEnd - cStart),
+      minSlots: Math.max(0, Math.floor(cEnd - cStart)),
       slotsByDay,
     };
   };
