@@ -769,90 +769,21 @@ function GradeCard({
         </div>
       </div>
 
-      <TrendSubjectsPie subjects={subjects} tSubject={tSubject} />
-    </div>
-  );
-}
-
-const SUBJECT_PIE_COLORS: Record<string, string> = {
-  math: "#fef08a",
-  hebrew: "#ddd6fe",
-  english: "#bae6fd",
-  science: "#99f6e4",
-  sport: "#fecaca",
-  music: "#fbcfe8",
-  computer: "#bfdbfe",
-  art: "#f5d0fe",
-  history: "#fed7aa",
-  geography: "#bbf7d0",
-  bible: "#d9f99d",
-};
-const PIE_FALLBACK_COLORS = [
-  "#fde68a",
-  "#c7d2fe",
-  "#a7f3d0",
-  "#fbcfe8",
-  "#bae6fd",
-];
-
-function subjectPieColor(subject: string, fallbackIdx: number): string {
-  return (
-    SUBJECT_PIE_COLORS[subject] ??
-    PIE_FALLBACK_COLORS[fallbackIdx % PIE_FALLBACK_COLORS.length]
-  );
-}
-
-function TrendSubjectsPie({
-  subjects,
-  tSubject,
-}: {
-  subjects: ClassSubject[];
-  tSubject: (s: string) => string;
-}) {
-  const { t } = useT();
-  const total = subjects.reduce((sum, s) => sum + s.hoursPerWeek, 0);
-  if (total <= 0) return null;
-  // Build cumulative conic-gradient stops; rounding the last stop to 100%
-  // avoids a hair-line gap from floating-point drift.
-  const stops: string[] = [];
-  let acc = 0;
-  subjects.forEach((s, i) => {
-    const start = (acc / total) * 100;
-    acc += s.hoursPerWeek;
-    const end = i === subjects.length - 1 ? 100 : (acc / total) * 100;
-    stops.push(`${subjectPieColor(s.subject, i)} ${start}% ${end}%`);
-  });
-  const gradient = `conic-gradient(${stops.join(", ")})`;
-  return (
-    <div className="trend-pie-wrap">
-      <div
-        className="trend-pie"
-        style={{ background: gradient }}
-        aria-label={subjects
-          .map((s) => `${tSubject(s.subject)} ${s.hoursPerWeek}`)
-          .join(", ")}
-      />
-      <ul className="trend-pie-legend">
-        {subjects.map((s, i) => {
+      <div className="trend-subjects-tags">
+        {subjects.map((s) => {
           const mandatory = s.mandatory !== false;
-          const pct = Math.round((s.hoursPerWeek / total) * 100);
           return (
-            <li
+            <span
               key={s.subject}
-              className="trend-pie-legend-item"
+              className={`tag tag-compact subj-${s.subject}`}
               style={{ opacity: mandatory ? 1 : 0.55 }}
-              title={`${s.hoursPerWeek} ${t("hoursShort")} · ${pct}%`}
+              title={`${s.hoursPerWeek} ${t("hoursShort")}`}
             >
-              <span
-                className="trend-pie-swatch"
-                style={{ background: subjectPieColor(s.subject, i) }}
-              />
-              <span className="trend-pie-legend-name">{tSubject(s.subject)}</span>
-              <span className="trend-pie-legend-hours">{s.hoursPerWeek}</span>
-            </li>
+              {tSubject(s.subject)} {s.hoursPerWeek}
+            </span>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }
