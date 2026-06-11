@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function InputView({ input, onChange }: Props) {
-  const { t, tSubject, tGrade, tClassId, tTeacher } = useT();
+  const { t, tSubject, tGrade, tTeacher } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [teacherSort, setTeacherSort] = useState<"name" | "subject" | "grade">(
