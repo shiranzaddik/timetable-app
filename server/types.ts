@@ -57,6 +57,8 @@ export interface Config {
 export interface Room {
   id: string;
   name: string;
+  /** Optional Hebrew display name; client-only. */
+  nameHe?: string;
   type: RoomType;
 }
 

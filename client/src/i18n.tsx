@@ -2,7 +2,7 @@
 // Adds Hebrew (RTL) alongside English; switches document direction on change.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Day, Grade, Subject, type Teacher } from "./types";
+import { Day, Grade, Subject, type Room, type Teacher } from "./types";
 
 export type Lang = "en" | "he";
 
@@ -29,7 +29,7 @@ const STRINGS = {
     saving: "Saving…",
     saved: "Saved ✓",
     saveFailed: "Save failed",
-    scheduledIn: "Scheduled {n} blocks in {ms} ms",
+    scheduledIn: "",
 
     // stats
     statTeachers: "Teachers",
@@ -320,7 +320,7 @@ const STRINGS = {
     saving: "שומר…",
     saved: "נשמר ✓",
     saveFailed: "שמירה נכשלה",
-    scheduledIn: "נוצרו {n} שיעורים תוך {ms} מ\"ש",
+    scheduledIn: "",
 
     statTeachers: "מורים",
     statClasses: "כיתות",
@@ -673,6 +673,10 @@ export interface I18nApi {
   /** Returns the teacher's display name for the current language
    *  (`teacher.nameHe` in Hebrew when set, otherwise `teacher.name`). */
   tTeacher: (t: Pick<Teacher, "name" | "nameHe">) => string;
+  /** Returns the room's display name for the current language. Falls
+   *  back to a literal translation of the leading "Room " prefix when
+   *  no nameHe is set, so demo data keeps reading well in Hebrew. */
+  tRoom: (room: Pick<Room, "name" | "nameHe">) => string;
   /** Translates a class id like "A1" → "א1" in Hebrew. Leaves unknown prefixes alone. */
   tClassId: (id: string) => string;
   tClassName: (id: string) => string;
@@ -720,6 +724,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     tGrade: (g) => GRADE_LETTERS[lang][g] ?? g,
     tTeacher: (teacher) =>
       lang === "he" && teacher.nameHe ? teacher.nameHe : teacher.name,
+    tRoom: (room) => {
+      if (lang === "he" && room.nameHe) return room.nameHe;
+      if (lang === "he") {
+        // Fallback: translate the "Room <id>" pattern to "חדר <id>" so the
+        // English demo strings stay readable in Hebrew until nameHe is set.
+        const m = /^Room\s+(.+)$/i.exec(room.name);
+        if (m) return `חדר ${translateClassId(m[1])}`;
+      }
+      return room.name;
+    },
     tClassId: translateClassId,
     tClassName: (id) => `${STRINGS[lang].classWord} ${translateClassId(id)}`,
   };

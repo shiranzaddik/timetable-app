@@ -52,6 +52,8 @@ export interface Config {
 export interface Room {
   id: string;
   name: string;
+  /** Optional Hebrew display name (mirrors Teacher.nameHe). */
+  nameHe?: string;
   type: RoomType;
 }
 

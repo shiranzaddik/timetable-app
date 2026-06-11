@@ -321,7 +321,7 @@ export default function App() {
         >
           {t("clearAll")}
         </button>
-        {result?.success && (
+        {result?.success && t("scheduledIn") && (
           <span className="banner success">
             {t("scheduledIn", {
               n: result.blockCount ?? 0,

@@ -132,9 +132,10 @@ function GridTable({
   conflictMap,
   onSwap,
 }: GridProps) {
-  const { t, tDay, tSubject, tClassName, tTeacher } = useT();
+  const { t, tDay, tSubject, tClassName, tTeacher, tRoom } = useT();
   const { days, slotLabels } = input.config;
   const teacherById = new Map(input.teachers.map((tch) => [tch.id, tch]));
+  const roomById = new Map(input.rooms.map((r) => [r.id, r]));
   const [pending, setPending] = useState<{ day: number; slot: number } | null>(
     null
   );
@@ -220,7 +221,11 @@ function GridTable({
                             : cell.teacherName)
                         : tClassName(cell.classId)}
                     </div>
-                    <div className="cell-meta">{cell.roomName}</div>
+                    <div className="cell-meta">
+                      {roomById.get(cell.roomId)
+                        ? tRoom(roomById.get(cell.roomId)!)
+                        : cell.roomName}
+                    </div>
                     {isConflict && (
                       <div className="cell-conflict-tag">
                         {t("cellConflict")}

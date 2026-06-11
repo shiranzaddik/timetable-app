@@ -48,21 +48,21 @@ export const config: Config = {
 };
 
 export const rooms: Room[] = [
-  { id: "room-A1", name: "Room A1", type: RoomType.Regular },
-  { id: "room-A2", name: "Room A2", type: RoomType.Regular },
-  { id: "room-B1", name: "Room B1", type: RoomType.Regular },
-  { id: "room-B2", name: "Room B2", type: RoomType.Regular },
-  { id: "room-C1", name: "Room C1", type: RoomType.Regular },
-  { id: "room-C2", name: "Room C2", type: RoomType.Regular },
-  { id: "room-D1", name: "Room D1", type: RoomType.Regular },
-  { id: "room-D2", name: "Room D2", type: RoomType.Regular },
-  { id: "room-E1", name: "Room E1", type: RoomType.Regular },
-  { id: "room-E2", name: "Room E2", type: RoomType.Regular },
-  { id: "room-F1", name: "Room F1", type: RoomType.Regular },
-  { id: "room-F2", name: "Room F2", type: RoomType.Regular },
-  { id: "sport-hall", name: "Sport Hall", type: RoomType.Sport },
-  { id: "computer-lab", name: "Computer Lab", type: RoomType.Computer },
-  { id: "music-room", name: "Music Room", type: RoomType.Music },
+  { id: "room-A1", name: "Room A1", nameHe: "חדר א1", type: RoomType.Regular },
+  { id: "room-A2", name: "Room A2", nameHe: "חדר א2", type: RoomType.Regular },
+  { id: "room-B1", name: "Room B1", nameHe: "חדר ב1", type: RoomType.Regular },
+  { id: "room-B2", name: "Room B2", nameHe: "חדר ב2", type: RoomType.Regular },
+  { id: "room-C1", name: "Room C1", nameHe: "חדר ג1", type: RoomType.Regular },
+  { id: "room-C2", name: "Room C2", nameHe: "חדר ג2", type: RoomType.Regular },
+  { id: "room-D1", name: "Room D1", nameHe: "חדר ד1", type: RoomType.Regular },
+  { id: "room-D2", name: "Room D2", nameHe: "חדר ד2", type: RoomType.Regular },
+  { id: "room-E1", name: "Room E1", nameHe: "חדר ה1", type: RoomType.Regular },
+  { id: "room-E2", name: "Room E2", nameHe: "חדר ה2", type: RoomType.Regular },
+  { id: "room-F1", name: "Room F1", nameHe: "חדר ו1", type: RoomType.Regular },
+  { id: "room-F2", name: "Room F2", nameHe: "חדר ו2", type: RoomType.Regular },
+  { id: "sport-hall", name: "Sport Hall", nameHe: "אולם ספורט", type: RoomType.Sport },
+  { id: "computer-lab", name: "Computer Lab", nameHe: "מעבדת מחשבים", type: RoomType.Computer },
+  { id: "music-room", name: "Music Room", nameHe: "חדר מוזיקה", type: RoomType.Music },
 ];
 
 const allGrades: Grade[] = [
@@ -388,14 +388,16 @@ const grade4Subjects: ClassSubject[] = [
   { subject: "bible", hoursPerWeek: 3 },
 ];
 
-// Grade 4 (D) music trend — 33h with extra music.
+// Grade 4 (D) music trend — 31h, slightly more music than regular.
+// Kept close to regular grade-4 to avoid music-room contention now that
+// every grade also has a music slot.
 const grade4MusicSubjects: ClassSubject[] = [
   { subject: Subject.Math, hoursPerWeek: 5 },
   { subject: Subject.Hebrew, hoursPerWeek: 5 },
   { subject: Subject.English, hoursPerWeek: 5 },
   { subject: Subject.Science, hoursPerWeek: 4 },
   { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 4 },
+  { subject: Subject.Music, hoursPerWeek: 2 },
   { subject: Subject.Computer, hoursPerWeek: 1 },
   { subject: "art", hoursPerWeek: 2 },
   { subject: "history", hoursPerWeek: 2 },
@@ -520,7 +522,8 @@ export const classes: SchoolClass[] = [
     endHour: 13,
     subjects: grade4MusicSubjects,
   },
-  // Grade 5
+  // Grade 5 — slightly longer day (15:00) to give the solver slack
+  // against ~32h of subjects.
   {
     id: "E1",
     grade: Grade.E,
@@ -528,7 +531,7 @@ export const classes: SchoolClass[] = [
     name: "E1",
     defaultTeacherId: "t-noa",
     defaultRoomId: "room-E1",
-    endHour: 14,
+    endHour: 15,
     subjects: grade5Subjects,
   },
   {
@@ -538,10 +541,10 @@ export const classes: SchoolClass[] = [
     name: "E2",
     defaultTeacherId: "t-ariel",
     defaultRoomId: "room-E2",
-    endHour: 14,
+    endHour: 15,
     subjects: grade5Subjects,
   },
-  // Grade 6
+  // Grade 6 — same logic for the 33h subject list.
   {
     id: "F1",
     grade: Grade.F,
@@ -549,7 +552,7 @@ export const classes: SchoolClass[] = [
     name: "F1",
     defaultTeacherId: "t-shira",
     defaultRoomId: "room-F1",
-    endHour: 14,
+    endHour: 15,
     subjects: grade6Subjects,
   },
   {
@@ -559,7 +562,7 @@ export const classes: SchoolClass[] = [
     name: "F2",
     defaultTeacherId: "t-yair",
     defaultRoomId: "room-F2",
-    endHour: 14,
+    endHour: 15,
     subjects: grade6Subjects,
   },
 ];
