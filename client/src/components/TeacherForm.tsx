@@ -235,8 +235,8 @@ export default function TeacherForm({
             {subjects
               .filter((s) => !WELL_KNOWN_SUBJECTS.includes(s))
               .map((s) => (
-                <span key={s} className="tag">
-                  {s}
+                <span key={s} className={`tag subj-${s}`}>
+                  {tSubject(s)}
                   <button
                     type="button"
                     className="tag-remove"
