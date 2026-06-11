@@ -269,11 +269,6 @@ export default function App() {
 
   if (!input) return <div className="app">{t("loading")}</div>;
 
-  const totalHours = input.classes.reduce(
-    (sum, c) => sum + c.subjects.reduce((s, x) => s + x.hoursPerWeek, 0),
-    0
-  );
-
   const teacherById = new Map(input.teachers.map((tch) => [tch.id, tch]));
   const teacherNameById = (id: string | undefined, fallback: string): string => {
     if (!id) return fallback;
@@ -313,14 +308,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
-      <div className="stats">
-        <Stat label={t("statTeachers")} value={input.teachers.length} />
-        <Stat label={t("statClasses")} value={input.classes.length} />
-        <Stat label={t("statHours")} value={totalHours} />
-        <Stat label={t("statDays")} value={input.config.days.length} />
-        <SchoolDayStat input={input} onChange={handleInputChange} />
-      </div>
 
       <div className="toolbar">
         <button onClick={runSolver} disabled={loading || input.classes.length === 0}>
@@ -731,112 +718,6 @@ function RecommendationCard({
           </span>
         </li>
       </ol>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="stat">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-    </div>
-  );
-}
-
-function makeSlotLabels(startHour: number, endHour: number): string[] {
-  const labels: string[] = [];
-  for (let h = startHour; h < endHour; h++) {
-    labels.push(`${String(h).padStart(2, "0")}:00`);
-  }
-  return labels;
-}
-
-function SchoolDayStat({
-  input,
-  onChange,
-}: {
-  input: SchoolInput;
-  onChange: (next: SchoolInput) => void;
-}) {
-  const { t, tDay } = useT();
-  const [expanded, setExpanded] = useState(false);
-  const startHour = input.config.startHour ?? 8;
-  const endHour = input.config.endHour ?? startHour + input.config.slotLabels.length;
-  const endByDay = input.config.endHourByDay ?? {};
-
-  const updateStartEnd = (nextStart: number, nextEnd: number) => {
-    if (nextEnd <= nextStart) return;
-    if (nextStart < 0 || nextEnd > 24) return;
-    onChange({
-      ...input,
-      config: {
-        ...input.config,
-        startHour: nextStart,
-        endHour: nextEnd,
-        slotLabels: makeSlotLabels(nextStart, nextEnd),
-      },
-    });
-  };
-
-  const updateDayEnd = (day: Day, nextEnd: number) => {
-    if (nextEnd <= startHour || nextEnd > endHour) return;
-    const next = { ...endByDay, [day]: nextEnd };
-    onChange({
-      ...input,
-      config: { ...input.config, endHourByDay: next },
-    });
-  };
-
-  return (
-    <div className="stat school-day-stat">
-      <div className="stat-label">{t("statSchoolDayMax")}</div>
-      <div className="school-day-inputs">
-        <input
-          type="number"
-          min={0}
-          max={23}
-          value={startHour}
-          onChange={(e) => updateStartEnd(Number(e.target.value), endHour)}
-          aria-label="start hour"
-        />
-        <span>→</span>
-        <input
-          type="number"
-          min={1}
-          max={24}
-          value={endHour}
-          onChange={(e) => updateStartEnd(startHour, Number(e.target.value))}
-          aria-label="end hour"
-        />
-        <button
-          type="button"
-          className="secondary school-day-toggle"
-          onClick={() => setExpanded((v) => !v)}
-        >
-          {expanded ? t("perDayHide") : t("perDayShow")}
-        </button>
-      </div>
-      {expanded && (
-        <div className="per-day-grid">
-          {input.config.days.map((d) => {
-            const v = endByDay[d] ?? endHour;
-            return (
-              <label key={d} className="per-day-field">
-                <span className="per-day-label">{tDay(d)}</span>
-                <input
-                  type="number"
-                  min={startHour + 1}
-                  max={endHour}
-                  value={v}
-                  onChange={(e) => updateDayEnd(d, Number(e.target.value))}
-                />
-                <span className="per-day-suffix">:00</span>
-              </label>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

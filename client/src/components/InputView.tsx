@@ -582,7 +582,21 @@ function TeacherCard({
     <div className="card teacher-card compact" id={`teacher-${teacher.id}`}>
       <div className="head">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">{displayName}</p>
+          <p className="teacher-name">
+            {displayName}
+            {teacher.dayOff && (
+              <span
+                style={{
+                  marginInlineStart: 8,
+                  color: "var(--warn)",
+                  fontWeight: 500,
+                  fontSize: 13,
+                }}
+              >
+                {t("off", { day: tDay(teacher.dayOff) })}
+              </span>
+            )}
+          </p>
           <p className="teacher-role">
             {t("grades")} {gradesLabel}
           </p>
@@ -621,11 +635,6 @@ function TeacherCard({
       </div>
 
       <div className="row">
-        {teacher.dayOff && (
-          <span className="tag warn">
-            {t("off", { day: tDay(teacher.dayOff) })}
-          </span>
-        )}
         {teacher.unavailable.map((w, i) => {
           const isSoft = w.hard === false;
           return (
