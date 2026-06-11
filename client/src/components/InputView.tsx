@@ -429,9 +429,7 @@ export default function InputView({ input, onChange }: Props) {
               <div key={def.key} className="card compact subject-card">
                 <div className="head">
                   <span className={`tag subj-${def.key}`}>{tSubject(def.key)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="teacher-name">{tSubject(def.key)}</p>
-                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }} />
                   <div className="card-actions">
                     <button
                       className="icon-btn edit-trigger"
