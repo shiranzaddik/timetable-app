@@ -7,6 +7,7 @@ import {
   type Room,
   type SchoolClass,
   type SchoolInput,
+  type SubjectDef,
   type Teacher,
   type Trend,
   type UnavailabilityWindow,
@@ -14,6 +15,7 @@ import {
 import TeacherForm, { type TrendChoice } from "./TeacherForm";
 import ClassForm, { type ClassFormResult } from "./ClassForm";
 import GradeForm, { defaultGradeSubjects, type GradeFormResult } from "./GradeForm";
+import SubjectForm from "./SubjectForm";
 import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
@@ -33,6 +35,8 @@ export default function InputView({ input, onChange }: Props) {
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
   const [addingTrend, setAddingTrend] = useState(false);
+  const [addingSubject, setAddingSubject] = useState(false);
+  const [editingSubjectKey, setEditingSubjectKey] = useState<string | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<{
     teacherId: string;
     teacherName: string;
@@ -131,6 +135,35 @@ export default function InputView({ input, onChange }: Props) {
   });
   const homeroomClassIdsForTeacher = (teacherId: string): string[] =>
     input.classes.filter((c) => c.defaultTeacherId === teacherId).map((c) => c.id);
+
+  const availableSubjects: SubjectDef[] = input.subjects ?? [];
+  const subjectKeyInUse = (key: string): boolean =>
+    input.trends.some((tr) => tr.subjects.some((s) => s.subject === key)) ||
+    input.teachers.some((te) => te.subjects.includes(key));
+  const addSubject = (def: SubjectDef) => {
+    onChange({ ...input, subjects: [...availableSubjects, def] });
+    setAddingSubject(false);
+  };
+  const updateSubject = (def: SubjectDef) => {
+    onChange({
+      ...input,
+      subjects: availableSubjects.map((s) => (s.key === def.key ? def : s)),
+    });
+    setEditingSubjectKey(null);
+  };
+  const removeSubject = (key: string) => {
+    if (subjectKeyInUse(key)) {
+      window.alert(t("errCannotRemoveSubjectInUse"));
+      return;
+    }
+    const def = availableSubjects.find((s) => s.key === key);
+    const display = def ? tSubject(def.key) : key;
+    if (!window.confirm(t("confirmDeleteSubject", { name: display }))) return;
+    onChange({
+      ...input,
+      subjects: availableSubjects.filter((s) => s.key !== key),
+    });
+  };
 
   const removeTeacher = (id: string) => {
     const teacher = input.teachers.find((x) => x.id === id);
@@ -400,6 +433,7 @@ export default function InputView({ input, onChange }: Props) {
               onCancel={() => setAddingTeacher(false)}
               existingIds={input.teachers.map((teacher) => teacher.id)}
               existingTeachers={input.teachers}
+              availableSubjects={availableSubjects}
               availableTrends={availableTrends}
               availableClasses={availableClasses}
               initialHomeroomClassIds={[]}
@@ -430,6 +464,7 @@ export default function InputView({ input, onChange }: Props) {
                     onCancel={() => setEditingTeacherId(null)}
                     existingIds={input.teachers.map((x) => x.id)}
                     existingTeachers={input.teachers}
+                    availableSubjects={availableSubjects}
                     availableTrends={availableTrends}
                     availableClasses={availableClasses}
                     initialHomeroomClassIds={homeroomClassIdsForTeacher(teacher.id)}
@@ -465,6 +500,7 @@ export default function InputView({ input, onChange }: Props) {
                       onCancel={() => setEditingTeacherId(null)}
                       existingIds={input.teachers.map((x) => x.id)}
                       existingTeachers={input.teachers}
+                      availableSubjects={availableSubjects}
                       availableTrends={availableTrends}
                       availableClasses={availableClasses}
                       initialHomeroomClassIds={homeroomClassIdsForTeacher(teacher.id)}
@@ -484,6 +520,81 @@ export default function InputView({ input, onChange }: Props) {
             ))
           );
         })()}
+      </div>
+
+      {/* SUBJECTS catalogue (school-level subject list) */}
+      <div className="section" id="section-subjects">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">{t("subjectsSection")}</h3>
+            <div className="section-meta">
+              {availableSubjects.length}{" "}
+              {availableSubjects.length === 1
+                ? t("countSubjectsOne")
+                : t("countSubjectsMany")}
+            </div>
+          </div>
+          {!addingSubject && !editingSubjectKey && (
+            <button className="add-btn" onClick={() => setAddingSubject(true)}>
+              {t("addSubjectSection")}
+            </button>
+          )}
+        </div>
+        {availableSubjects.length === 0 && !addingSubject && (
+          <div className="empty-state">{t("emptySubjects")}</div>
+        )}
+        <div className="card-grid">
+          {addingSubject && (
+            <SubjectForm
+              existingKeys={availableSubjects.map((s) => s.key)}
+              onSave={addSubject}
+              onCancel={() => setAddingSubject(false)}
+            />
+          )}
+          {availableSubjects.map((def) => {
+            if (editingSubjectKey === def.key) {
+              return (
+                <SubjectForm
+                  key={def.key}
+                  initial={def}
+                  existingKeys={availableSubjects.map((s) => s.key)}
+                  onSave={updateSubject}
+                  onCancel={() => setEditingSubjectKey(null)}
+                />
+              );
+            }
+            const inUse = subjectKeyInUse(def.key);
+            return (
+              <div key={def.key} className="card compact subject-card">
+                <div className="head">
+                  <span className={`tag subj-${def.key}`}>{tSubject(def.key)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p className="teacher-name">{tSubject(def.key)}</p>
+                    <p className="teacher-role">{def.key}</p>
+                  </div>
+                  <div className="card-actions">
+                    <button
+                      className="icon-btn edit-trigger"
+                      onClick={() => setEditingSubjectKey(def.key)}
+                      aria-label={t("edit")}
+                      title={t("edit")}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className="icon-btn danger"
+                      onClick={() => removeSubject(def.key)}
+                      aria-label={t("delete")}
+                      title={inUse ? t("errCannotRemoveSubjectInUse") : t("delete")}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* TRENDS (subjects per grade + specialization) */}
@@ -513,6 +624,7 @@ export default function InputView({ input, onChange }: Props) {
               mode="new"
               grade={Grade.A}
               initialSubjects={[]}
+              availableSubjects={availableSubjects}
               existingTrendKeys={presentTrendKeys}
               onSave={(r) => {
                 const cleanName = r.trendName?.trim().toLowerCase() || undefined;
@@ -552,6 +664,7 @@ export default function InputView({ input, onChange }: Props) {
                 grade={grade}
                 trendName={trendName}
                 initialSubjects={subjects}
+                availableSubjects={availableSubjects}
                 onSave={(r) => saveTrendSubjects(grade, trendName, r)}
                 onCancel={() => setEditingTrendKey(null)}
               />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useT } from "../i18n";
-import { Grade, Subject, type ClassSubject } from "../types";
+import { Grade, Subject, type ClassSubject, type SubjectDef } from "../types";
 
 export interface GradeFormResult {
   subjects: ClassSubject[];
@@ -14,6 +14,9 @@ interface Props {
   /** Specialization name within the grade (e.g., "science"). Undefined = regular. */
   trendName?: string;
   initialSubjects: ClassSubject[];
+  /** Subject catalogue (school-level). Each row's subject dropdown picks
+   *  from this list. */
+  availableSubjects: SubjectDef[];
   /** When "new", the form also surfaces a grade dropdown + trend-name input
    *  so the user picks grade/name and subjects in a single step. When
    *  omitted/"edit", grade and trendName are locked. */
@@ -59,6 +62,7 @@ export default function GradeForm({
   grade,
   trendName,
   initialSubjects,
+  availableSubjects,
   mode = "edit",
   existingTrendKeys,
   onSave,
@@ -69,10 +73,6 @@ export default function GradeForm({
   const [gradeState, setGradeState] = useState<Grade>(grade);
   const [trendNameState, setTrendNameState] = useState<string>(trendName ?? "");
   const [subjects, setSubjects] = useState<ClassSubject[]>(initialSubjects);
-  // Indices the user added in this session; their text input stays editable
-  // (instead of locking to a read-only label as soon as the user types the
-  // first character).
-  const [draftIndices, setDraftIndices] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const headerLabel = isNew
     ? t("newTrend")
@@ -161,35 +161,31 @@ export default function GradeForm({
         <label>{t("fieldSubjectsHours")}</label>
         {subjects.map((row, i) => {
           const isMandatory = row.mandatory ?? true;
-          // Existing rows (loaded from initialSubjects) lock the subject name
-          // to a read-only label so a typo can't accidentally rename a stored
-          // subject. Rows the user added in this session stay editable as long
-          // as the form is open.
-          const isEditing = draftIndices.has(i) || row.subject.trim() === "";
+          // Subjects already used in *other* rows are hidden from this row's
+          // dropdown so the user can't accidentally pick the same subject
+          // twice. The current row's own selection stays visible.
+          const usedElsewhere = new Set(
+            subjects.filter((_, j) => j !== i).map((s) => s.subject).filter(Boolean)
+          );
           return (
             <div key={i} className="subject-hours-row mandatory-row">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={row.subject}
-                  placeholder={t("subjectPlaceholder")}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[i] = { ...next[i], subject: e.target.value };
-                    setSubjects(next);
-                  }}
-                />
-              ) : (
-                <span
-                  style={{
-                    textTransform: "capitalize",
-                    fontSize: 13,
-                    alignSelf: "center",
-                  }}
-                >
-                  {tSubject(row.subject)}
-                </span>
-              )}
+              <select
+                value={row.subject}
+                onChange={(e) => {
+                  const next = [...subjects];
+                  next[i] = { ...next[i], subject: e.target.value };
+                  setSubjects(next);
+                }}
+              >
+                <option value="">{t("subjectPlaceholder")}</option>
+                {availableSubjects
+                  .filter((def) => !usedElsewhere.has(def.key) || def.key === row.subject)
+                  .map((def) => (
+                    <option key={def.key} value={def.key}>
+                      {tSubject(def.key)}
+                    </option>
+                  ))}
+              </select>
               <input
                 type="number"
                 min={0}
@@ -220,18 +216,7 @@ export default function GradeForm({
               <button
                 type="button"
                 className="icon-btn"
-                onClick={() => {
-                  setSubjects(subjects.filter((_, j) => j !== i));
-                  // Drop & re-key the draft index set since indices shift.
-                  setDraftIndices((prev) => {
-                    const next = new Set<number>();
-                    prev.forEach((idx) => {
-                      if (idx === i) return;
-                      next.add(idx > i ? idx - 1 : idx);
-                    });
-                    return next;
-                  });
-                }}
+                onClick={() => setSubjects(subjects.filter((_, j) => j !== i))}
                 title={t("delete")}
                 aria-label={t("delete")}
               >
@@ -244,14 +229,12 @@ export default function GradeForm({
           type="button"
           className="add-btn"
           style={{ alignSelf: "flex-start", marginTop: 4 }}
-          onClick={() => {
-            const nextIdx = subjects.length;
+          onClick={() =>
             setSubjects([
               ...subjects,
               { subject: "", hoursPerWeek: 2, mandatory: true },
-            ]);
-            setDraftIndices((prev) => new Set([...prev, nextIdx]));
-          }}
+            ])
+          }
         >
           {t("addSubject")}
         </button>

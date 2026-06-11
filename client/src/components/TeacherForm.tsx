@@ -3,7 +3,7 @@ import { useT } from "../i18n";
 import {
   Day,
   Grade,
-  Subject,
+  type SubjectDef,
   type Teacher,
   type UnavailabilityWindow,
 } from "../types";
@@ -32,6 +32,9 @@ interface Props {
   /** All teachers currently in the school (used to block duplicate names). */
   existingTeachers: Pick<Teacher, "id" | "name" | "nameHe">[];
   initial?: Teacher;
+  /** School-level subject catalogue. The checkbox grid is built from this
+   *  list — to add a new subject the user goes to the Subjects section. */
+  availableSubjects: SubjectDef[];
   /** Trends that actually exist among the school's classes. Each per-subject
    *  chip toggles one trend. When omitted/empty, the form falls back to
    *  generic per-grade chips. */
@@ -42,18 +45,6 @@ interface Props {
   initialHomeroomClassIds?: string[];
 }
 
-/** Subjects that ship with a built-in translation + chip color. Includes
- *  the Subject enum values plus the "custom" subjects the i18n layer
- *  already knows ("art", "history", "geography", "bible") so they share
- *  the same uniform checkbox tile as math/hebrew/etc. instead of falling
- *  into the user-typed "extra" row. */
-const WELL_KNOWN_SUBJECTS: string[] = [
-  ...Object.values(Subject),
-  "art",
-  "history",
-  "geography",
-  "bible",
-];
 const ALL_GRADES: Grade[] = Object.values(Grade);
 
 function mergeLegacyDayOff(
@@ -75,6 +66,7 @@ export default function TeacherForm({
   existingIds,
   existingTeachers,
   initial,
+  availableSubjects,
   availableTrends,
   availableClasses,
   initialHomeroomClassIds,
@@ -111,7 +103,6 @@ export default function TeacherForm({
       : initial?.name ?? ""
   );
   const [subjects, setSubjects] = useState<string[]>(initial?.subjects ?? []);
-  const [customDraft, setCustomDraft] = useState("");
   const [trendsPerSubject, setTrendsPerSubject] = useState<Record<string, string[]>>(() => {
     const out: Record<string, string[]> = {};
     for (const s of initial?.subjects ?? []) {
@@ -236,69 +227,18 @@ export default function TeacherForm({
         )}
 
         <div className="checkbox-grid">
-          {WELL_KNOWN_SUBJECTS.map((s) => (
-            <label key={s} className={subjects.includes(s) ? "checked" : ""}>
+          {availableSubjects.map((def) => (
+            <label key={def.key} className={subjects.includes(def.key) ? "checked" : ""}>
               <input
                 type="checkbox"
-                checked={subjects.includes(s)}
+                checked={subjects.includes(def.key)}
                 onChange={() =>
-                  subjects.includes(s) ? removeSubject(s) : addSubject(s)
+                  subjects.includes(def.key) ? removeSubject(def.key) : addSubject(def.key)
                 }
               />
-              {tSubject(s)}
+              {tSubject(def.key)}
             </label>
           ))}
-        </div>
-
-        {subjects.filter((s) => !WELL_KNOWN_SUBJECTS.includes(s)).length > 0 && (
-          <div className="row" style={{ marginTop: 6 }}>
-            {subjects
-              .filter((s) => !WELL_KNOWN_SUBJECTS.includes(s))
-              .map((s) => (
-                <span key={s} className={`tag subj-${s}`}>
-                  {tSubject(s)}
-                  <button
-                    type="button"
-                    className="tag-remove"
-                    aria-label={t("delete")}
-                    onClick={() => removeSubject(s)}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-          </div>
-        )}
-
-        <div
-          className="window-row"
-          style={{ marginTop: 4, gridTemplateColumns: "1fr auto" }}
-        >
-          <input
-            type="text"
-            value={customDraft}
-            placeholder={t("subjectPlaceholder")}
-            onChange={(e) => setCustomDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                const v = customDraft.trim().toLowerCase();
-                if (v) addSubject(v);
-                setCustomDraft("");
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="add-btn"
-            onClick={() => {
-              const v = customDraft.trim().toLowerCase();
-              if (v) addSubject(v);
-              setCustomDraft("");
-            }}
-          >
-            {t("addSubject")}
-          </button>
         </div>
 
         {subjects.length > 0 && (
