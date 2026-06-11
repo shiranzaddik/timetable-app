@@ -2,7 +2,7 @@
 // Adds Hebrew (RTL) alongside English; switches document direction on change.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Day, Grade, Subject, type Room, type Teacher } from "./types";
+import { Day, Grade, Subject, type Room, type SubjectDef, type Teacher } from "./types";
 
 export type Lang = "en" | "he";
 
@@ -676,8 +676,13 @@ export interface I18nApi {
   setLang: (l: Lang) => void;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
   tDay: (d: Day) => string;
-  /** Translates well-known Subject enum values; returns the string as-is for custom subjects. */
+  /** Translates a subject key into a display label. The user-managed
+   *  catalogue set via `setUserSubjects` wins; falls back to the bundled
+   *  i18n names for well-known enum values; finally returns the raw key. */
   tSubject: (s: string) => string;
+  /** App calls this whenever `input.subjects` changes so tSubject can
+   *  prefer user-set display names over the bundled translations. */
+  setUserSubjects: (subjects: SubjectDef[]) => void;
   /** Translates a Grade letter (A→א in Hebrew). */
   tGrade: (g: Grade) => string;
   /** Returns the teacher's display name for the current language
@@ -703,6 +708,7 @@ function readInitialLang(): Lang {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => readInitialLang());
+  const [userSubjects, setUserSubjects] = useState<SubjectDef[]>([]);
 
   const setLang = (l: Lang) => {
     setLangState(l);
@@ -730,7 +736,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLang,
     t: (key, vars) => interpolate(STRINGS[lang][key] ?? STRINGS.en[key] ?? key, vars),
     tDay: (d) => DAY_NAMES[lang][d] ?? d,
-    tSubject: (s) => SUBJECT_NAMES[lang][s] ?? s,
+    tSubject: (s) => {
+      const def = userSubjects.find((u) => u.key === s);
+      if (def) {
+        if (lang === "he" && def.nameHe) return def.nameHe;
+        if (def.name) return def.name;
+      }
+      return SUBJECT_NAMES[lang][s] ?? s;
+    },
+    setUserSubjects,
     tGrade: (g) => GRADE_LETTERS[lang][g] ?? g,
     tTeacher: (teacher) =>
       lang === "he" && teacher.nameHe ? teacher.nameHe : teacher.name,

@@ -512,7 +512,7 @@ export default function InputView({ input, onChange }: Props) {
             <GradeForm
               mode="new"
               grade={Grade.A}
-              initialSubjects={defaultGradeSubjects()}
+              initialSubjects={[]}
               existingTrendKeys={presentTrendKeys}
               onSave={(r) => {
                 const cleanName = r.trendName?.trim().toLowerCase() || undefined;

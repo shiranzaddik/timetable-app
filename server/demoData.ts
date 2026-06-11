@@ -14,6 +14,7 @@ import {
   type Room,
   type SchoolClass,
   type SchoolInput,
+  type SubjectDef,
   type Teacher,
   type Trend,
 } from "./types.js";
@@ -567,6 +568,20 @@ export const classes: SchoolClass[] = [
   },
 ];
 
+export const subjects: SubjectDef[] = [
+  { key: Subject.Math, name: "Math", nameHe: "מתמטיקה" },
+  { key: Subject.Hebrew, name: "Hebrew", nameHe: "עברית" },
+  { key: Subject.English, name: "English", nameHe: "אנגלית" },
+  { key: Subject.Science, name: "Science", nameHe: "מדעים" },
+  { key: Subject.Sport, name: "Sport", nameHe: "ספורט" },
+  { key: Subject.Music, name: "Music", nameHe: "מוזיקה" },
+  { key: Subject.Computer, name: "Computer", nameHe: "מחשבים" },
+  { key: "art", name: "Art", nameHe: "אמנות" },
+  { key: "history", name: "History", nameHe: "היסטוריה" },
+  { key: "geography", name: "Geography", nameHe: "גאוגרפיה" },
+  { key: "bible", name: "Bible", nameHe: "תנ\"ך" },
+];
+
 export const trends: Trend[] = [
   { grade: Grade.A, subjects: grade1Subjects },
   { grade: Grade.B, subjects: grade2Subjects },
@@ -584,4 +599,5 @@ export const demoInput: SchoolInput = {
   teachers,
   classes,
   trends,
+  subjects,
 };

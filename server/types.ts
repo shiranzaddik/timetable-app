@@ -39,6 +39,15 @@ export enum Subject {
   Computer = "computer",
 }
 
+/** School-level subject definition. Trends/teachers reference subjects by
+ *  the stable lowercase `key`. The server doesn't read name/nameHe — they
+ *  are display metadata only. */
+export interface SubjectDef {
+  key: string;
+  name?: string;
+  nameHe?: string;
+}
+
 export interface Config {
   days: Day[];
   /** School day starting hour (24h), e.g., 8 for 08:00. */
@@ -162,6 +171,8 @@ export interface SchoolInput {
   teachers: Teacher[];
   classes: SchoolClass[];
   trends: Trend[];
+  /** Client-managed subject catalogue; the solver doesn't read it. */
+  subjects?: SubjectDef[];
 }
 
 export interface TimetableCell {

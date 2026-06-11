@@ -37,6 +37,19 @@ export enum Subject {
   Computer = "computer",
 }
 
+/** A subject definition that lives at the school level. Trends and teachers
+ *  reference subjects by their stable lowercase `key`. The display name uses
+ *  the i18n fallback when name/nameHe are unset — this lets the demo's
+ *  well-known subjects keep their translations even when subjects is empty. */
+export interface SubjectDef {
+  /** Stable lowercase id, e.g. "math", "bible", or a user-typed "drama". */
+  key: string;
+  /** Display label in English (falls back to `key` when unset). */
+  name?: string;
+  /** Optional Hebrew display label. */
+  nameHe?: string;
+}
+
 export interface Config {
   days: Day[];
   /** School day starting hour (24h), e.g., 8 for 08:00. */
@@ -130,6 +143,10 @@ export interface SchoolInput {
   teachers: Teacher[];
   classes: SchoolClass[];
   trends: Trend[];
+  /** School-level subject catalogue. Trends and teachers reference these by
+   *  `key`. Optional in older saved inputs — when missing the client back-
+   *  fills the list from the subjects already referenced by trends/teachers. */
+  subjects?: SubjectDef[];
 }
 
 export interface TimetableCell {

@@ -18,16 +18,34 @@ import {
  *  classes so the trends list works as before. New edits will persist
  *  trends explicitly going forward. */
 function normalizeInput(input: SchoolInput): SchoolInput {
-  if (input.trends && input.trends.length > 0) return input;
-  const seen = new Set<string>();
-  const trends: Trend[] = [];
-  for (const c of input.classes) {
-    const key = `${c.grade}:${c.trendName ?? ""}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    trends.push({ grade: c.grade, trendName: c.trendName, subjects: c.subjects });
+  let normalized = input;
+  if (!normalized.trends || normalized.trends.length === 0) {
+    const seen = new Set<string>();
+    const trends: Trend[] = [];
+    for (const c of normalized.classes) {
+      const key = `${c.grade}:${c.trendName ?? ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      trends.push({ grade: c.grade, trendName: c.trendName, subjects: c.subjects });
+    }
+    normalized = { ...normalized, trends };
   }
-  return { ...input, trends };
+  // Backfill the school-level subject catalogue from whatever trends/teachers
+  // already reference so older saved inputs keep working.
+  if (!normalized.subjects || normalized.subjects.length === 0) {
+    const keys = new Set<string>();
+    for (const tr of normalized.trends) {
+      for (const s of tr.subjects) keys.add(s.subject);
+    }
+    for (const te of normalized.teachers) {
+      for (const s of te.subjects) keys.add(s);
+    }
+    normalized = {
+      ...normalized,
+      subjects: Array.from(keys).map((key) => ({ key })),
+    };
+  }
+  return normalized;
 }
 
 type View = "byClass" | "byTeacher";
@@ -64,7 +82,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function App() {
-  const { t, tDay, tClassId, tTeacher, tSubject } = useT();
+  const { t, tDay, tClassId, tTeacher, tSubject, setUserSubjects } = useT();
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [persisted, setPersisted] = useState(false);
@@ -126,6 +144,13 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  // Keep the i18n layer's user-subject catalogue in sync with the current
+  // input so tSubject() prefers the user's display names over the bundled
+  // i18n fallback.
+  useEffect(() => {
+    setUserSubjects(input?.subjects ?? []);
+  }, [input?.subjects, setUserSubjects]);
 
   // Auto-save: 1s after the user makes an edit, PUT the current input to /api/school.
   useEffect(() => {
