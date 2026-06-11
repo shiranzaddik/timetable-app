@@ -599,17 +599,17 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
 .tag-remove:hover { opacity: 1; }
 
 /* Subject chips - colored */
-.tag.subj-math      { background: #fef3c7; color: #92400e; border-color: transparent; }
-.tag.subj-hebrew    { background: #ede9fe; color: #5b21b6; border-color: transparent; }
-.tag.subj-english   { background: #e0f2fe; color: #075985; border-color: transparent; }
-.tag.subj-science   { background: #cffafe; color: #155e75; border-color: transparent; }
-.tag.subj-sport     { background: #fee2e2; color: #991b1b; border-color: transparent; }
-.tag.subj-music     { background: #fce7f3; color: #9d174d; border-color: transparent; }
-.tag.subj-computer  { background: #dbeafe; color: #1e3a8a; border-color: transparent; }
-.tag.subj-art       { background: #fae8ff; color: #86198f; border-color: transparent; }
-.tag.subj-history   { background: #fed7aa; color: #9a3412; border-color: transparent; }
-.tag.subj-geography { background: #fde68a; color: #78350f; border-color: transparent; }
-.tag.subj-bible     { background: #fef9c3; color: #854d0e; border-color: transparent; }
+.tag.subj-math      { background: #fef08a; color: #854d0e; border-color: transparent; } /* yellow   */
+.tag.subj-hebrew    { background: #ddd6fe; color: #4c1d95; border-color: transparent; } /* violet   */
+.tag.subj-english   { background: #bae6fd; color: #075985; border-color: transparent; } /* sky      */
+.tag.subj-science   { background: #99f6e4; color: #115e59; border-color: transparent; } /* teal     */
+.tag.subj-sport     { background: #fecaca; color: #991b1b; border-color: transparent; } /* red      */
+.tag.subj-music     { background: #fbcfe8; color: #831843; border-color: transparent; } /* pink     */
+.tag.subj-computer  { background: #c7d2fe; color: #3730a3; border-color: transparent; } /* indigo   */
+.tag.subj-art       { background: #f5d0fe; color: #86198f; border-color: transparent; } /* fuchsia  */
+.tag.subj-history   { background: #fed7aa; color: #9a3412; border-color: transparent; } /* orange   */
+.tag.subj-geography { background: #d9f99d; color: #3f6212; border-color: transparent; } /* lime     */
+.tag.subj-bible     { background: #e7e5e4; color: #44403c; border-color: transparent; } /* stone    */
 
 /* Trend card subject compact tag list */
 .trend-subjects-tags {
