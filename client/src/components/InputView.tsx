@@ -581,20 +581,10 @@ function TeacherCard({
   return (
     <div className="card teacher-card compact" id={`teacher-${teacher.id}`}>
       <div className="head">
-        <div className="avatar">{initials(displayName)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{displayName}</p>
           <p className="teacher-role">
             {t("grades")} {gradesLabel}
-            {homeroomOf.length > 0 && (
-              <>
-                {" · "}
-                <span className="homeroom-inline">
-                  {t("homeroomLabel")}:{" "}
-                  {homeroomOf.map((c) => tClassId(c.id)).join(", ")}
-                </span>
-              </>
-            )}
           </p>
         </div>
         <div className="card-actions">
@@ -633,7 +623,7 @@ function TeacherCard({
       <div className="row">
         {teacher.dayOff && (
           <span className="tag warn">
-            {t("off")} {tDay(teacher.dayOff)} · {t("cantWork")}
+            {t("off", { day: tDay(teacher.dayOff) })}
           </span>
         )}
         {teacher.unavailable.map((w, i) => {
@@ -816,16 +806,6 @@ function ClassCard({
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 }
 
 function formatWindow(

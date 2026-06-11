@@ -87,7 +87,7 @@ const STRINGS = {
 
     // teacher card
     grades: "Grades",
-    off: "Off",
+    off: "Off {day}",
     allDay: "all day",
 
     // class card
@@ -362,7 +362,7 @@ const STRINGS = {
     emptyClasses: "עדיין אין כיתות. לחצו על + הוסף כיתה ליצירת הראשונה.",
 
     grades: "שכבות",
-    off: "חופש ב-",
+    off: "חופש ב{day}",
     allDay: "כל היום",
 
     teacherLabel: "מורה",
