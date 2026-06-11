@@ -402,9 +402,11 @@ export default function TeacherForm({
 
       <div className="form-row">
         <label>{t("fieldHomerooms")}</label>
-        <small style={{ color: "var(--text-muted)", marginBottom: 4 }}>
-          {t("fieldHomeroomsHint")}
-        </small>
+        {t("fieldHomeroomsHint") && (
+          <small style={{ color: "var(--text-muted)", marginBottom: 4 }}>
+            {t("fieldHomeroomsHint")}
+          </small>
+        )}
         {!availableClasses || availableClasses.length === 0 ? (
           <small style={{ color: "var(--text-muted)" }}>
             {t("fieldHomeroomsNoClasses")}
@@ -447,7 +449,9 @@ export default function TeacherForm({
           />
           <span>{t("canBeDefaultLabel")}</span>
         </label>
-        <small style={{ color: "var(--text-muted)" }}>{t("canBeDefaultHint")}</small>
+        {t("canBeDefaultHint") && (
+          <small style={{ color: "var(--text-muted)" }}>{t("canBeDefaultHint")}</small>
+        )}
       </div>
 
       {error && <div className="banner error">{error}</div>}

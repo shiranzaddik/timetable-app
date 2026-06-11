@@ -424,13 +424,11 @@ const STRINGS = {
     fieldVacation: "חופשים",
     vacationHint: "",
     addVacation: "+ הוסף חופש",
-    fieldHomerooms: "מחנך/ת של הכיתות",
-    fieldHomeroomsHint:
-      "סמנו את הכיתות שהמורה מחנך/ת. בחירה תשייך את הכיתה למחנך/ת זה ותסיר אותו מהמחנך/ת הקודם.",
+    fieldHomerooms: "מחנך/ת של כיתה",
+    fieldHomeroomsHint: "",
     fieldHomeroomsNoClasses: "הוסיפו כיתות תחילה כדי להגדיר מחנכים.",
-    canBeDefaultLabel: "יכול להיות מחנך של כיתה",
-    canBeDefaultHint:
-      "כאשר כבוי, הפותר לא יבחר אוטומטית מורה זה כמחנך גם אם לא נקבע מחנך מפורש לכיתה.",
+    canBeDefaultLabel: "יכול להבחר אוטומטית כמחנך",
+    canBeDefaultHint: "",
     cantWork: "לא יכול",
     preferNot: "מעדיף שלא",
     colDay: "יום",
