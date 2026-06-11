@@ -650,17 +650,17 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
   color: var(--text-muted);
   text-align: start;
 }
-.trend-bar-fill.subj-math      { background: #fde68a; }
-.trend-bar-fill.subj-hebrew    { background: #c4b5fd; }
-.trend-bar-fill.subj-english   { background: #7dd3fc; }
-.trend-bar-fill.subj-science   { background: #67e8f9; }
-.trend-bar-fill.subj-sport     { background: #fca5a5; }
-.trend-bar-fill.subj-music     { background: #f9a8d4; }
-.trend-bar-fill.subj-computer  { background: #93c5fd; }
-.trend-bar-fill.subj-art       { background: #f0abfc; }
-.trend-bar-fill.subj-history   { background: #fdba74; }
-.trend-bar-fill.subj-geography { background: #fde047; }
-.trend-bar-fill.subj-bible     { background: #fef08a; }
+.trend-bar-fill.subj-math      { background: #fef08a; } /* yellow */
+.trend-bar-fill.subj-hebrew    { background: #ddd6fe; } /* violet */
+.trend-bar-fill.subj-english   { background: #bae6fd; } /* sky */
+.trend-bar-fill.subj-science   { background: #99f6e4; } /* teal */
+.trend-bar-fill.subj-sport     { background: #fecaca; } /* red */
+.trend-bar-fill.subj-music     { background: #fbcfe8; } /* pink */
+.trend-bar-fill.subj-computer  { background: #bfdbfe; } /* blue */
+.trend-bar-fill.subj-art       { background: #f5d0fe; } /* fuchsia */
+.trend-bar-fill.subj-history   { background: #fed7aa; } /* orange */
+.trend-bar-fill.subj-geography { background: #bbf7d0; } /* green */
+.trend-bar-fill.subj-bible     { background: #d9f99d; } /* lime */
 
 /* --- Timetable --- */
 .timetable-wrap { overflow-x: auto; }
