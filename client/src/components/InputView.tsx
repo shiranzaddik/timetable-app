@@ -137,11 +137,18 @@ export default function InputView({ input, onChange }: Props) {
     if (!teacher) return;
     const usedBy = homeroomByTeacher[id] ?? [];
     if (usedBy.length > 0) {
+      // The homeroom case opens the richer modal that already has its own
+      // confirm/cancel buttons — no extra window.confirm needed.
       setDeleteCandidate({
         teacherId: id,
         teacherName: tTeacher(teacher),
         classes: usedBy,
       });
+      return;
+    }
+    if (
+      !window.confirm(t("confirmDeleteTeacherSimple", { name: tTeacher(teacher) }))
+    ) {
       return;
     }
     onChange({ ...input, teachers: input.teachers.filter((x) => x.id !== id) });
@@ -164,6 +171,15 @@ export default function InputView({ input, onChange }: Props) {
   };
 
   const removeClass = (id: string) => {
+    const cls = input.classes.find((c) => c.id === id);
+    if (!cls) return;
+    if (
+      !window.confirm(
+        t("confirmDeleteClassSimple", { name: tClassId(cls.id) })
+      )
+    ) {
+      return;
+    }
     onChange({
       ...input,
       classes: input.classes.filter((c) => c.id !== id),

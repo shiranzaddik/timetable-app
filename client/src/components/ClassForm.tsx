@@ -221,7 +221,6 @@ export default function ClassForm({
               className="min-hours-time"
             />
           </label>
-          <span className="min-hours-arrow">-</span>
           <label className="min-hours-field">
             <span className="min-hours-field-label">{t("classHoursTo")}</span>
             <input

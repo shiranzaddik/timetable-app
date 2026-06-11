@@ -113,6 +113,8 @@ const STRINGS = {
     // confirms
     confirmRemoveTeacher:
       "This teacher is the default teacher for one or more classes. Remove anyway?",
+    confirmDeleteTeacherSimple: "Delete teacher {name}?",
+    confirmDeleteClassSimple: "Delete class {name}?",
     deleteTeacherTitle: "Delete {name}?",
     deleteTeacherBodyOne:
       "{name} is the homeroom of class {classes}. Deleting will clear that homeroom assignment; a new one will be picked automatically when the schedule is generated.",
@@ -398,6 +400,8 @@ const STRINGS = {
 
     confirmRemoveTeacher:
       "מורה זה מוגדר כברירת מחדל באחת או יותר מהכיתות. למחוק בכל זאת?",
+    confirmDeleteTeacherSimple: "למחוק את המורה {name}?",
+    confirmDeleteClassSimple: "למחוק את הכיתה {name}?",
     deleteTeacherTitle: "למחוק את {name}?",
     deleteTeacherBodyOne:
       "{name} מחנך כיתה {classes}. מחיקה שלה תסיר את הקצאת המחנך של הכיתה שיבחר אוטומטית ביצירת מערכת השעות.",
