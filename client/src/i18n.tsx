@@ -55,6 +55,16 @@ const STRINGS = {
     countGradesMany: "trends",
     countRoomsOne: "room",
     countRoomsMany: "rooms",
+    addTrend: "+ Add trend",
+    newTrend: "New trend",
+    saveTrend: "Save trend",
+    fieldTrendGrade: "Grade",
+    fieldTrendNameOptional: "Trend name (optional)",
+    trendExistsAlready: "This trend already exists.",
+    emptyTrends:
+      "No trends yet. Add one to define the subjects each grade studies.",
+    confirmRemoveTrendWithClasses:
+      "This trend has classes assigned to it. Remove anyway? The classes will move to the regular trend of the grade.",
     addRoom: "+ Add room",
     emptyRooms:
       "No rooms yet. Add at least one regular room — you'll be able to pick it as a class's location.",
@@ -340,6 +350,15 @@ const STRINGS = {
     countGradesMany: "מגמות",
     countRoomsOne: "חדר",
     countRoomsMany: "חדרים",
+    addTrend: "+ הוסף מגמה",
+    newTrend: "מגמה חדשה",
+    saveTrend: "שמור מגמה",
+    fieldTrendGrade: "שכבה",
+    fieldTrendNameOptional: "שם המגמה (אופציונלי)",
+    trendExistsAlready: "המגמה כבר קיימת.",
+    emptyTrends: "אין עדיין מגמות. הוסיפו מגמה כדי להגדיר את המקצועות בכל שכבה.",
+    confirmRemoveTrendWithClasses:
+      "למגמה זו משויכות כיתות. להסיר בכל זאת? הכיתות יועברו למגמה הרגילה של השכבה.",
     addRoom: "+ הוסף חדר",
     emptyRooms:
       "אין עדיין חדרים. הוסיפו לפחות חדר רגיל אחד — ניתן יהיה לבחור בו כמיקום כיתה.",
@@ -421,8 +440,7 @@ const STRINGS = {
     colTo: "עד",
     colType: "סוג",
     classHoursLabel: "מינימום שעות לימוד ביום זה",
-    classHoursHint:
-      "כל יום בלוח יכלול לפחות את מספר השעות שנקבע כאן. תופיע אזהרה אם סך המקצועות לא ממלא את המינימום.",
+    classHoursHint: "",
     classHoursFrom: "מ-",
     classHoursTo: "עד",
     errEndHourBeforeStart: "שעת הסיום חייבת להיות אחרי שעת ההתחלה.",

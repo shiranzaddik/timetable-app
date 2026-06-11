@@ -32,6 +32,7 @@ export default function InputView({ input, onChange }: Props) {
   const [addingClass, setAddingClass] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editingTrendKey, setEditingTrendKey] = useState<string | null>(null);
+  const [addingTrend, setAddingTrend] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<{
     teacherId: string;
     teacherName: string;
@@ -235,6 +236,25 @@ export default function InputView({ input, onChange }: Props) {
     ];
   };
 
+  /** Commit a brand-new trend from the inline "+ הוסף מגמה" form. Returns
+   *  true on success, false when the trend already exists (so the form can
+   *  surface an error). */
+  const createTrend = (grade: Grade, trendName: string | undefined): boolean => {
+    const cleanName = trendName?.trim().toLowerCase() || undefined;
+    const exists = input.trends.some(
+      (tr) => tr.grade === grade && (tr.trendName ?? "") === (cleanName ?? "")
+    );
+    if (exists) return false;
+    onChange({
+      ...input,
+      trends: [
+        ...input.trends,
+        { grade, trendName: cleanName, subjects: defaultGradeSubjects() },
+      ],
+    });
+    return true;
+  };
+
   const addClass = ({ cls }: ClassFormResult) => {
     const trends = ensureTrend(cls.grade, cls.trendName);
     const subjects =
@@ -301,16 +321,38 @@ export default function InputView({ input, onChange }: Props) {
   };
 
   const removeTrend = (grade: Grade, trendName: string | undefined) => {
-    const stillUsed = input.classes.some(
+    const usedBy = input.classes.filter(
       (c) => c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
     );
-    if (stillUsed) return;
-    onChange({
-      ...input,
-      trends: input.trends.filter(
-        (tr) => !(tr.grade === grade && (tr.trendName ?? "") === (trendName ?? ""))
-      ),
-    });
+    if (usedBy.length > 0) {
+      if (!window.confirm(t("confirmRemoveTrendWithClasses"))) return;
+    }
+    // Move any orphan classes to the regular (unnamed) trend of the same
+    // grade so they keep working. Ensure that regular trend exists; reuse
+    // the existing subjects if so, otherwise create a default template.
+    const regularExists =
+      !trendName ||
+      input.trends.some(
+        (tr) => tr.grade === grade && !tr.trendName
+      );
+    const trendsAfterDelete = input.trends.filter(
+      (tr) => !(tr.grade === grade && (tr.trendName ?? "") === (trendName ?? ""))
+    );
+    const trends = regularExists
+      ? trendsAfterDelete
+      : [
+          ...trendsAfterDelete,
+          { grade, trendName: undefined, subjects: defaultGradeSubjects() },
+        ];
+    const regularSubjects =
+      trends.find((tr) => tr.grade === grade && !tr.trendName)?.subjects ??
+      defaultGradeSubjects();
+    const classes = input.classes.map((c) =>
+      c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
+        ? { ...c, trendName: undefined, subjects: regularSubjects }
+        : c
+    );
+    onChange({ ...input, trends, classes });
   };
 
   return (
@@ -451,59 +493,76 @@ export default function InputView({ input, onChange }: Props) {
       </div>
 
       {/* TRENDS (subjects per grade + specialization) */}
-      {presentTrendKeys.length > 0 && (
-        <div className="section" id="section-trends">
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">{t("gradesSection")}</h3>
-              <div className="section-meta">
-                {presentTrendKeys.length}{" "}
-                {presentTrendKeys.length === 1
-                  ? t("countGradesOne")
-                  : t("countGradesMany")}
-              </div>
+      <div className="section" id="section-trends">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">{t("gradesSection")}</h3>
+            <div className="section-meta">
+              {presentTrendKeys.length}{" "}
+              {presentTrendKeys.length === 1
+                ? t("countGradesOne")
+                : t("countGradesMany")}
             </div>
           </div>
-          <div className="card-grid">
-            {presentTrendKeys.map((key) => {
-              const { grade, trendName } = parseTrendKey(key);
-              const subjects = subjectsForTrend(grade, trendName);
-              const classIds = input.classes
-                .filter(
-                  (c) =>
-                    c.grade === grade &&
-                    (c.trendName ?? "") === (trendName ?? "")
-                )
-                .map((c) => c.id);
-              return editingTrendKey === key ? (
-                <GradeForm
-                  key={key}
-                  grade={grade}
-                  trendName={trendName}
-                  initialSubjects={subjects}
-                  onSave={(r) => saveTrendSubjects(grade, trendName, r)}
-                  onCancel={() => setEditingTrendKey(null)}
-                />
-              ) : (
-                <GradeCard
-                  key={key}
-                  grade={grade}
-                  trendName={trendName}
-                  subjects={subjects}
-                  classIds={classIds}
-                  onEdit={() => setEditingTrendKey(key)}
-                  onDelete={
-                    classIds.length === 0
-                      ? () => removeTrend(grade, trendName)
-                      : undefined
-                  }
-                  tSubject={tSubject}
-                />
-              );
-            })}
-          </div>
+          {!addingTrend && (
+            <button className="add-btn" onClick={() => setAddingTrend(true)}>
+              {t("addTrend")}
+            </button>
+          )}
         </div>
-      )}
+        {presentTrendKeys.length === 0 && !addingTrend && (
+          <div className="empty-state">{t("emptyTrends")}</div>
+        )}
+        <div className="card-grid">
+          {addingTrend && (
+            <NewTrendForm
+              existingKeys={presentTrendKeys}
+              onSave={(grade, trendName) => {
+                const ok = createTrend(grade, trendName);
+                if (ok) {
+                  setAddingTrend(false);
+                  const cleanName = trendName?.trim().toLowerCase() || undefined;
+                  setEditingTrendKey(trendKeyOf(grade, cleanName));
+                }
+                return ok;
+              }}
+              onCancel={() => setAddingTrend(false)}
+            />
+          )}
+          {presentTrendKeys.map((key) => {
+            const { grade, trendName } = parseTrendKey(key);
+            const subjects = subjectsForTrend(grade, trendName);
+            const classIds = input.classes
+              .filter(
+                (c) =>
+                  c.grade === grade &&
+                  (c.trendName ?? "") === (trendName ?? "")
+              )
+              .map((c) => c.id);
+            return editingTrendKey === key ? (
+              <GradeForm
+                key={key}
+                grade={grade}
+                trendName={trendName}
+                initialSubjects={subjects}
+                onSave={(r) => saveTrendSubjects(grade, trendName, r)}
+                onCancel={() => setEditingTrendKey(null)}
+              />
+            ) : (
+              <GradeCard
+                key={key}
+                grade={grade}
+                trendName={trendName}
+                subjects={subjects}
+                classIds={classIds}
+                onEdit={() => setEditingTrendKey(key)}
+                onDelete={() => removeTrend(grade, trendName)}
+                tSubject={tSubject}
+              />
+            );
+          })}
+        </div>
+      </div>
 
       {/* CLASSES */}
       <div className="section" id="section-classes">
@@ -867,6 +926,76 @@ function formatHourMinute(hour: number): string {
   const h = Math.max(0, Math.min(23, Math.floor(safe)));
   const m = Math.max(0, Math.min(59, Math.round((safe - h) * 60)));
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** Inline form for creating a brand-new trend. Returns true from onSave on
+ *  success so the form can be closed by the parent; returning false keeps
+ *  it open with an inline error. */
+function NewTrendForm({
+  existingKeys,
+  onSave,
+  onCancel,
+}: {
+  existingKeys: string[];
+  onSave: (grade: Grade, trendName: string | undefined) => boolean;
+  onCancel: () => void;
+}) {
+  const { t, tGrade } = useT();
+  const [grade, setGrade] = useState<Grade>(Grade.A);
+  const [trendName, setTrendName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const existingSet = new Set(existingKeys);
+  const submit = () => {
+    const clean = trendName.trim().toLowerCase() || undefined;
+    const key = clean ? `${grade}:${clean}` : `${grade}`;
+    if (existingSet.has(key)) {
+      setError(t("trendExistsAlready"));
+      return;
+    }
+    if (!onSave(grade, clean)) {
+      setError(t("trendExistsAlready"));
+    }
+  };
+  return (
+    <div className="form-card">
+      <strong style={{ fontSize: 14 }}>{t("newTrend")}</strong>
+      <div className="form-row">
+        <label>{t("fieldTrendGrade")}</label>
+        <select
+          value={grade}
+          onChange={(e) => {
+            setGrade(e.target.value as Grade);
+            setError(null);
+          }}
+        >
+          {Object.values(Grade).map((g) => (
+            <option key={g} value={g}>
+              {tGrade(g)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-row">
+        <label>{t("fieldTrendNameOptional")}</label>
+        <input
+          type="text"
+          value={trendName}
+          placeholder={t("trendPlaceholder")}
+          onChange={(e) => {
+            setTrendName(e.target.value);
+            setError(null);
+          }}
+        />
+      </div>
+      {error && <div className="banner error">{error}</div>}
+      <div className="form-actions">
+        <button onClick={submit}>{t("saveTrend")}</button>
+        <button className="secondary" onClick={onCancel}>
+          {t("cancel")}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function formatWindow(

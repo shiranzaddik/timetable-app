@@ -235,7 +235,9 @@ export default function ClassForm({
             = {formatDuration(Math.max(0, endHour - startHour))}
           </span>
         </div>
-        <small style={{ color: "var(--text-muted)" }}>{t("classHoursHint")}</small>
+        {t("classHoursHint") && (
+          <small style={{ color: "var(--text-muted)" }}>{t("classHoursHint")}</small>
+        )}
       </div>
 
       {error && <div className="banner error">{error}</div>}
