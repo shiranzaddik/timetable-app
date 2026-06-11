@@ -416,9 +416,8 @@ const STRINGS = {
     fieldNamePlaceholder: "לדוגמה, גב' כהן",
     fieldSubjects: "מקצועות",
     fieldGrades: "שכבות שאפשר ללמד",
-    fieldGradesPerSubject: "שכבות לכל מקצוע",
-    perSubjectGradesHint:
-      "כברירת מחדל, המורה מלמד כל מקצוע שנבחר בכל המגמות",
+    fieldGradesPerSubject: "מקצועות",
+    perSubjectGradesHint: "",
     fieldDayOff: "יום חופש *",
     dayOffSoftNote:
       "* ננסה לכבד את יום החופש, אבל ייתכן שיוקצו שיעורים גם בו אם לא יימצאו זמנים אחרים.",

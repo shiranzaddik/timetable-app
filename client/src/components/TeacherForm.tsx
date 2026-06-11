@@ -209,9 +209,11 @@ export default function TeacherForm({
 
       <div className="form-row">
         <label>{t("fieldGradesPerSubject")}</label>
-        <small style={{ color: "var(--text-muted)", marginBottom: 4 }}>
-          {t("perSubjectGradesHint")}
-        </small>
+        {t("perSubjectGradesHint") && (
+          <small style={{ color: "var(--text-muted)", marginBottom: 4 }}>
+            {t("perSubjectGradesHint")}
+          </small>
+        )}
 
         <div className="checkbox-grid">
           {WELL_KNOWN_SUBJECTS.map((s) => (

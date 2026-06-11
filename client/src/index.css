@@ -1,26 +1,27 @@
 :root {
-  --bg: #f5f7fb;
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --border: #e5e7eb;
-  --border-strong: #d1d5db;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --text-dim: #94a3b8;
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-soft: #eef2ff;
-  --success: #16a34a;
-  --success-soft: #dcfce7;
-  --error: #dc2626;
-  --error-soft: #fee2e2;
-  --warn: #b45309;
-  --warn-soft: #fef3c7;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #273347;
+  --border: #334155;
+  --border-strong: #475569;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --primary: #818cf8;
+  --primary-hover: #a5b4fc;
+  --primary-soft: rgba(99, 102, 241, 0.22);
+  --success: #4ade80;
+  --success-soft: rgba(34, 197, 94, 0.22);
+  --error: #f87171;
+  --error-soft: rgba(239, 68, 68, 0.22);
+  --warn: #fbbf24;
+  --warn-soft: rgba(245, 158, 11, 0.22);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   --radius: 12px;
   --radius-sm: 8px;
   --radius-pill: 999px;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -57,7 +58,7 @@ body {
   font-size: 40px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #0f172a;
+  color: var(--text);
   position: relative;
   display: inline-block;
   padding-bottom: 8px;
@@ -136,7 +137,7 @@ body {
   color: var(--text);
 }
 .lang-pill.active {
-  background: var(--text);
+  background: var(--primary);
   color: white;
 }
 .login-lang-wrap {
@@ -442,9 +443,9 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
 }
 .tab:hover { background: var(--surface-2); color: var(--text); }
 .tab.active {
-  background: var(--text);
+  background: var(--primary);
   color: white;
-  border-color: var(--text);
+  border-color: var(--primary);
 }
 
 /* --- Banners --- */
@@ -677,18 +678,31 @@ table.timetable td.empty {
 .cell-subject { font-weight: 600; text-transform: capitalize; }
 .cell-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-/* Subject background colors for cells */
-td.subj-math      { background: #fffbeb; }
-td.subj-hebrew    { background: #f5f3ff; }
-td.subj-english   { background: #f0fdf4; }
-td.subj-science   { background: #ecfeff; }
-td.subj-sport     { background: #fef2f2; }
-td.subj-music     { background: #fdf2f8; }
-td.subj-computer  { background: #eff6ff; }
-td.subj-art       { background: #fdf4ff; }
-td.subj-history   { background: #fff7ed; }
-td.subj-geography { background: #ecfdf5; }
-td.subj-bible     { background: #fefce8; }
+/* Subject background colors for cells. Force a dark text color so the light
+ * pastel backgrounds stay readable in dark mode (the cell inherits the
+ * page's light --text otherwise). */
+td.subj-math      { background: #fffbeb; color: #92400e; }
+td.subj-hebrew    { background: #f5f3ff; color: #5b21b6; }
+td.subj-english   { background: #f0fdf4; color: #075985; }
+td.subj-science   { background: #ecfeff; color: #155e75; }
+td.subj-sport     { background: #fef2f2; color: #991b1b; }
+td.subj-music     { background: #fdf2f8; color: #9d174d; }
+td.subj-computer  { background: #eff6ff; color: #1e3a8a; }
+td.subj-art       { background: #fdf4ff; color: #86198f; }
+td.subj-history   { background: #fff7ed; color: #9a3412; }
+td.subj-geography { background: #ecfdf5; color: #065f46; }
+td.subj-bible     { background: #fefce8; color: #854d0e; }
+td.subj-math .cell-meta,
+td.subj-hebrew .cell-meta,
+td.subj-english .cell-meta,
+td.subj-science .cell-meta,
+td.subj-sport .cell-meta,
+td.subj-music .cell-meta,
+td.subj-computer .cell-meta,
+td.subj-art .cell-meta,
+td.subj-history .cell-meta,
+td.subj-geography .cell-meta,
+td.subj-bible .cell-meta { color: rgba(15, 23, 42, 0.65); }
 
 /* --- Forms --- */
 .icon-btn {
@@ -763,7 +777,8 @@ td.subj-bible     { background: #fefce8; }
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: white;
+  background: var(--surface-2);
+  color: var(--text);
   font-family: inherit;
   font-size: 13px;
 }
@@ -783,7 +798,7 @@ td.subj-bible     { background: #fefce8; }
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  background: white;
+  background: var(--surface-2);
   padding: 6px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
