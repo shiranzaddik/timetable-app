@@ -126,24 +126,9 @@ export default function GradeForm({
                   setSubjects(next);
                 }}
               />
-              <label className="block-size-control" title={t("blockSizeHint")}>
-                <span>{t("blockSizeLabel")}</span>
-                <select
-                  value={effectiveBlockSize(row)}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[i] = {
-                      ...next[i],
-                      blockSize: Number(e.target.value) as 1 | 2,
-                    };
-                    setSubjects(next);
-                  }}
-                >
-                  <option value={1}>1h</option>
-                  <option value={2}>2h</option>
-                </select>
-              </label>
-              <label className="mandatory-toggle">
+              <label
+                className={`mandatory-toggle ${isMandatory ? "on" : ""}`}
+              >
                 <input
                   type="checkbox"
                   checked={isMandatory}

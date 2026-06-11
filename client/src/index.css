@@ -650,17 +650,17 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
   color: var(--text-muted);
   text-align: start;
 }
-.trend-bar-fill.subj-math      { background: #fbbf24; }
-.trend-bar-fill.subj-hebrew    { background: #8b5cf6; }
-.trend-bar-fill.subj-english   { background: #38bdf8; }
-.trend-bar-fill.subj-science   { background: #22d3ee; }
-.trend-bar-fill.subj-sport     { background: #f87171; }
-.trend-bar-fill.subj-music     { background: #f472b6; }
-.trend-bar-fill.subj-computer  { background: #60a5fa; }
-.trend-bar-fill.subj-art       { background: #e879f9; }
-.trend-bar-fill.subj-history   { background: #fb923c; }
-.trend-bar-fill.subj-geography { background: #facc15; }
-.trend-bar-fill.subj-bible     { background: #fde047; }
+.trend-bar-fill.subj-math      { background: #fde68a; }
+.trend-bar-fill.subj-hebrew    { background: #c4b5fd; }
+.trend-bar-fill.subj-english   { background: #7dd3fc; }
+.trend-bar-fill.subj-science   { background: #67e8f9; }
+.trend-bar-fill.subj-sport     { background: #fca5a5; }
+.trend-bar-fill.subj-music     { background: #f9a8d4; }
+.trend-bar-fill.subj-computer  { background: #93c5fd; }
+.trend-bar-fill.subj-art       { background: #f0abfc; }
+.trend-bar-fill.subj-history   { background: #fdba74; }
+.trend-bar-fill.subj-geography { background: #fde047; }
+.trend-bar-fill.subj-bible     { background: #fef08a; }
 
 /* --- Timetable --- */
 .timetable-wrap { overflow-x: auto; }
@@ -844,18 +844,35 @@ td.subj-bible     { background: #fefce8; }
   align-items: center;
 }
 .subject-hours-row.mandatory-row {
-  grid-template-columns: minmax(110px, 160px) 64px auto auto 32px;
+  grid-template-columns: minmax(110px, 160px) 64px auto 32px;
 }
 .mandatory-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
   cursor: pointer;
   user-select: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.mandatory-toggle input[type="checkbox"] { margin: 0; }
+.mandatory-toggle input[type="checkbox"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.mandatory-toggle.on {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+}
 .block-size-control {
   display: flex;
   align-items: center;
