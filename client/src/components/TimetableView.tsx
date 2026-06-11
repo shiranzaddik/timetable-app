@@ -136,6 +136,7 @@ function GridTable({
   const { days, slotLabels } = input.config;
   const teacherById = new Map(input.teachers.map((tch) => [tch.id, tch]));
   const roomById = new Map(input.rooms.map((r) => [r.id, r]));
+  const classById = new Map(input.classes.map((c) => [c.id, c]));
   const [pending, setPending] = useState<{ day: number; slot: number } | null>(
     null
   );
@@ -221,13 +222,22 @@ function GridTable({
                             : cell.teacherName)
                         : tClassName(cell.classId)}
                     </div>
-                    {mode === "byTeacher" && (
-                      <div className="cell-meta">
-                        {roomById.get(cell.roomId)
-                          ? tRoom(roomById.get(cell.roomId)!)
-                          : cell.roomName}
-                      </div>
-                    )}
+                    {(() => {
+                      // In by-class mode, hide the room when it's just the
+                      // class's own default room (every cell of that class
+                      // would otherwise repeat "Room A1"). Specialty rooms
+                      // (sport hall, computer lab, music room) still show.
+                      if (mode === "byClass") {
+                        const own = classById.get(cell.classId);
+                        if (own && own.defaultRoomId === cell.roomId) return null;
+                      }
+                      const room = roomById.get(cell.roomId);
+                      return (
+                        <div className="cell-meta">
+                          {room ? tRoom(room) : cell.roomName}
+                        </div>
+                      );
+                    })()}
                     {isConflict && (
                       <div className="cell-conflict-tag">
                         {t("cellConflict")}
