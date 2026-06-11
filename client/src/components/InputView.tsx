@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function InputView({ input, onChange }: Props) {
-  const { t, tSubject, tGrade, tTeacher } = useT();
+  const { t, tSubject, tGrade, tClassId, tTeacher } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [teacherSort, setTeacherSort] = useState<"name" | "subject" | "grade">(
@@ -106,6 +106,21 @@ export default function InputView({ input, onChange }: Props) {
     homeroomByTeacher[cls.defaultTeacherId].push({ id: cls.id, name: cls.name });
   }
 
+  /** Class chips passed into TeacherForm so the user can toggle which classes
+   *  this teacher is the homeroom of, directly from the teacher side. */
+  const availableClasses = input.classes.map((c) => {
+    const currentTeacher = c.defaultTeacherId
+      ? teacherById[c.defaultTeacherId]
+      : null;
+    return {
+      id: c.id,
+      label: tClassId(c.id),
+      currentHomeroomTeacherName: currentTeacher ? tTeacher(currentTeacher) : null,
+    };
+  });
+  const homeroomClassIdsForTeacher = (teacherId: string): string[] =>
+    input.classes.filter((c) => c.defaultTeacherId === teacherId).map((c) => c.id);
+
   const removeTeacher = (id: string) => {
     const teacher = input.teachers.find((x) => x.id === id);
     if (!teacher) return;
@@ -145,17 +160,45 @@ export default function InputView({ input, onChange }: Props) {
     });
   };
 
-  const addTeacher = (teacher: Teacher) => {
-    onChange({ ...input, teachers: [...input.teachers, teacher] });
+  /** Apply homeroom assignments coming back from the teacher form. The form
+   *  emits the *full* set of classes this teacher should be homeroom of:
+   *   - Any class in `homeroomClassIds` gets its defaultTeacherId set to this
+   *     teacher (overriding whichever teacher was there before).
+   *   - Any class NOT in `homeroomClassIds` that previously pointed at this
+   *     teacher gets cleared. */
+  const applyHomeroomAssignments = (
+    classes: SchoolClass[],
+    teacherId: string,
+    homeroomClassIds: string[]
+  ): SchoolClass[] => {
+    const desired = new Set(homeroomClassIds);
+    return classes.map((c) => {
+      if (desired.has(c.id) && c.defaultTeacherId !== teacherId) {
+        return { ...c, defaultTeacherId: teacherId };
+      }
+      if (!desired.has(c.id) && c.defaultTeacherId === teacherId) {
+        return { ...c, defaultTeacherId: null };
+      }
+      return c;
+    });
+  };
+
+  const addTeacher = (teacher: Teacher, homeroomClassIds: string[]) => {
+    onChange({
+      ...input,
+      teachers: [...input.teachers, teacher],
+      classes: applyHomeroomAssignments(input.classes, teacher.id, homeroomClassIds),
+    });
     setAddingTeacher(false);
   };
 
-  const updateTeacher = (teacher: Teacher) => {
+  const updateTeacher = (teacher: Teacher, homeroomClassIds: string[]) => {
     onChange({
       ...input,
       teachers: input.teachers.map((existing) =>
         existing.id === teacher.id ? teacher : existing
       ),
+      classes: applyHomeroomAssignments(input.classes, teacher.id, homeroomClassIds),
     });
     setEditingTeacherId(null);
   };
@@ -314,6 +357,8 @@ export default function InputView({ input, onChange }: Props) {
               onCancel={() => setAddingTeacher(false)}
               existingIds={input.teachers.map((teacher) => teacher.id)}
               availableTrends={availableTrends}
+              availableClasses={availableClasses}
+              initialHomeroomClassIds={[]}
             />
           </div>
         )}
@@ -341,6 +386,8 @@ export default function InputView({ input, onChange }: Props) {
                     onCancel={() => setEditingTeacherId(null)}
                     existingIds={input.teachers.map((x) => x.id)}
                     availableTrends={availableTrends}
+                    availableClasses={availableClasses}
+                    initialHomeroomClassIds={homeroomClassIdsForTeacher(teacher.id)}
                   />
                 ) : (
                   <TeacherCard
@@ -373,6 +420,8 @@ export default function InputView({ input, onChange }: Props) {
                       onCancel={() => setEditingTeacherId(null)}
                       existingIds={input.teachers.map((x) => x.id)}
                       availableTrends={availableTrends}
+                      availableClasses={availableClasses}
+                      initialHomeroomClassIds={homeroomClassIdsForTeacher(teacher.id)}
                     />
                   ) : (
                     <TeacherCard
@@ -508,8 +557,8 @@ export default function InputView({ input, onChange }: Props) {
                 key={c.id}
                 cls={c}
                 defaultTeacherName={
-                  c.defaultTeacherId
-                    ? teacherById[c.defaultTeacherId]?.name ?? "—"
+                  c.defaultTeacherId && teacherById[c.defaultTeacherId]
+                    ? tTeacher(teacherById[c.defaultTeacherId])
                     : ""
                 }
                 startHour={c.startHour ?? configStartHour}
@@ -582,21 +631,7 @@ function TeacherCard({
     <div className="card teacher-card compact" id={`teacher-${teacher.id}`}>
       <div className="head">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">
-            {displayName}
-            {teacher.dayOff && (
-              <span
-                style={{
-                  marginInlineStart: 8,
-                  color: "var(--warn)",
-                  fontWeight: 500,
-                  fontSize: 13,
-                }}
-              >
-                {t("off", { day: tDay(teacher.dayOff) })}
-              </span>
-            )}
-          </p>
+          <p className="teacher-name">{displayName}</p>
           <p className="teacher-role">
             {t("grades")} {gradesLabel}
           </p>
@@ -621,12 +656,21 @@ function TeacherCard({
         </div>
       </div>
 
+      {(homeroomOf.length > 0 || teacher.dayOff) && (
+        <div className="row">
+          {homeroomOf.map((c) => (
+            <span key={c.id} className="tag homeroom-tag">
+              ★ {t("homeroomOfShort", { className: tClassId(c.id) })}
+            </span>
+          ))}
+          {teacher.dayOff && (
+            <span className="tag dayoff-tag">
+              🌴 {t("off", { day: tDay(teacher.dayOff) })}
+            </span>
+          )}
+        </div>
+      )}
       <div className="row">
-        {homeroomOf.map((c) => (
-          <span key={c.id} className="tag homeroom-tag">
-            ★ {t("homeroomOfShort", { className: tClassId(c.id) })}
-          </span>
-        ))}
         {teacher.subjects.map((s) => (
           <span key={s} className={`tag subj-${s}`}>
             {tSubject(s)}
@@ -713,25 +757,35 @@ function GradeCard({
         </div>
       </div>
 
-      <div className="row">
-        {subjects.map((s) => {
-          const mandatory = s.mandatory !== false;
-          const block = subjectBlockSize(s);
-          const titleParts = [];
-          if (!mandatory) titleParts.push(t("mandatoryLabel") + ": —");
-          titleParts.push(t("blockSizeTooltip", { size: block }));
-          return (
-            <span
-              key={s.subject}
-              className={`tag subj-${s.subject}`}
-              style={{ opacity: mandatory ? 1 : 0.55 }}
-              title={titleParts.join(" · ")}
-            >
-              {tSubject(s.subject)} {s.hoursPerWeek} {t("hoursShort")}
-              <span className="tag-block-size">×{block} {t("hoursShort")}</span>
-            </span>
-          );
-        })}
+      <div className="trend-subjects-bars">
+        {(() => {
+          const maxHours = Math.max(1, ...subjects.map((s) => s.hoursPerWeek));
+          return subjects.map((s) => {
+            const mandatory = s.mandatory !== false;
+            const block = subjectBlockSize(s);
+            const pct = (s.hoursPerWeek / maxHours) * 100;
+            const titleParts = [`${s.hoursPerWeek} ${t("hoursShort")}`];
+            if (!mandatory) titleParts.push(t("mandatoryLabel") + ": —");
+            titleParts.push(t("blockSizeTooltip", { size: block }));
+            return (
+              <div
+                key={s.subject}
+                className="trend-bar-row"
+                style={{ opacity: mandatory ? 1 : 0.55 }}
+                title={titleParts.join(" · ")}
+              >
+                <span className="trend-bar-label">{tSubject(s.subject)}</span>
+                <div className="trend-bar-track">
+                  <div
+                    className={`trend-bar-fill subj-${s.subject}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="trend-bar-hours">{s.hoursPerWeek}</span>
+              </div>
+            );
+          });
+        })()}
       </div>
     </div>
   );
@@ -802,9 +856,6 @@ function ClassCard({
         ) : (
           <span className="tag muted">{t("noDefaultTeacher")}</span>
         )}
-        <span className={`tag trend trend-${cls.grade}`}>
-          {t("gradeBadgePrefix")}: {trendLabel}
-        </span>
         <span className="tag muted">
           {`${pad2(startHour)}:00 → ${pad2(endHour)}:00`}
         </span>

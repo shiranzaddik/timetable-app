@@ -128,6 +128,10 @@ const STRINGS = {
     vacationHint:
       "Add the days/times this teacher can't work, or would prefer not to. Leave times empty for an entire day. Pick \"Prefer not\" if you're OK with the solver overriding it.",
     addVacation: "+ Add time-off",
+    fieldHomerooms: "Homeroom of (classes)",
+    fieldHomeroomsHint:
+      "Pick which classes this teacher is the homeroom of. Selecting a class will move its homeroom assignment from any previous teacher.",
+    fieldHomeroomsNoClasses: "Add classes first to set a homeroom here.",
     canBeDefaultLabel: "Can be a class's homeroom teacher",
     canBeDefaultHint:
       "When off, the solver won't auto-assign this teacher as a homeroom even if no explicit one is set for the class.",
@@ -293,8 +297,7 @@ const STRINGS = {
   he: {
     hoursShort: "שעות",
     appTitle: "בונה מערכת שעות בית-ספרית",
-    appSubtitle:
-      "הגדירו מורים וכיתות, וצרו מערכת שעות שבועית העונה על כל האילוצים.",
+    appSubtitle: "הגדירו מורים וכיתות וקבלו מערכת שעות מתאימה",
 
     generate: "צור מערכת שעות",
     solving: "מחשב…",
@@ -362,10 +365,10 @@ const STRINGS = {
     emptyClasses: "עדיין אין כיתות. לחצו על + הוסף כיתה ליצירת הראשונה.",
 
     grades: "שכבות",
-    off: "חופש ב{day}",
+    off: "יום חופשי {day}",
     allDay: "כל היום",
 
-    teacherLabel: "מורה",
+    teacherLabel: "מחנך",
     roomLabel: "חדר",
 
     edit: "ערוך",
@@ -391,7 +394,7 @@ const STRINGS = {
     fieldGrades: "שכבות שאפשר ללמד",
     fieldGradesPerSubject: "שכבות לכל מקצוע",
     perSubjectGradesHint:
-      "כברירת מחדל, המורה מלמד כל מקצוע שנבחר בכל השכבות. ניתן להסיר שכבה כדי לצמצם.",
+      "כברירת מחדל, המורה מלמד כל מקצוע שנבחר בכל המסלולים",
     fieldDayOff: "יום חופש *",
     dayOffSoftNote:
       "* ננסה לכבד את יום החופש, אבל ייתכן שיוקצו שיעורים גם בו אם לא יימצאו זמנים אחרים.",
@@ -399,6 +402,10 @@ const STRINGS = {
     vacationHint:
       "הוסיפו ימים ושעות בהם המורה לא יכול ללמד, או מעדיף שלא. השאירו שעות ריקות ליום שלם. בחרו \"מעדיף שלא\" כאשר אפשר לחרוג מכך אם צריך.",
     addVacation: "+ הוסף חופש",
+    fieldHomerooms: "מחנך/ת של הכיתות",
+    fieldHomeroomsHint:
+      "סמנו את הכיתות שהמורה מחנך/ת. בחירה תשייך את הכיתה למחנך/ת זה ותסיר אותו מהמחנך/ת הקודם.",
+    fieldHomeroomsNoClasses: "הוסיפו כיתות תחילה כדי להגדיר מחנכים.",
     canBeDefaultLabel: "יכול להיות מחנך של כיתה",
     canBeDefaultHint:
       "כאשר כבוי, הפותר לא יבחר אוטומטית מורה זה כמחנך גם אם לא נקבע מחנך מפורש לכיתה.",

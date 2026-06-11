@@ -279,33 +279,31 @@ export default function App() {
   return (
     <div className="app">
       <header className="page-header">
-        <div className="header-row">
-          <div>
-            <h1>{t("appTitle")}</h1>
-            <p className="subtitle">{t("appSubtitle")}</p>
-          </div>
-          <div className="user-menu">
-            <LanguageSwitcher />
-            {auth.user && (
-              <>
-                {persisted && (
-                  <span className={`save-indicator save-${saving}`}>
-                    {saving === "saving"
-                      ? t("saving")
-                      : saving === "saved"
-                      ? t("saved")
-                      : saving === "error"
-                      ? t("saveFailed")
-                      : ""}
-                  </span>
-                )}
-                <span className="user-name">{auth.user.name}</span>
-                <button className="secondary" onClick={logout}>
-                  {t("signOut")}
-                </button>
-              </>
-            )}
-          </div>
+        <div className="header-controls">
+          <LanguageSwitcher />
+          {auth.user && (
+            <>
+              {persisted && (
+                <span className={`save-indicator save-${saving}`}>
+                  {saving === "saving"
+                    ? t("saving")
+                    : saving === "saved"
+                    ? t("saved")
+                    : saving === "error"
+                    ? t("saveFailed")
+                    : ""}
+                </span>
+              )}
+              <span className="user-name">{auth.user.name}</span>
+              <button className="secondary" onClick={logout}>
+                {t("signOut")}
+              </button>
+            </>
+          )}
+        </div>
+        <div className="header-title">
+          <h1>{t("appTitle")}</h1>
+          <p className="subtitle">{t("appSubtitle")}</p>
         </div>
       </header>
 

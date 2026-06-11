@@ -16,8 +16,17 @@ export interface TrendChoice {
   grade: Grade;
 }
 
+/** One class option for the "homeroom of" picker inside TeacherForm. */
+export interface HomeroomClassOption {
+  id: string;
+  /** Pre-localized display id (e.g., "א1" or "A1"). */
+  label: string;
+  /** Current homeroom teacher (used to surface a "will reassign" hint). */
+  currentHomeroomTeacherName: string | null;
+}
+
 interface Props {
-  onSave: (teacher: Teacher) => void;
+  onSave: (teacher: Teacher, homeroomClassIds: string[]) => void;
   onCancel: () => void;
   existingIds: string[];
   initial?: Teacher;
@@ -25,6 +34,10 @@ interface Props {
    *  chip toggles one trend. When omitted/empty, the form falls back to
    *  generic per-grade chips. */
   availableTrends?: TrendChoice[];
+  /** Class chips offered for the "homeroom of" picker. */
+  availableClasses?: HomeroomClassOption[];
+  /** Class IDs whose current homeroom is this teacher (used when editing). */
+  initialHomeroomClassIds?: string[];
 }
 
 const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
@@ -49,6 +62,8 @@ export default function TeacherForm({
   existingIds,
   initial,
   availableTrends,
+  availableClasses,
+  initialHomeroomClassIds,
 }: Props) {
   const { t, tDay, tSubject, tGrade } = useT();
   const isEdit = !!initial;
@@ -89,7 +104,16 @@ export default function TeacherForm({
   const [canBeDefault, setCanBeDefault] = useState<boolean>(
     initial?.canBeDefault !== false
   );
+  const [homeroomClassIds, setHomeroomClassIds] = useState<string[]>(
+    initialHomeroomClassIds ?? []
+  );
   const [error, setError] = useState<string | null>(null);
+
+  /** Single-select: clicking a chip picks just that class, clicking the
+   *  already-selected one clears the choice (a teacher can have no homeroom). */
+  const toggleHomeroomClass = (classId: string) => {
+    setHomeroomClassIds((prev) => (prev.includes(classId) ? [] : [classId]));
+  };
 
   const toggleTrendForSubject = (subject: string, trendKey: string) => {
     setTrendsPerSubject((prev) => {
@@ -137,18 +161,22 @@ export default function TeacherForm({
         )
       )
     ) as Grade[];
-    onSave({
-      id,
-      name: name.trim(),
-      subjects,
-      grades: overallGrades,
-      trendsPerSubject,
-      // Legacy dayOff is folded into unavailable; emit undefined here so it's
-      // not double-counted on the next read.
-      dayOff: undefined,
-      unavailable,
-      canBeDefault,
-    });
+    onSave(
+      {
+        id,
+        name: name.trim(),
+        nameHe: initial?.nameHe,
+        subjects,
+        grades: overallGrades,
+        trendsPerSubject,
+        // Legacy dayOff is folded into unavailable; emit undefined here so it's
+        // not double-counted on the next read.
+        dayOff: undefined,
+        unavailable,
+        canBeDefault,
+      },
+      homeroomClassIds
+    );
   };
 
   return (
@@ -353,6 +381,44 @@ export default function TeacherForm({
         >
           {t("addVacation")}
         </button>
+      </div>
+
+      <div className="form-row">
+        <label>{t("fieldHomerooms")}</label>
+        <small style={{ color: "var(--text-muted)", marginBottom: 4 }}>
+          {t("fieldHomeroomsHint")}
+        </small>
+        {!availableClasses || availableClasses.length === 0 ? (
+          <small style={{ color: "var(--text-muted)" }}>
+            {t("fieldHomeroomsNoClasses")}
+          </small>
+        ) : (
+          <div className="grade-chip-row">
+            {availableClasses.map((c) => {
+              const on = homeroomClassIds.includes(c.id);
+              const willReassign =
+                on &&
+                c.currentHomeroomTeacherName &&
+                c.currentHomeroomTeacherName !== name.trim() &&
+                !initialHomeroomClassIds?.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`grade-chip ${on ? "on" : ""}`}
+                  onClick={() => toggleHomeroomClass(c.id)}
+                  title={
+                    willReassign
+                      ? `${c.label} ← ${c.currentHomeroomTeacherName}`
+                      : c.label
+                  }
+                >
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="form-row">
