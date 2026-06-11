@@ -221,11 +221,13 @@ function GridTable({
                             : cell.teacherName)
                         : tClassName(cell.classId)}
                     </div>
-                    <div className="cell-meta">
-                      {roomById.get(cell.roomId)
-                        ? tRoom(roomById.get(cell.roomId)!)
-                        : cell.roomName}
-                    </div>
+                    {mode === "byTeacher" && (
+                      <div className="cell-meta">
+                        {roomById.get(cell.roomId)
+                          ? tRoom(roomById.get(cell.roomId)!)
+                          : cell.roomName}
+                      </div>
+                    )}
                     {isConflict && (
                       <div className="cell-conflict-tag">
                         {t("cellConflict")}

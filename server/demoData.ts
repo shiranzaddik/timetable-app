@@ -37,13 +37,12 @@ export const config: Config = {
   days: [Day.Sunday, Day.Monday, Day.Tuesday, Day.Wednesday, Day.Thursday],
   startHour: DEFAULT_START_HOUR,
   endHour: DEFAULT_END_HOUR,
-  // Different weekdays end at different times — Thursday short, Tuesday long.
   endHourByDay: {
-    [Day.Sunday]: 15,
-    [Day.Monday]: 14,
+    [Day.Sunday]: 16,
+    [Day.Monday]: 16,
     [Day.Tuesday]: 16,
-    [Day.Wednesday]: 15,
-    [Day.Thursday]: 13,
+    [Day.Wednesday]: 16,
+    [Day.Thursday]: 16,
   },
   slotLabels: makeSlotLabels(DEFAULT_START_HOUR, DEFAULT_END_HOUR),
 };
@@ -61,9 +60,12 @@ export const rooms: Room[] = [
   { id: "room-E2", name: "Room E2", nameHe: "חדר ה2", type: RoomType.Regular },
   { id: "room-F1", name: "Room F1", nameHe: "חדר ו1", type: RoomType.Regular },
   { id: "room-F2", name: "Room F2", nameHe: "חדר ו2", type: RoomType.Regular },
-  { id: "sport-hall", name: "Sport Hall", nameHe: "אולם ספורט", type: RoomType.Sport },
-  { id: "computer-lab", name: "Computer Lab", nameHe: "מעבדת מחשבים", type: RoomType.Computer },
-  { id: "music-room", name: "Music Room", nameHe: "חדר מוזיקה", type: RoomType.Music },
+  { id: "sport-hall", name: "Sport Hall A", nameHe: "אולם ספורט א", type: RoomType.Sport },
+  { id: "sport-hall-2", name: "Sport Hall B", nameHe: "אולם ספורט ב", type: RoomType.Sport },
+  { id: "computer-lab", name: "Computer Lab A", nameHe: "מעבדת מחשבים א", type: RoomType.Computer },
+  { id: "computer-lab-2", name: "Computer Lab B", nameHe: "מעבדת מחשבים ב", type: RoomType.Computer },
+  { id: "music-room", name: "Music Room A", nameHe: "חדר מוזיקה א", type: RoomType.Music },
+  { id: "music-room-2", name: "Music Room B", nameHe: "חדר מוזיקה ב", type: RoomType.Music },
 ];
 
 const allGrades: Grade[] = [
@@ -308,132 +310,144 @@ export const teachers: Teacher[] = [
     dayOff: Day.Sunday,
     unavailable: [],
   },
+  // Second music teacher so demand across all grades fits without
+  // serializing on a single teacher's calendar.
+  {
+    id: "t-orit",
+    name: "Orit Bechar",
+    nameHe: "אורית בכר",
+    subjects: [Subject.Music],
+    grades: allGrades,
+    dayOff: Day.Thursday,
+    unavailable: [],
+  },
 ];
 
 // Each trend sums to 22h. Classes set endHour=12 below — minimum school day
 // 4h × 5 = 20h, max 5h × 5 = 25h. The 2h slack between subjects total (22h)
 // and minimum lets the solver shuffle blocks around special-room contention
 // (sport hall, music room, computer lab) without dropping anything.
+/** All demo subjects use 1-hour blocks so the solver can pack the
+ *  light specialty subjects (sport / music / computer) into any single
+ *  empty slot without needing a 2-hour contiguous gap. */
+const ONE_HOUR_BLOCK: Pick<ClassSubject, "blockSize"> = { blockSize: 1 };
+
 // Grade 1 (A) regular — 25h, finishes at 13:00 every day (1st graders).
 const grade1Subjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 4 },
-  { subject: Subject.Science, hoursPerWeek: 3 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 1 },
-  { subject: "geography", hoursPerWeek: 1 },
-  { subject: "bible", hoursPerWeek: 1 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 3, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "art", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 2 (B) regular — 27h.
+// Grade 2 (B) regular — 25h.
 const grade2Subjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 4 },
-  { subject: Subject.Science, hoursPerWeek: 3 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 1 },
-  { subject: "bible", hoursPerWeek: 2 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 3, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "art", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 3 (C) regular — 29h.
+// Grade 3 (C) regular — 25h.
 const grade3Subjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 5 },
-  { subject: Subject.Science, hoursPerWeek: 4 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 1 },
-  { subject: "bible", hoursPerWeek: 2 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 3, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "art", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 3 (C) science trend — 31h with stronger science.
+// Grade 3 (C) science trend — 25h with stronger science (less art).
 const grade3ScienceSubjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 5 },
-  { subject: Subject.Science, hoursPerWeek: 6 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 1 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 2 },
-  { subject: "bible", hoursPerWeek: 2 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 4 (D) regular — 31h.
+// Grade 4 (D) regular — 25h.
 const grade4Subjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 5 },
-  { subject: Subject.Science, hoursPerWeek: 4 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 2 },
-  { subject: "bible", hoursPerWeek: 3 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 3, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "art", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 4 (D) music trend — 31h, slightly more music than regular.
-// Kept close to regular grade-4 to avoid music-room contention now that
-// every grade also has a music slot.
+// Grade 4 (D) music trend — 25h with extra music.
 const grade4MusicSubjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 5 },
-  { subject: Subject.Science, hoursPerWeek: 4 },
-  { subject: Subject.Sport, hoursPerWeek: 1 },
-  { subject: Subject.Music, hoursPerWeek: 2 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 1 },
-  { subject: "bible", hoursPerWeek: 3 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 3, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 5 (E) regular — 32h.
+// Grade 5 (E) regular — 26h, longer day (endHour=14 below).
 const grade5Subjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 5 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 5 },
-  { subject: Subject.Science, hoursPerWeek: 4 },
-  { subject: Subject.Sport, hoursPerWeek: 2 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 2 },
-  { subject: "bible", hoursPerWeek: 3 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "art", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
-// Grade 6 (F) regular — 33h, longest school day.
+// Grade 6 (F) regular — 26h.
 const grade6Subjects: ClassSubject[] = [
-  { subject: Subject.Math, hoursPerWeek: 6 },
-  { subject: Subject.Hebrew, hoursPerWeek: 5 },
-  { subject: Subject.English, hoursPerWeek: 5 },
-  { subject: Subject.Science, hoursPerWeek: 4 },
-  { subject: Subject.Sport, hoursPerWeek: 2 },
-  { subject: Subject.Music, hoursPerWeek: 1 },
-  { subject: Subject.Computer, hoursPerWeek: 1 },
-  { subject: "art", hoursPerWeek: 2 },
-  { subject: "history", hoursPerWeek: 2 },
-  { subject: "geography", hoursPerWeek: 2 },
-  { subject: "bible", hoursPerWeek: 3 },
+  { subject: Subject.Math, hoursPerWeek: 5, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Hebrew, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.English, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Science, hoursPerWeek: 4, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Sport, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Music, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: Subject.Computer, hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "art", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "history", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
+  { subject: "geography", hoursPerWeek: 1, ...ONE_HOUR_BLOCK },
+  { subject: "bible", hoursPerWeek: 2, ...ONE_HOUR_BLOCK },
 ];
 
 export const classes: SchoolClass[] = [
@@ -523,8 +537,7 @@ export const classes: SchoolClass[] = [
     endHour: 13,
     subjects: grade4MusicSubjects,
   },
-  // Grade 5 — slightly longer day (15:00) to give the solver slack
-  // against ~32h of subjects.
+  // Grade 5
   {
     id: "E1",
     grade: Grade.E,
@@ -532,7 +545,7 @@ export const classes: SchoolClass[] = [
     name: "E1",
     defaultTeacherId: "t-noa",
     defaultRoomId: "room-E1",
-    endHour: 15,
+    endHour: 13,
     subjects: grade5Subjects,
   },
   {
@@ -542,10 +555,10 @@ export const classes: SchoolClass[] = [
     name: "E2",
     defaultTeacherId: "t-ariel",
     defaultRoomId: "room-E2",
-    endHour: 15,
+    endHour: 13,
     subjects: grade5Subjects,
   },
-  // Grade 6 — same logic for the 33h subject list.
+  // Grade 6
   {
     id: "F1",
     grade: Grade.F,
@@ -553,7 +566,7 @@ export const classes: SchoolClass[] = [
     name: "F1",
     defaultTeacherId: "t-shira",
     defaultRoomId: "room-F1",
-    endHour: 15,
+    endHour: 13,
     subjects: grade6Subjects,
   },
   {
@@ -563,7 +576,7 @@ export const classes: SchoolClass[] = [
     name: "F2",
     defaultTeacherId: "t-yair",
     defaultRoomId: "room-F2",
-    endHour: 15,
+    endHour: 13,
     subjects: grade6Subjects,
   },
 ];
