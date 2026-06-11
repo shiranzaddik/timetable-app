@@ -331,14 +331,14 @@ const STRINGS = {
 
     teachersSection: "מורים",
     classesSection: "כיתות",
-    gradesSection: "מסלולים",
+    gradesSection: "מגמות",
     roomsSection: "חדרים",
     countTeachersOne: "מורה",
     countTeachersMany: "מורים",
     countClassesOne: "כיתה",
     countClassesMany: "כיתות",
-    countGradesOne: "מסלול",
-    countGradesMany: "מסלולים",
+    countGradesOne: "מגמה",
+    countGradesMany: "מגמות",
     countRoomsOne: "חדר",
     countRoomsMany: "חדרים",
     addRoom: "+ הוסף חדר",
@@ -400,7 +400,7 @@ const STRINGS = {
     fieldGrades: "שכבות שאפשר ללמד",
     fieldGradesPerSubject: "שכבות לכל מקצוע",
     perSubjectGradesHint:
-      "כברירת מחדל, המורה מלמד כל מקצוע שנבחר בכל המסלולים",
+      "כברירת מחדל, המורה מלמד כל מקצוע שנבחר בכל המגמות",
     fieldDayOff: "יום חופש *",
     dayOffSoftNote:
       "* ננסה לכבד את יום החופש, אבל ייתכן שיוקצו שיעורים גם בו אם לא יימצאו זמנים אחרים.",
@@ -478,19 +478,19 @@ const STRINGS = {
     assignedHomeroomLine: "{className}: {teacherName}",
     saveClassWithId: "שמור כיתה ({id})",
     saveChangesToId: "שמור שינויים לכיתה {id}",
-    editGradeSubjects: "עריכת מקצועות למסלול {grade}",
+    editGradeSubjects: "עריכת מקצועות למגמה {grade}",
     saveGradeSubjects: "שמור מקצועות",
-    trendHoursLabel: "שעות לימוד למסלול זה",
+    trendHoursLabel: "שעות לימוד למגמה זו",
     trendHoursHint:
-      "ברירת המחדל היא יום הלימודים הכללי (למעלה). שנו אם המסלול הזה מסתיים מוקדם יותר משאר המסלולים.",
-    gradeBadgePrefix: "מסלול",
-    classesInTrend: "{n} כיתות במסלול",
-    fieldTrendSpecialization: "מסלול",
+      "ברירת המחדל היא יום הלימודים הכללי (למעלה). שנו אם המגמה הזו מסתיימת מוקדם יותר משאר המגמות.",
+    gradeBadgePrefix: "מגמה",
+    classesInTrend: "{n} כיתות במגמה",
+    fieldTrendSpecialization: "מגמה",
     trendPlaceholder: "לדוגמה: מדעים, ספורט, מחשבים",
     trendSpecializationHint:
-      "בחרו את המסלול של הכיתה. כיתות באותו מסלול חולקות את אותם מקצועות.",
-    trendAddNew: "+ מסלול חדש…",
-    errTrendNameRequired: "יש להזין שם למסלול החדש",
+      "בחרו את המגמה של הכיתה. כיתות באותה מגמה חולקות את אותם מקצועות.",
+    trendAddNew: "+ מגמה חדשה…",
+    errTrendNameRequired: "יש להזין שם למגמה החדשה",
 
     recommendationsHeading: "המלצות",
     recClassUnderfilledHeader:
@@ -498,14 +498,14 @@ const STRINGS = {
     recClassUnderfilledDetail:
       "ממוצע נוכחי {have} ביום מול {need} ביום נדרש. חסרות {missing} שעות בשבוע.",
     recAddHoursToTrend:
-      "הוסיפו {missing} שעות נוספות למקצועות של מסלול {trend}.",
+      "הוסיפו {missing} שעות נוספות למקצועות של מגמה {trend}.",
     recShortenSchoolDay: "קצרו את יום הלימודים של {className} (הזיזו את ההתחלה או הסיום).",
     recLowerMandatoryRange:
       "הקטינו את טווח שעות החובה של {className}.",
-    recEditTrend: "עריכת מסלול {trend}",
+    recEditTrend: "עריכת מגמה {trend}",
     recEditClass: "עריכת כיתה {className}",
     recOpenTeachers: "פתח מורים",
-    recOpenTrends: "פתח מסלולים",
+    recOpenTrends: "פתח מגמות",
     recOpenClasses: "פתח כיתות",
     recMandatoryOverflowHeader:
       "לא ניתן היה לשבץ את כל מקצועות החובה. נסו לפי הסדר:",

@@ -101,8 +101,9 @@ export const teachers: Teacher[] = [
     nameHe: "שירה שפירא",
     subjects: [Subject.English],
     grades: allGrades,
-    dayOff: Day.Tuesday,
-    unavailable: [],
+    // Soft day-off ("prefers not") on Tuesday — demonstrates the
+    // hard-vs-soft difference in the teacher card.
+    unavailable: [{ day: Day.Tuesday, hard: false }],
   },
   {
     id: "t-avi",
