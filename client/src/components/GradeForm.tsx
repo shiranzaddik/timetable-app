@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useT } from "../i18n";
-import { Subject, type ClassSubject, type Grade } from "../types";
+import { Grade, Subject, type ClassSubject } from "../types";
 
 export interface GradeFormResult {
   subjects: ClassSubject[];
+  /** Set only when the form is in "new" mode — see Props.mode. */
+  grade?: Grade;
+  trendName?: string;
 }
 
 interface Props {
@@ -11,6 +14,12 @@ interface Props {
   /** Specialization name within the grade (e.g., "science"). Undefined = regular. */
   trendName?: string;
   initialSubjects: ClassSubject[];
+  /** When "new", the form also surfaces a grade dropdown + trend-name input
+   *  so the user picks grade/name and subjects in a single step. When
+   *  omitted/"edit", grade and trendName are locked. */
+  mode?: "new" | "edit";
+  /** Used in "new" mode to refuse duplicate (grade + trendName) keys. */
+  existingTrendKeys?: string[];
   onSave: (result: GradeFormResult) => void;
   onCancel: () => void;
 }
@@ -50,17 +59,31 @@ export default function GradeForm({
   grade,
   trendName,
   initialSubjects,
+  mode = "edit",
+  existingTrendKeys,
   onSave,
   onCancel,
 }: Props) {
   const { t, tSubject, tGrade } = useT();
+  const isNew = mode === "new";
+  const [gradeState, setGradeState] = useState<Grade>(grade);
+  const [trendNameState, setTrendNameState] = useState<string>(trendName ?? "");
   const [subjects, setSubjects] = useState<ClassSubject[]>(initialSubjects);
   const [error, setError] = useState<string | null>(null);
-  const headerLabel = trendName
+  const headerLabel = isNew
+    ? t("newTrend")
+    : trendName
     ? `${tGrade(grade)} · ${trendName}`
     : `${tGrade(grade)}`;
 
   const submit = () => {
+    if (isNew) {
+      const cleanName = trendNameState.trim().toLowerCase() || undefined;
+      const key = cleanName ? `${gradeState}:${cleanName}` : `${gradeState}`;
+      if (existingTrendKeys?.includes(key)) {
+        return setError(t("trendExistsAlready"));
+      }
+    }
     const filtered = subjects
       .map((s) => ({
         subject: s.subject.trim().toLowerCase(),
@@ -70,14 +93,57 @@ export default function GradeForm({
       }))
       .filter((s) => s.subject !== "" && s.hoursPerWeek > 0);
     if (filtered.length === 0) return setError(t("errSetHours"));
-    onSave({ subjects: filtered });
+    onSave(
+      isNew
+        ? {
+            subjects: filtered,
+            grade: gradeState,
+            trendName: trendNameState.trim().toLowerCase() || undefined,
+          }
+        : { subjects: filtered }
+    );
   };
 
   return (
     <div className="form-card">
       <strong style={{ fontSize: 14 }}>
-        {t("editGradeSubjects", { grade: headerLabel })}
+        {isNew
+          ? headerLabel
+          : t("editGradeSubjects", { grade: headerLabel })}
       </strong>
+
+      {isNew && (
+        <>
+          <div className="form-row">
+            <label>{t("fieldTrendGrade")}</label>
+            <select
+              value={gradeState}
+              onChange={(e) => {
+                setGradeState(e.target.value as Grade);
+                setError(null);
+              }}
+            >
+              {Object.values(Grade).map((g) => (
+                <option key={g} value={g}>
+                  {tGrade(g)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-row">
+            <label>{t("fieldTrendNameOptional")}</label>
+            <input
+              type="text"
+              value={trendNameState}
+              placeholder={t("trendPlaceholder")}
+              onChange={(e) => {
+                setTrendNameState(e.target.value);
+                setError(null);
+              }}
+            />
+          </div>
+        </>
+      )}
 
       <div className="form-row">
         <label>{t("fieldSubjectsHours")}</label>
@@ -170,7 +236,9 @@ export default function GradeForm({
       {error && <div className="banner error">{error}</div>}
 
       <div className="form-actions">
-        <button onClick={submit}>{t("saveGradeSubjects")}</button>
+        <button onClick={submit}>
+          {isNew ? t("saveTrend") : t("saveGradeSubjects")}
+        </button>
         <button className="secondary" onClick={onCancel}>
           {t("cancel")}
         </button>

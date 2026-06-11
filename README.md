@@ -13,10 +13,11 @@ React + Node.js app that generates a weekly school timetable from a description 
 ## Features
 
 - **Data model**
-  - **Teachers** with subjects, eligible grades (per-subject or per-trend), an optional day off, and arbitrary "can't / prefer-not" time-off windows.
-  - **Trends** as first-class entities — a trend is `(grade, optional specialization, subjects[])`. Classes belong to a trend; the trend's subjects are the source of truth.
-  - **Classes** with a homeroom (default) teacher, a minimum school-day window (e.g. 08:00–13:00), and a trend pointer.
-  - **Global config**: weekdays, start hour, max end hour, and optional **per-day end-hour overrides** so each weekday can finish at a different time.
+  - **Teachers** with optional bilingual names (`name` / `nameHe`), subjects, eligible grades (per-subject or per-trend), an optional day off, and arbitrary "can't / prefer-not" time-off windows.
+  - **Trends** as first-class entities — a trend is `(grade, optional specialization, subjects[])`. Classes belong to a trend; the trend's subjects are the source of truth. Trends can be added or removed from the UI; deleting a named trend moves its classes to the regular trend of the same grade, and the regular trend itself can't be removed while classes still reference it.
+  - **Classes** with a homeroom (default) teacher, a per-class minimum school-day window (e.g. 08:30–13:00 — minute resolution is editable in the form), and a trend pointer.
+  - **Rooms** with optional bilingual names (`name` / `nameHe`).
+  - **Global config**: weekdays, start hour, max end hour, and optional per-day end-hour overrides so each weekday can finish at a different time.
 - **Solver** (backtracking with greedy fallback)
   - Two-pass strategy: first tries every class day starting at slot 0; falls back to best-effort if no all-morning solution exists.
   - Multiple class orderings tried within an 8-second budget.
@@ -26,15 +27,17 @@ React + Node.js app that generates a weekly school timetable from a description 
   - Auto-assigns a homeroom teacher to classes that don't specify one.
 - **UI**
   - Editor for teachers, trends, and classes with live save (when authenticated).
-  - **Teacher search + sort** by name / subject / grade. Sort modes group teachers under each subject or grade they teach.
-  - **Per-day school-day** editor — set a different max end hour per weekday.
+  - **Teacher search + sort** by name / subject / grade. Sort modes group teachers under each subject or grade they teach. Duplicate teacher names (case-insensitive, across either language) are refused with an inline error.
+  - **Homeroom-of picker inside the teacher form** — a single-select dropdown that assigns the teacher to one class and reassigns any previous homeroom of that class on save.
   - Generated timetable in two views (by class / by teacher).
   - **Click-to-swap manual editing** in the by-class view, with automatic conflict detection (red outline + "Conflict" badge when a teacher/room ends up double-booked).
   - **Snapshots + Compare** — save the current schedule as a named snapshot, then open a side-by-side compare view that highlights every cell that differs between two snapshots.
   - **Print** — two buttons in the timetable header: *Print current* (selected class only) and *Print all classes* (one page per class). A media-print stylesheet hides the editor chrome.
-  - English + Hebrew (RTL) UI, switchable at runtime.
+  - **Dark mode** by default — slate-900 page on slate-800 cards with pastel subject chips.
+  - English + Hebrew (RTL) UI, switchable at runtime. Demo teachers and rooms ship with both an English and a Hebrew display name; grade letters render as א/ב/ג/ד/ה/ו in Hebrew and class IDs follow ("A1" → "א1").
 - **Auth & persistence** (optional, off-by-default)
   - Google OAuth sign-in. When enabled, each user's school config auto-saves to Postgres.
+  - Per-address allowlist via `ALLOWED_EMAILS`, per-domain allowlist via `ALLOWED_DOMAINS` (e.g. `gmail.com`). Either gate alone admits a user; both empty means anyone with a verified Google account can sign in.
   - Without `GOOGLE_*` and `DATABASE_URL` env vars set, the server runs auth-off / db-off and serves the demo.
 
 ## Project layout
@@ -46,7 +49,7 @@ timetable-app/
 │   ├── auth.ts              Google OAuth verification + cookie sessions
 │   ├── db.ts                Postgres connection + school config persistence
 │   ├── solver.ts            The constraint-satisfaction solver
-│   ├── demoData.ts          The elementary-school demo (8 classes, 6 trends, 17 teachers)
+│   ├── demoData.ts          The elementary-school demo (12 classes, 8 trends, 25 teachers — bilingual)
 │   ├── types.ts             Shared domain types
 │   └── test-solver.ts       Standalone smoke test that prints the generated grid
 ├── client/                  React + Vite UI
@@ -117,13 +120,14 @@ In production the server also serves the built React bundle from `client/dist/`.
 
 ### Demo data (`server/demoData.ts`)
 
-An elementary school: 4 grades (1st–4th), 17 teachers, 6 trends, 8 classes. The demo intentionally has:
+An elementary school: 6 grades (1st–6th — A through F), 25 teachers, 8 trends, 12 classes. The demo intentionally has:
 - A non-uniform week — global day 08:00–16:00, per-day overrides: Sunday 15, Monday 14, Tuesday 16, Wednesday 15, Thursday 13.
-- Different subject loads per grade (25h for 1st grade, up to 33h for the 4th-grade "music" trend), so different classes end at different hours.
+- Different subject loads per grade (25h for 1st grade, up to 33h for the 6th-grade list), so different classes end at different hours.
 - Two specialty trends — Grade C science (extra science) and Grade D music (extra music).
-- Days off spread across the week so no single weekday is a teacher shortage.
+- Days off spread across the week so no single weekday is a teacher shortage. One teacher (Shira Shapiro) uses a *soft* day off ("prefer not") to demonstrate the difference from the hard day-off case.
+- Bilingual teacher and room names — `name` carries the English form, `nameHe` the Hebrew (Israeli-style first + last). The client picks the right one based on the UI language at render time.
 
-It solves cleanly with no dropped blocks and no recommendations, so the demo is always a "happy path" the user can mutate. Because each Generate click now passes a fresh seed, re-running on the unmodified demo produces a different valid schedule each time — useful for trying out the Save snapshot → Compare flow.
+It solves cleanly with no dropped blocks and no recommendations, so the demo is always a "happy path" the user can mutate. Because each Generate click passes a fresh seed, re-running on the unmodified demo produces a different valid schedule each time — useful for trying out the Save snapshot → Compare flow.
 
 ## Run it locally
 
