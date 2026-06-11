@@ -42,7 +42,18 @@ interface Props {
   initialHomeroomClassIds?: string[];
 }
 
-const WELL_KNOWN_SUBJECTS: string[] = Object.values(Subject);
+/** Subjects that ship with a built-in translation + chip color. Includes
+ *  the Subject enum values plus the "custom" subjects the i18n layer
+ *  already knows ("art", "history", "geography", "bible") so they share
+ *  the same uniform checkbox tile as math/hebrew/etc. instead of falling
+ *  into the user-typed "extra" row. */
+const WELL_KNOWN_SUBJECTS: string[] = [
+  ...Object.values(Subject),
+  "art",
+  "history",
+  "geography",
+  "bible",
+];
 const ALL_GRADES: Grade[] = Object.values(Grade);
 
 function mergeLegacyDayOff(
@@ -118,12 +129,6 @@ export default function TeacherForm({
     initialHomeroomClassIds ?? []
   );
   const [error, setError] = useState<string | null>(null);
-
-  /** Single-select: clicking a chip picks just that class, clicking the
-   *  already-selected one clears the choice (a teacher can have no homeroom). */
-  const toggleHomeroomClass = (classId: string) => {
-    setHomeroomClassIds((prev) => (prev.includes(classId) ? [] : [classId]));
-  };
 
   const toggleTrendForSubject = (subject: string, trendKey: string) => {
     setTrendsPerSubject((prev) => {
@@ -427,31 +432,28 @@ export default function TeacherForm({
             {t("fieldHomeroomsNoClasses")}
           </small>
         ) : (
-          <div className="grade-chip-row">
+          <select
+            value={homeroomClassIds[0] ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              setHomeroomClassIds(v ? [v] : []);
+            }}
+          >
+            <option value="">{t("noDefaultTeacher")}</option>
             {availableClasses.map((c) => {
-              const on = homeroomClassIds.includes(c.id);
-              const willReassign =
-                on &&
+              const occupiedByOther =
                 c.currentHomeroomTeacherName &&
                 c.currentHomeroomTeacherName !== name.trim() &&
                 !initialHomeroomClassIds?.includes(c.id);
               return (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={`grade-chip ${on ? "on" : ""}`}
-                  onClick={() => toggleHomeroomClass(c.id)}
-                  title={
-                    willReassign
-                      ? `${c.label} ← ${c.currentHomeroomTeacherName}`
-                      : c.label
-                  }
-                >
-                  {c.label}
-                </button>
+                <option key={c.id} value={c.id}>
+                  {occupiedByOther
+                    ? `${c.label} — ${c.currentHomeroomTeacherName}`
+                    : c.label}
+                </option>
               );
             })}
-          </div>
+          </select>
         )}
       </div>
 
