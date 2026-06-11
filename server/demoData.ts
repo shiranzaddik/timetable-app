@@ -327,18 +327,16 @@ export const teachers: Teacher[] = [
 // 4h × 5 = 20h, max 5h × 5 = 25h. The 2h slack between subjects total (22h)
 // and minimum lets the solver shuffle blocks around special-room contention
 // (sport hall, music room, computer lab) without dropping anything.
-/** All demo subjects use 1-hour blocks so the solver can pack the
- *  light specialty subjects (sport / music / computer) into any single
- *  empty slot without needing a 2-hour contiguous gap. */
-const ONE_HOUR_BLOCK: Pick<ClassSubject, "blockSize"> = { blockSize: 1 };
-/** Specialty / "enrichment" subjects: marked non-mandatory so the demo
- *  doesn't surface a mandatoryOverflow recommendation if the solver
- *  can't fit every single specialty hour given room contention. The
- *  core subjects (math/hebrew/english/science) stay mandatory. */
-const OPT_ONE_HOUR: Pick<ClassSubject, "blockSize" | "mandatory"> = {
+/** Every demo subject is non-mandatory + 1-hour blocks. Non-mandatory so
+ *  the solver can drop any individual hour (under heavy contention)
+ *  without triggering the mandatoryOverflow recommendation card. The
+ *  user's own data can set mandatory: true to surface those warnings;
+ *  the demo stays a clean "happy-path" example. */
+const ONE_HOUR_BLOCK: Pick<ClassSubject, "blockSize" | "mandatory"> = {
   blockSize: 1,
   mandatory: false,
 };
+const OPT_ONE_HOUR = ONE_HOUR_BLOCK;
 
 // Grade 1 (A) regular — 25h, finishes at 13:00 every day (1st graders).
 const grade1Subjects: ClassSubject[] = [
