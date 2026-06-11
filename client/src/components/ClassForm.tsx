@@ -35,7 +35,7 @@ export default function ClassForm({
   onCancel,
   initial,
 }: Props) {
-  const { t, tGrade, tClassId } = useT();
+  const { t, tGrade, tClassId, tTeacher } = useT();
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
@@ -171,7 +171,7 @@ export default function ClassForm({
             )
             .map((teacher) => (
               <option key={teacher.id} value={teacher.id}>
-                {teacher.name}
+                {tTeacher(teacher)}
               </option>
             ))}
         </select>

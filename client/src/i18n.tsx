@@ -2,7 +2,7 @@
 // Adds Hebrew (RTL) alongside English; switches document direction on change.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Day, Grade, Subject } from "./types";
+import { Day, Grade, Subject, type Teacher } from "./types";
 
 export type Lang = "en" | "he";
 
@@ -10,6 +10,7 @@ const LANG_KEY = "lang";
 
 const STRINGS = {
   en: {
+    hoursShort: "h",
     appTitle: "School Timetable Builder",
     appSubtitle:
       "Define teachers and classes, then generate a weekly timetable that satisfies all constraints.",
@@ -290,6 +291,7 @@ const STRINGS = {
     loginFooterLink: "Source on GitHub",
   },
   he: {
+    hoursShort: "שעות",
     appTitle: "בונה מערכת שעות בית-ספרית",
     appSubtitle:
       "הגדירו מורים וכיתות, וצרו מערכת שעות שבועית העונה על כל האילוצים.",
@@ -642,6 +644,9 @@ export interface I18nApi {
   tSubject: (s: string) => string;
   /** Translates a Grade letter (A→א in Hebrew). */
   tGrade: (g: Grade) => string;
+  /** Returns the teacher's display name for the current language
+   *  (`teacher.nameHe` in Hebrew when set, otherwise `teacher.name`). */
+  tTeacher: (t: Pick<Teacher, "name" | "nameHe">) => string;
   /** Translates a class id like "A1" → "א1" in Hebrew. Leaves unknown prefixes alone. */
   tClassId: (id: string) => string;
   tClassName: (id: string) => string;
@@ -687,6 +692,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     tDay: (d) => DAY_NAMES[lang][d] ?? d,
     tSubject: (s) => SUBJECT_NAMES[lang][s] ?? s,
     tGrade: (g) => GRADE_LETTERS[lang][g] ?? g,
+    tTeacher: (teacher) =>
+      lang === "he" && teacher.nameHe ? teacher.nameHe : teacher.name,
     tClassId: translateClassId,
     tClassName: (id) => `${STRINGS[lang].classWord} ${translateClassId(id)}`,
   };

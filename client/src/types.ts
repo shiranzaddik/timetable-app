@@ -64,6 +64,9 @@ export interface UnavailabilityWindow {
 export interface Teacher {
   id: string;
   name: string;
+  /** Optional Hebrew display name. When set and the UI is in Hebrew, shown
+   *  in place of `name`. Falls back to `name` everywhere else. */
+  nameHe?: string;
   subjects: string[];
   grades: Grade[];
   gradesPerSubject?: Record<string, Grade[]>;

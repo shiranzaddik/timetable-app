@@ -75,6 +75,9 @@ export interface UnavailabilityWindow {
 export interface Teacher {
   id: string;
   name: string;
+  /** Optional Hebrew display name. The solver/server doesn't care about it;
+   *  the client renders it when the UI language is Hebrew. */
+  nameHe?: string;
   /** Subjects this teacher can teach. Well-known values come from the Subject
    *  enum; custom strings are also allowed for school-specific subjects. */
   subjects: string[];

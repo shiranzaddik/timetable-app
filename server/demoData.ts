@@ -69,14 +69,16 @@ const allGrades: Grade[] = [Grade.A, Grade.B, Grade.C, Grade.D];
 export const teachers: Teacher[] = [
   {
     id: "t-cohen",
-    name: "רחל כהן",
+    name: "Mrs. Cohen",
+    nameHe: "רחל כהן",
     subjects: [Subject.Math, Subject.Hebrew],
     grades: allGrades,
     unavailable: [],
   },
   {
     id: "t-levi",
-    name: "אבי לוי",
+    name: "Mr. Levi",
+    nameHe: "אבי לוי",
     subjects: [Subject.Math, Subject.Science],
     grades: allGrades,
     dayOff: Day.Monday,
@@ -84,7 +86,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-shapiro",
-    name: "שירה שפירא",
+    name: "Ms. Shapiro",
+    nameHe: "שירה שפירא",
     subjects: [Subject.English],
     grades: allGrades,
     dayOff: Day.Tuesday,
@@ -92,7 +95,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-avi",
-    name: "אבי גלעדי",
+    name: "Mr. Avi",
+    nameHe: "אבי גלעדי",
     subjects: [Subject.English],
     grades: [Grade.A], // only teaches grade A — demo of a grade-restricted teacher
     dayOff: Day.Sunday,
@@ -100,7 +104,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-david",
-    name: "דוד פרץ",
+    name: "Mr. David",
+    nameHe: "דוד פרץ",
     subjects: [Subject.Hebrew, Subject.Science],
     grades: allGrades,
     dayOff: Day.Wednesday,
@@ -108,14 +113,16 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-yossi",
-    name: "יוסי מזרחי",
+    name: "Coach Yossi",
+    nameHe: "יוסי מזרחי",
     subjects: [Subject.Sport],
     grades: allGrades,
     unavailable: [],
   },
   {
     id: "t-mira",
-    name: "מירה רוזן",
+    name: "Ms. Mira",
+    nameHe: "מירה רוזן",
     subjects: [Subject.Music],
     grades: allGrades,
     dayOff: Day.Sunday,
@@ -123,7 +130,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-tech",
-    name: "טל חזן",
+    name: "Mr. Tech",
+    nameHe: "טל חזן",
     subjects: [Subject.Computer],
     grades: allGrades,
     dayOff: Day.Thursday,
@@ -131,7 +139,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-sarah",
-    name: "שרה ברקוביץ",
+    name: "Ms. Sarah",
+    nameHe: "שרה ברקוביץ",
     subjects: [Subject.Math, Subject.Hebrew, Subject.Science],
     grades: allGrades,
     dayOff: Day.Thursday,
@@ -139,7 +148,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-beth",
-    name: "ברכה אלון",
+    name: "Ms. Beth",
+    nameHe: "ברכה אלון",
     subjects: [Subject.English],
     grades: allGrades,
     dayOff: Day.Thursday,
@@ -147,7 +157,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-omer",
-    name: "עומר נחום",
+    name: "Mr. Omer",
+    nameHe: "עומר נחום",
     subjects: [Subject.Computer],
     grades: allGrades,
     dayOff: Day.Monday,
@@ -155,7 +166,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-dafna",
-    name: "דפנה אדרי",
+    name: "Ms. Dafna",
+    nameHe: "דפנה אדרי",
     subjects: ["art"],
     grades: allGrades,
     dayOff: Day.Tuesday,
@@ -163,7 +175,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-ronen",
-    name: "רונן ביטון",
+    name: "Mr. Ronen",
+    nameHe: "רונן ביטון",
     subjects: ["history", "geography"],
     grades: allGrades,
     dayOff: Day.Monday,
@@ -171,7 +184,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-tova",
-    name: "טובה שלום",
+    name: "Ms. Tova",
+    nameHe: "טובה שלום",
     subjects: ["bible"],
     grades: allGrades,
     dayOff: Day.Sunday,
@@ -182,7 +196,8 @@ export const teachers: Teacher[] = [
   // constraints lock parts of the grid).
   {
     id: "t-dani",
-    name: "דני כהן",
+    name: "Coach Dani",
+    nameHe: "דני כהן",
     subjects: [Subject.Sport],
     grades: allGrades,
     dayOff: Day.Wednesday,
@@ -190,7 +205,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-rina",
-    name: "רינה אזולאי",
+    name: "Ms. Rina",
+    nameHe: "רינה אזולאי",
     subjects: ["art"],
     grades: allGrades,
     dayOff: Day.Wednesday,
@@ -198,7 +214,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-eli",
-    name: "אלי גרין",
+    name: "Mr. Eli",
+    nameHe: "אלי גרין",
     subjects: ["history", "geography"],
     grades: allGrades,
     dayOff: Day.Wednesday,
@@ -207,7 +224,8 @@ export const teachers: Teacher[] = [
   // Extra core-subject teachers so the larger class roster fits.
   {
     id: "t-maya",
-    name: "מאיה צרפתי",
+    name: "Ms. Maya",
+    nameHe: "מאיה צרפתי",
     subjects: [Subject.Math, Subject.Hebrew],
     grades: allGrades,
     dayOff: Day.Tuesday,
@@ -215,7 +233,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-itai",
-    name: "איתי כץ",
+    name: "Mr. Itai",
+    nameHe: "איתי כץ",
     subjects: [Subject.Hebrew, Subject.Science],
     grades: allGrades,
     dayOff: Day.Sunday,
@@ -223,7 +242,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-talia",
-    name: "טליה דהן",
+    name: "Ms. Talia",
+    nameHe: "טליה דהן",
     subjects: [Subject.Math, Subject.Science],
     grades: allGrades,
     dayOff: Day.Thursday,
@@ -231,7 +251,8 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-tal",
-    name: "טל ויסמן",
+    name: "Ms. Tal",
+    nameHe: "טל ויסמן",
     subjects: [Subject.English],
     grades: allGrades,
     dayOff: Day.Wednesday,

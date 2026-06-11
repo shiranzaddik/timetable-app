@@ -64,7 +64,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function App() {
-  const { t, tDay, tClassId } = useT();
+  const { t, tDay, tClassId, tTeacher } = useT();
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [persisted, setPersisted] = useState(false);
@@ -274,6 +274,13 @@ export default function App() {
     0
   );
 
+  const teacherById = new Map(input.teachers.map((tch) => [tch.id, tch]));
+  const teacherNameById = (id: string | undefined, fallback: string): string => {
+    if (!id) return fallback;
+    const tch = teacherById.get(id);
+    return tch ? tTeacher(tch) : fallback;
+  };
+
   return (
     <div className="app">
       <header className="page-header">
@@ -354,7 +361,11 @@ export default function App() {
           </div>
           <div className="card-grid">
             {result.recommendations.map((rec, i) => (
-              <RecommendationCard key={i} rec={rec} />
+              <RecommendationCard
+                key={i}
+                rec={rec}
+                teacherNameById={teacherNameById}
+              />
             ))}
           </div>
         </div>
@@ -398,7 +409,7 @@ export default function App() {
             {result.dayOffSuggestions.map((s) => (
               <li key={s.teacherId} style={{ marginBottom: 4 }}>
                 {t("dayOffSuggestionLine", {
-                  teacherName: s.teacherName,
+                  teacherName: teacherNameById(s.teacherId, s.teacherName),
                   currentDay: tDay(s.currentDay as Day),
                   suggestedDay: tDay(s.suggestedDay as Day),
                   count: s.improvesBlocksBy,
@@ -422,7 +433,7 @@ export default function App() {
               <li key={a.classId} style={{ marginBottom: 4 }}>
                 {t("assignedHomeroomLine", {
                   className: tClassId(a.className),
-                  teacherName: a.teacherName,
+                  teacherName: teacherNameById(a.teacherId, a.teacherName),
                 })}
               </li>
             ))}
@@ -441,7 +452,7 @@ export default function App() {
           <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
             {result.unusedTeachers.map((u) => (
               <span key={u.id} className="tag muted">
-                {u.name}
+                {teacherNameById(u.id, u.name)}
               </span>
             ))}
           </div>
@@ -556,9 +567,18 @@ function jumpToCard(anchorId: string) {
   editBtn?.click();
 }
 
-function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
+function RecommendationCard({
+  rec,
+  teacherNameById,
+}: {
+  rec: ScheduleRecommendation;
+  teacherNameById: (id: string | undefined, fallback: string) => string;
+}) {
   const { t, tClassId } = useT();
   if (rec.kind === "mandatoryOverflow") {
+    const busiestName = rec.busiestTeacherName
+      ? teacherNameById(rec.busiestTeacherId, rec.busiestTeacherName)
+      : undefined;
     return (
       <div className="card recommendation-card">
         <div className="rec-header">{t("recMandatoryOverflowHeader")}</div>
@@ -577,10 +597,8 @@ function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
           <li>
             <span className="rec-row">
               <span>
-                {rec.busiestTeacherName
-                  ? t("recMandatoryOption2Named", {
-                      teacher: rec.busiestTeacherName,
-                    })
+                {busiestName
+                  ? t("recMandatoryOption2Named", { teacher: busiestName })
                   : t("recMandatoryOption2")}
               </span>
               <button
@@ -593,8 +611,8 @@ function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
                   )
                 }
               >
-                {rec.busiestTeacherName
-                  ? t("recEditTeacher", { teacher: rec.busiestTeacherName })
+                {busiestName
+                  ? t("recEditTeacher", { teacher: busiestName })
                   : t("recOpenTeachers")}
               </button>
             </span>
@@ -917,7 +935,13 @@ function CompareSection({
   onChange: (next: { a: string; b: string } | null) => void;
   onClose: () => void;
 }) {
-  const { t, tClassName, tDay, tSubject } = useT();
+  const { t, tClassName, tDay, tSubject, tTeacher } = useT();
+  const teacherById = new Map(input.teachers.map((tch) => [tch.id, tch]));
+  const teacherNameById = (id: string | undefined, fallback: string): string => {
+    if (!id) return fallback;
+    const tch = teacherById.get(id);
+    return tch ? tTeacher(tch) : fallback;
+  };
   const snapA = snapshots.find((s) => s.id === compareIds.a);
   const snapB = snapshots.find((s) => s.id === compareIds.b);
   const [selectedClassId, setSelectedClassId] = useState<string>(
@@ -994,6 +1018,7 @@ function CompareSection({
           gridOther={gridB}
           tDay={tDay}
           tSubject={tSubject}
+          teacherNameById={teacherNameById}
         />
         <CompareGrid
           title={snapB.label}
@@ -1002,6 +1027,7 @@ function CompareSection({
           gridOther={gridA}
           tDay={tDay}
           tSubject={tSubject}
+          teacherNameById={teacherNameById}
         />
       </div>
     </div>
@@ -1015,6 +1041,7 @@ function CompareGrid({
   gridOther,
   tDay,
   tSubject,
+  teacherNameById,
 }: {
   title: string;
   input: SchoolInput;
@@ -1022,6 +1049,7 @@ function CompareGrid({
   gridOther: Grid | undefined;
   tDay: (d: Day) => string;
   tSubject: (s: string) => string;
+  teacherNameById: (id: string | undefined, fallback: string) => string;
 }) {
   const { days, slotLabels } = input.config;
   if (!gridSelf) return <div className="compare-grid">No data</div>;
@@ -1072,7 +1100,9 @@ function CompareGrid({
                       className={`subj-${cell.subject} ${differs ? "diff" : ""}`}
                     >
                       <div className="cell-subject">{tSubject(cell.subject)}</div>
-                      <div className="cell-meta">{cell.teacherName}</div>
+                      <div className="cell-meta">
+                        {teacherNameById(cell.teacherId, cell.teacherName)}
+                      </div>
                     </td>
                   );
                 })}

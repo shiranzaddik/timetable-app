@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function InputView({ input, onChange }: Props) {
-  const { t, tSubject, tGrade, tClassId } = useT();
+  const { t, tSubject, tGrade, tClassId, tTeacher } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [teacherSort, setTeacherSort] = useState<"name" | "subject" | "grade">(
@@ -113,7 +113,7 @@ export default function InputView({ input, onChange }: Props) {
     if (usedBy.length > 0) {
       setDeleteCandidate({
         teacherId: id,
-        teacherName: teacher.name,
+        teacherName: tTeacher(teacher),
         classes: usedBy,
       });
       return;
@@ -572,7 +572,8 @@ function TeacherCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t, tDay, tSubject, tGrade, tClassId } = useT();
+  const { t, tDay, tSubject, tGrade, tClassId, tTeacher } = useT();
+  const displayName = tTeacher(teacher);
   const gradesLabel =
     teacher.grades.length > 0
       ? teacher.grades.map((g) => tGrade(g)).join(", ")
@@ -580,9 +581,9 @@ function TeacherCard({
   return (
     <div className="card teacher-card compact" id={`teacher-${teacher.id}`}>
       <div className="head">
-        <div className="avatar">{initials(teacher.name)}</div>
+        <div className="avatar">{initials(displayName)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">{teacher.name}</p>
+          <p className="teacher-name">{displayName}</p>
           <p className="teacher-role">
             {t("grades")} {gradesLabel}
             {homeroomOf.length > 0 && (
@@ -688,7 +689,7 @@ function GradeCard({
           </p>
           <p className="teacher-role">
             {t("classesInTrend", { n: classIds.length })}
-            {classList ? ` (${classList})` : ""} · {total}h / {t("statHours")}
+            {classList ? ` (${classList})` : ""} · {total} {t("hoursShort")} / {t("statHours")}
           </p>
         </div>
         <div className="card-actions">
@@ -727,8 +728,8 @@ function GradeCard({
               style={{ opacity: mandatory ? 1 : 0.55 }}
               title={titleParts.join(" · ")}
             >
-              {tSubject(s.subject)} {s.hoursPerWeek}h
-              <span className="tag-block-size">×{block}h</span>
+              {tSubject(s.subject)} {s.hoursPerWeek} {t("hoursShort")}
+              <span className="tag-block-size">×{block} {t("hoursShort")}</span>
             </span>
           );
         })}
@@ -855,6 +856,7 @@ function filterTeachers(
   if (!q) return teachers;
   return teachers.filter((teacher) => {
     if (teacher.name.toLowerCase().includes(q)) return true;
+    if (teacher.nameHe && teacher.nameHe.toLowerCase().includes(q)) return true;
     for (const s of teacher.subjects) {
       if (s.toLowerCase().includes(q)) return true;
       if (tSubject(s).toLowerCase().includes(q)) return true;

@@ -28,11 +28,11 @@ export default function TimetableView({
   mode,
   onResultChange,
 }: Props) {
-  const { tClassName } = useT();
+  const { tClassName, tTeacher } = useT();
   const entities: EntityRef[] =
     mode === "byClass"
       ? input.classes.map((c) => ({ id: c.id, name: tClassName(c.id) }))
-      : input.teachers.map((teacher) => ({ id: teacher.id, name: teacher.name }));
+      : input.teachers.map((teacher) => ({ id: teacher.id, name: tTeacher(teacher) }));
 
   const grids: Record<string, Grid> =
     mode === "byClass"
@@ -132,8 +132,9 @@ function GridTable({
   conflictMap,
   onSwap,
 }: GridProps) {
-  const { t, tDay, tSubject, tClassName } = useT();
+  const { t, tDay, tSubject, tClassName, tTeacher } = useT();
   const { days, slotLabels } = input.config;
+  const teacherById = new Map(input.teachers.map((tch) => [tch.id, tch]));
   const [pending, setPending] = useState<{ day: number; slot: number } | null>(
     null
   );
@@ -214,7 +215,9 @@ function GridTable({
                     <div className="cell-subject">{tSubject(cell.subject)}</div>
                     <div className="cell-meta">
                       {mode === "byClass"
-                        ? cell.teacherName
+                        ? (teacherById.get(cell.teacherId)
+                            ? tTeacher(teacherById.get(cell.teacherId)!)
+                            : cell.teacherName)
                         : tClassName(cell.classId)}
                     </div>
                     <div className="cell-meta">{cell.roomName}</div>
