@@ -64,7 +64,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function App() {
-  const { t, tDay, tClassId, tTeacher } = useT();
+  const { t, tDay, tClassId, tTeacher, tSubject } = useT();
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [persisted, setPersisted] = useState(false);
@@ -371,7 +371,7 @@ export default function App() {
               <li key={`${d.classId}-${d.subject}`} style={{ marginBottom: 4 }}>
                 {t("droppedLine", {
                   className: tClassId(d.className),
-                  subject: d.subject,
+                  subject: tSubject(d.subject),
                   hours: d.hours,
                 })}
               </li>

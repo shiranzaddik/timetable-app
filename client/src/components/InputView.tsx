@@ -324,35 +324,29 @@ export default function InputView({ input, onChange }: Props) {
     const usedBy = input.classes.filter(
       (c) => c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
     );
+    // The regular (unnamed) trend is the fallback target for displaced
+    // classes — we can't delete it while classes still rely on it.
+    if (!trendName && usedBy.length > 0) {
+      window.alert(t("errCannotRemoveDefaultTrend"));
+      return;
+    }
     if (usedBy.length > 0) {
       if (!window.confirm(t("confirmRemoveTrendWithClasses"))) return;
     }
-    // Move any orphan classes to the regular (unnamed) trend of the same
-    // grade so they keep working. Ensure that regular trend exists; reuse
-    // the existing subjects if so, otherwise create a default template.
-    const regularExists =
-      !trendName ||
-      input.trends.some(
-        (tr) => tr.grade === grade && !tr.trendName
-      );
     const trendsAfterDelete = input.trends.filter(
       (tr) => !(tr.grade === grade && (tr.trendName ?? "") === (trendName ?? ""))
     );
-    const trends = regularExists
-      ? trendsAfterDelete
-      : [
-          ...trendsAfterDelete,
-          { grade, trendName: undefined, subjects: defaultGradeSubjects() },
-        ];
+    // The regular trend is guaranteed to exist for this grade if we reach
+    // this branch (we refused above when it was the one being deleted).
     const regularSubjects =
-      trends.find((tr) => tr.grade === grade && !tr.trendName)?.subjects ??
-      defaultGradeSubjects();
+      trendsAfterDelete.find((tr) => tr.grade === grade && !tr.trendName)
+        ?.subjects ?? defaultGradeSubjects();
     const classes = input.classes.map((c) =>
       c.grade === grade && (c.trendName ?? "") === (trendName ?? "")
         ? { ...c, trendName: undefined, subjects: regularSubjects }
         : c
     );
-    onChange({ ...input, trends, classes });
+    onChange({ ...input, trends: trendsAfterDelete, classes });
   };
 
   return (

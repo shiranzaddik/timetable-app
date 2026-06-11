@@ -80,7 +80,7 @@ const allGrades: Grade[] = [
 export const teachers: Teacher[] = [
   {
     id: "t-cohen",
-    name: "Mrs. Cohen",
+    name: "Rachel Cohen",
     nameHe: "רחל כהן",
     subjects: [Subject.Math, Subject.Hebrew],
     grades: allGrades,
@@ -88,7 +88,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-levi",
-    name: "Mr. Levi",
+    name: "Avi Levi",
     nameHe: "אבי לוי",
     subjects: [Subject.Math, Subject.Science],
     grades: allGrades,
@@ -97,7 +97,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-shapiro",
-    name: "Ms. Shapiro",
+    name: "Shira Shapiro",
     nameHe: "שירה שפירא",
     subjects: [Subject.English],
     grades: allGrades,
@@ -107,7 +107,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-avi",
-    name: "Mr. Avi",
+    name: "Avi Giladi",
     nameHe: "אבי גלעדי",
     subjects: [Subject.English],
     grades: [Grade.A], // only teaches grade A — demo of a grade-restricted teacher
@@ -116,7 +116,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-david",
-    name: "Mr. David",
+    name: "David Peretz",
     nameHe: "דוד פרץ",
     subjects: [Subject.Hebrew, Subject.Science],
     grades: allGrades,
@@ -125,7 +125,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-yossi",
-    name: "Coach Yossi",
+    name: "Yossi Mizrahi",
     nameHe: "יוסי מזרחי",
     subjects: [Subject.Sport],
     grades: allGrades,
@@ -133,7 +133,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-mira",
-    name: "Ms. Mira",
+    name: "Mira Rosen",
     nameHe: "מירה רוזן",
     subjects: [Subject.Music],
     grades: allGrades,
@@ -142,7 +142,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-tech",
-    name: "Mr. Tech",
+    name: "Tal Hazan",
     nameHe: "טל חזן",
     subjects: [Subject.Computer],
     grades: allGrades,
@@ -151,7 +151,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-sarah",
-    name: "Ms. Sarah",
+    name: "Sarah Berkowitz",
     nameHe: "שרה ברקוביץ",
     subjects: [Subject.Math, Subject.Hebrew, Subject.Science],
     grades: allGrades,
@@ -160,7 +160,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-beth",
-    name: "Ms. Beth",
+    name: "Beracha Alon",
     nameHe: "ברכה אלון",
     subjects: [Subject.English],
     grades: allGrades,
@@ -169,7 +169,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-omer",
-    name: "Mr. Omer",
+    name: "Omer Nachum",
     nameHe: "עומר נחום",
     subjects: [Subject.Computer],
     grades: allGrades,
@@ -178,7 +178,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-dafna",
-    name: "Ms. Dafna",
+    name: "Dafna Adari",
     nameHe: "דפנה אדרי",
     subjects: ["art"],
     grades: allGrades,
@@ -187,7 +187,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-ronen",
-    name: "Mr. Ronen",
+    name: "Ronen Biton",
     nameHe: "רונן ביטון",
     subjects: ["history", "geography"],
     grades: allGrades,
@@ -196,7 +196,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-tova",
-    name: "Ms. Tova",
+    name: "Tova Shalom",
     nameHe: "טובה שלום",
     subjects: ["bible"],
     grades: allGrades,
@@ -208,7 +208,7 @@ export const teachers: Teacher[] = [
   // constraints lock parts of the grid).
   {
     id: "t-dani",
-    name: "Coach Dani",
+    name: "Dani Cohen",
     nameHe: "דני כהן",
     subjects: [Subject.Sport],
     grades: allGrades,
@@ -217,7 +217,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-rina",
-    name: "Ms. Rina",
+    name: "Rina Azulai",
     nameHe: "רינה אזולאי",
     subjects: ["art"],
     grades: allGrades,
@@ -226,7 +226,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-eli",
-    name: "Mr. Eli",
+    name: "Eli Green",
     nameHe: "אלי גרין",
     subjects: ["history", "geography"],
     grades: allGrades,
@@ -236,7 +236,7 @@ export const teachers: Teacher[] = [
   // Extra core-subject teachers so the larger class roster fits.
   {
     id: "t-maya",
-    name: "Ms. Maya",
+    name: "Maya Tzarfati",
     nameHe: "מאיה צרפתי",
     subjects: [Subject.Math, Subject.Hebrew],
     grades: allGrades,
@@ -245,7 +245,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-itai",
-    name: "Mr. Itai",
+    name: "Itai Katz",
     nameHe: "איתי כץ",
     subjects: [Subject.Hebrew, Subject.Science],
     grades: allGrades,
@@ -254,7 +254,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-talia",
-    name: "Ms. Talia",
+    name: "Talia Dahan",
     nameHe: "טליה דהן",
     subjects: [Subject.Math, Subject.Science],
     grades: allGrades,
@@ -263,7 +263,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-tal",
-    name: "Ms. Tal",
+    name: "Tal Weissman",
     nameHe: "טל ויסמן",
     subjects: [Subject.English],
     grades: allGrades,
@@ -273,7 +273,7 @@ export const teachers: Teacher[] = [
   // Grade 5/6 homeroom teachers + extra core-subject coverage.
   {
     id: "t-noa",
-    name: "Ms. Noa",
+    name: "Noa Gabai",
     nameHe: "נועה גבאי",
     subjects: [Subject.Math, Subject.Hebrew, Subject.Science],
     grades: allGrades,
@@ -282,7 +282,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-ariel",
-    name: "Mr. Ariel",
+    name: "Ariel Pinto",
     nameHe: "אריאל פינטו",
     subjects: [Subject.Math, Subject.English],
     grades: allGrades,
@@ -291,7 +291,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-shira",
-    name: "Ms. Shira",
+    name: "Shira Levinson",
     nameHe: "שירה לוינסון",
     subjects: [Subject.Hebrew, Subject.English, Subject.Science],
     grades: allGrades,
@@ -300,7 +300,7 @@ export const teachers: Teacher[] = [
   },
   {
     id: "t-yair",
-    name: "Mr. Yair",
+    name: "Yair Ohana",
     nameHe: "יאיר אוחנה",
     subjects: [Subject.Math, Subject.Science, Subject.Computer],
     grades: allGrades,

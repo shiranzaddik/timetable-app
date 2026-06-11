@@ -11,9 +11,9 @@ const LANG_KEY = "lang";
 const STRINGS = {
   en: {
     hoursShort: "h",
-    appTitle: "School Timetable Builder",
+    appTitle: "The smart way to build a school timetable",
     appSubtitle:
-      "Define teachers and classes, then generate a weekly timetable that satisfies all constraints.",
+      "Define teachers, classes and constraints — get an optimized timetable in minutes.",
 
     // toolbar / header
     generate: "Generate Timetable",
@@ -65,6 +65,8 @@ const STRINGS = {
       "No trends yet. Add one to define the subjects each grade studies.",
     confirmRemoveTrendWithClasses:
       "This trend has classes assigned to it. Remove anyway? The classes will move to the regular trend of the grade.",
+    errCannotRemoveDefaultTrend:
+      "Can't delete the default trend while classes still use it. Move those classes to a different trend or delete them first.",
     addRoom: "+ Add room",
     emptyRooms:
       "No rooms yet. Add at least one regular room — you'll be able to pick it as a class's location.",
@@ -129,32 +131,27 @@ const STRINGS = {
     fieldNamePlaceholder: "e.g. Ms. Smith",
     fieldSubjects: "Subjects",
     fieldGrades: "Grades they can teach",
-    fieldGradesPerSubject: "Grades per subject",
-    perSubjectGradesHint:
-      "By default, the teacher teaches each chosen subject to every grade. Uncheck a grade to restrict that subject.",
+    fieldGradesPerSubject: "Subjects",
+    perSubjectGradesHint: "",
     fieldDayOff: "Day off *",
     dayOffSoftNote:
       "* We try to honor the day off but may schedule lessons here if no other slot fits.",
-    fieldVacation: "Time off & preferences",
-    vacationHint:
-      "Add the days/times this teacher can't work, or would prefer not to. Leave times empty for an entire day. Pick \"Prefer not\" if you're OK with the solver overriding it.",
+    fieldVacation: "Days off",
+    vacationHint: "",
     addVacation: "+ Add time-off",
-    fieldHomerooms: "Homeroom of (classes)",
-    fieldHomeroomsHint:
-      "Pick which classes this teacher is the homeroom of. Selecting a class will move its homeroom assignment from any previous teacher.",
+    fieldHomerooms: "Homeroom of (class)",
+    fieldHomeroomsHint: "",
     fieldHomeroomsNoClasses: "Add classes first to set a homeroom here.",
-    canBeDefaultLabel: "Can be a class's homeroom teacher",
-    canBeDefaultHint:
-      "When off, the solver won't auto-assign this teacher as a homeroom even if no explicit one is set for the class.",
+    canBeDefaultLabel: "Can be auto-assigned as homeroom",
+    canBeDefaultHint: "",
     cantWork: "Can't",
     preferNot: "Prefer not",
     colDay: "Day",
     colFrom: "From",
     colTo: "To",
     colType: "Type",
-    classHoursLabel: "At least this many study hours per day",
-    classHoursHint:
-      "Each day will be scheduled for at least this many hours. The solver warns you if the subjects below don't add up to the minimum.",
+    classHoursLabel: "Minimum study hours per day",
+    classHoursHint: "",
     classHoursFrom: "From",
     classHoursTo: "Until",
     errEndHourBeforeStart: "End hour must be after start hour.",
@@ -177,11 +174,10 @@ const STRINGS = {
     fieldSection: "Section",
     fieldDefaultTeacher: "Default teacher",
     selectDots: "Select…",
-    noDefaultTeacher: "(no default — solver picks)",
+    noDefaultTeacher: "(no default - auto-pick)",
     fieldRoomName: "Class location (room)",
     roomPlaceholder: "Room name",
-    defaultTeacherNote:
-      "For subjects this teacher can teach, they will be forced for this class. Leave empty to let the solver choose.",
+    defaultTeacherNote: "",
     fieldSubjectsHours: "Subjects (hours / week)",
     addSubject: "+ Add subject",
     subjectPlaceholder: "Subject name",
@@ -218,8 +214,7 @@ const STRINGS = {
     classesInTrend: "{n} classes in this trend",
     fieldTrendSpecialization: "Trend",
     trendPlaceholder: "e.g. science, sport, computers",
-    trendSpecializationHint:
-      "Pick the trend this class belongs to. Classes that share a trend share one subjects list.",
+    trendSpecializationHint: "",
     trendAddNew: "+ New trend…",
     errTrendNameRequired: "Enter a name for the new trend",
 
@@ -359,6 +354,8 @@ const STRINGS = {
     emptyTrends: "אין עדיין מגמות. הוסיפו מגמה כדי להגדיר את המקצועות בכל שכבה.",
     confirmRemoveTrendWithClasses:
       "למגמה זו משויכות כיתות. להסיר בכל זאת? הכיתות יועברו למגמה הרגילה של השכבה.",
+    errCannotRemoveDefaultTrend:
+      "לא ניתן למחוק את המגמה הרגילה כל עוד יש כיתות המשויכות אליה. העבירו את הכיתות למגמה אחרת או מחקו אותן תחילה.",
     addRoom: "+ הוסף חדר",
     emptyRooms:
       "אין עדיין חדרים. הוסיפו לפחות חדר רגיל אחד — ניתן יהיה לבחור בו כמיקום כיתה.",
