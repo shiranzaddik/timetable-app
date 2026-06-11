@@ -25,9 +25,23 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
+// Pre-seed the language preference so the screenshots are captured in the
+// language we want (defaults to Hebrew now that the app's primary audience
+// is Hebrew-speaking). Override with `LANG=en` to capture English instead.
+const LANG = process.env.LANG_HE === "0" ? "en" : "he";
+await context.addInitScript((lang) => {
+  try {
+    window.localStorage.setItem("lang", lang);
+  } catch {
+    // ignore (private mode, etc.)
+  }
+}, LANG);
+
 await page.goto(APP_URL, { waitUntil: "networkidle" });
-// Wait for the demo data to populate.
-await page.waitForSelector("text=Teachers", { timeout: 10_000 });
+// Wait for the demo data to populate (Subjects section is rendered first).
+await page.waitForSelector(LANG === "he" ? "text=מקצועות" : "text=Subjects", {
+  timeout: 10_000,
+});
 await page.waitForTimeout(500);
 
 const shootFull = async (name) => {
@@ -48,16 +62,19 @@ const shootElement = async (name, selector) => {
 // 01: full-page editor view (teachers, trends, classes).
 await shootFull("01-input.png");
 
-// Click "Generate Timetable" and wait for the timetable section to render.
-await page.getByRole("button", { name: /Generate Timetable/i }).click();
-await page.waitForSelector("text=Generated Timetable", { timeout: 30_000 });
+const GENERATE_BTN = LANG === "he" ? /צור מערכת שעות/i : /Generate Timetable/i;
+const GENERATED_HDR = LANG === "he" ? "מערכת השעות שנוצרה" : "Generated Timetable";
+const BY_TEACHER_BTN = LANG === "he" ? /לפי מורה/i : /By teacher/i;
+
+await page.getByRole("button", { name: GENERATE_BTN }).click();
+await page.waitForSelector(`text=${GENERATED_HDR}`, { timeout: 30_000 });
 await page.waitForTimeout(500);
 
 // 02 + 03: just the generated-timetable section, not the editor above it.
 await shootElement("02-timetable.png", ".section-timetable");
 
-// Switch to "By teacher" view.
-await page.getByRole("button", { name: /By teacher/i }).click();
+// Switch to the by-teacher view.
+await page.getByRole("button", { name: BY_TEACHER_BTN }).click();
 await page.waitForTimeout(500);
 await shootElement("03-timetable-by-teacher.png", ".section-timetable");
 
