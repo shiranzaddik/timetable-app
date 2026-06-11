@@ -541,6 +541,11 @@ button.secondary:hover:not(:disabled) { background: var(--surface-2); }
   align-items: center;
   gap: 12px;
 }
+.subject-card .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .grade-badge {
   width: 44px;
   height: 44px;
