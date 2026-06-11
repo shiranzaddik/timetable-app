@@ -53,10 +53,12 @@ export default function GradeForm({
   onSave,
   onCancel,
 }: Props) {
-  const { t, tSubject } = useT();
+  const { t, tSubject, tGrade } = useT();
   const [subjects, setSubjects] = useState<ClassSubject[]>(initialSubjects);
   const [error, setError] = useState<string | null>(null);
-  const headerLabel = trendName ? `${grade} · ${trendName}` : `${grade}`;
+  const headerLabel = trendName
+    ? `${tGrade(grade)} · ${trendName}`
+    : `${tGrade(grade)}`;
 
   const submit = () => {
     const filtered = subjects

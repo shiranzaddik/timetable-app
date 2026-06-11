@@ -2,7 +2,7 @@
 // Adds Hebrew (RTL) alongside English; switches document direction on change.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { Day, Subject } from "./types";
+import { Day, Grade, Subject } from "./types";
 
 export type Lang = "en" | "he";
 
@@ -573,6 +573,30 @@ const DAY_NAMES: Record<Lang, Record<Day, string>> = {
   },
 };
 
+const GRADE_LETTERS: Record<Lang, Record<Grade, string>> = {
+  en: {
+    [Grade.A]: "A",
+    [Grade.B]: "B",
+    [Grade.C]: "C",
+    [Grade.D]: "D",
+  },
+  he: {
+    [Grade.A]: "א",
+    [Grade.B]: "ב",
+    [Grade.C]: "ג",
+    [Grade.D]: "ד",
+  },
+};
+
+const HEBREW_GRADE_BY_LETTER: Record<string, string> = {
+  A: "א",
+  B: "ב",
+  C: "ג",
+  D: "ד",
+  E: "ה",
+  F: "ו",
+};
+
 const SUBJECT_NAMES: Record<Lang, Record<string, string>> = {
   en: {
     [Subject.Math]: "math",
@@ -616,6 +640,10 @@ export interface I18nApi {
   tDay: (d: Day) => string;
   /** Translates well-known Subject enum values; returns the string as-is for custom subjects. */
   tSubject: (s: string) => string;
+  /** Translates a Grade letter (A→א in Hebrew). */
+  tGrade: (g: Grade) => string;
+  /** Translates a class id like "A1" → "א1" in Hebrew. Leaves unknown prefixes alone. */
+  tClassId: (id: string) => string;
   tClassName: (id: string) => string;
 }
 
@@ -645,13 +673,22 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
   }, [lang]);
 
+  const translateClassId = (id: string): string => {
+    if (lang !== "he") return id;
+    const first = id.charAt(0).toUpperCase();
+    const heLetter = HEBREW_GRADE_BY_LETTER[first];
+    return heLetter ? `${heLetter}${id.slice(1)}` : id;
+  };
+
   const value: I18nApi = {
     lang,
     setLang,
     t: (key, vars) => interpolate(STRINGS[lang][key] ?? STRINGS.en[key] ?? key, vars),
     tDay: (d) => DAY_NAMES[lang][d] ?? d,
     tSubject: (s) => SUBJECT_NAMES[lang][s] ?? s,
-    tClassName: (id) => `${STRINGS[lang].classWord} ${id}`,
+    tGrade: (g) => GRADE_LETTERS[lang][g] ?? g,
+    tClassId: translateClassId,
+    tClassName: (id) => `${STRINGS[lang].classWord} ${translateClassId(id)}`,
   };
 
   return <I18nCtx.Provider value={value}>{children}</I18nCtx.Provider>;

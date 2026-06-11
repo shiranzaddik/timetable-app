@@ -35,7 +35,7 @@ export default function ClassForm({
   onCancel,
   initial,
 }: Props) {
-  const { t } = useT();
+  const { t, tGrade, tClassId } = useT();
   const isEdit = !!initial;
   const [grade, setGrade] = useState<Grade>(initial?.grade ?? Grade.A);
   const [section, setSection] = useState<number>(initial?.section ?? 1);
@@ -82,7 +82,7 @@ export default function ClassForm({
   return (
     <div className="form-card">
       <strong style={{ fontSize: 14 }}>
-        {isEdit ? t("editClass", { id: initial!.id }) : t("newClass")}
+        {isEdit ? t("editClass", { id: tClassId(initial!.id) }) : t("newClass")}
       </strong>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -101,7 +101,7 @@ export default function ClassForm({
           >
             {Object.values(Grade).map((g) => (
               <option key={g} value={g}>
-                {g}
+                {tGrade(g)}
               </option>
             ))}
           </select>
@@ -135,8 +135,8 @@ export default function ClassForm({
           {(trendsByGrade[grade] ?? [""]).map((name) => (
             <option key={name || "__regular__"} value={name}>
               {name
-                ? `${t("gradeBadgePrefix")} ${grade} · ${name}`
-                : `${t("gradeBadgePrefix")} ${grade}`}
+                ? `${t("gradeBadgePrefix")} ${tGrade(grade)} · ${name}`
+                : `${t("gradeBadgePrefix")} ${tGrade(grade)}`}
             </option>
           ))}
           <option value={NEW_TREND_SENTINEL}>{t("trendAddNew")}</option>
@@ -222,8 +222,8 @@ export default function ClassForm({
       <div className="form-actions">
         <button onClick={submit}>
           {isEdit
-            ? t("saveChangesToId", { id })
-            : t("saveClassWithId", { id })}
+            ? t("saveChangesToId", { id: tClassId(id) })
+            : t("saveClassWithId", { id: tClassId(id) })}
         </button>
         <button className="secondary" onClick={onCancel}>
           {t("cancel")}

@@ -64,7 +64,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function App() {
-  const { t, tDay } = useT();
+  const { t, tDay, tClassId } = useT();
   const [auth, setAuth] = useState<AuthState | undefined>(undefined);
   const [input, setInput] = useState<SchoolInput | null>(null);
   const [persisted, setPersisted] = useState(false);
@@ -374,7 +374,7 @@ export default function App() {
             {result.droppedBlocks.map((d) => (
               <li key={`${d.classId}-${d.subject}`} style={{ marginBottom: 4 }}>
                 {t("droppedLine", {
-                  className: d.className,
+                  className: tClassId(d.className),
                   subject: d.subject,
                   hours: d.hours,
                 })}
@@ -421,7 +421,7 @@ export default function App() {
             {result.assignedHomerooms.map((a) => (
               <li key={a.classId} style={{ marginBottom: 4 }}>
                 {t("assignedHomeroomLine", {
-                  className: a.className,
+                  className: tClassId(a.className),
                   teacherName: a.teacherName,
                 })}
               </li>
@@ -557,7 +557,7 @@ function jumpToCard(anchorId: string) {
 }
 
 function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
-  const { t } = useT();
+  const { t, tClassId } = useT();
   if (rec.kind === "mandatoryOverflow") {
     return (
       <div className="card recommendation-card">
@@ -654,11 +654,13 @@ function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
   const totalDailyMinutes = (rec.totalHours / rec.daysPerWeek) * 60;
   const fmtMinutes = (m: number) =>
     `${Math.floor(m / 60)}h ${Math.round(m % 60)}m`;
+  const displayClassName = tClassId(rec.className);
+  const displayTrendLabel = tClassId(rec.trendLabel);
   return (
     <div className="card recommendation-card">
       <div className="rec-header">
         {t("recClassUnderfilledHeader", {
-          className: rec.className,
+          className: displayClassName,
           total: rec.totalHours,
           target: rec.targetHours,
           start: String(rec.startHour).padStart(2, "0"),
@@ -676,37 +678,37 @@ function RecommendationCard({ rec }: { rec: ScheduleRecommendation }) {
         <li>
           <span className="rec-row">
             <span>
-              {t("recAddHoursToTrend", { trend: rec.trendLabel, missing })}
+              {t("recAddHoursToTrend", { trend: displayTrendLabel, missing })}
             </span>
             <button
               className="rec-link"
               onClick={() => jumpToCard(trendAnchor)}
             >
-              {t("recEditTrend", { trend: rec.trendLabel })}
+              {t("recEditTrend", { trend: displayTrendLabel })}
             </button>
           </span>
         </li>
         <li>
           <span className="rec-row">
-            <span>{t("recShortenSchoolDay", { className: rec.className })}</span>
+            <span>{t("recShortenSchoolDay", { className: displayClassName })}</span>
             <button
               className="rec-link"
               onClick={() => jumpToCard(classAnchor)}
             >
-              {t("recEditClass", { className: rec.className })}
+              {t("recEditClass", { className: displayClassName })}
             </button>
           </span>
         </li>
         <li>
           <span className="rec-row">
             <span>
-              {t("recLowerMandatoryRange", { className: rec.className })}
+              {t("recLowerMandatoryRange", { className: displayClassName })}
             </span>
             <button
               className="rec-link"
               onClick={() => jumpToCard(classAnchor)}
             >
-              {t("recEditClass", { className: rec.className })}
+              {t("recEditClass", { className: displayClassName })}
             </button>
           </span>
         </li>

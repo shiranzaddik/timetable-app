@@ -50,7 +50,7 @@ export default function TeacherForm({
   initial,
   availableTrends,
 }: Props) {
-  const { t, tDay, tSubject } = useT();
+  const { t, tDay, tSubject, tGrade } = useT();
   const isEdit = !!initial;
 
   /** Trend choices: prefer the school's actual trends. Fall back to the
@@ -58,7 +58,7 @@ export default function TeacherForm({
   const trendChoices: TrendChoice[] =
     availableTrends?.length
       ? availableTrends
-      : ALL_GRADES.map((g) => ({ key: g as string, label: g as string, grade: g }));
+      : ALL_GRADES.map((g) => ({ key: g as string, label: tGrade(g), grade: g }));
   const allTrendKeys = trendChoices.map((c) => c.key);
 
   /** Expand legacy gradesPerSubject (Grade enum) into trend keys covered by

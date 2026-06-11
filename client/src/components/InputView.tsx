@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function InputView({ input, onChange }: Props) {
-  const { t, tSubject } = useT();
+  const { t, tSubject, tGrade, tClassId } = useT();
   const [addingTeacher, setAddingTeacher] = useState(false);
   const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [teacherSort, setTeacherSort] = useState<"name" | "subject" | "grade">(
@@ -90,7 +90,7 @@ export default function InputView({ input, onChange }: Props) {
     const { grade, trendName } = parseTrendKey(key);
     return {
       key,
-      label: trendName ? `${grade} · ${trendName}` : `${grade}`,
+      label: trendName ? `${tGrade(grade)} · ${trendName}` : `${tGrade(grade)}`,
       grade,
     };
   });
@@ -322,7 +322,8 @@ export default function InputView({ input, onChange }: Props) {
           const filteredTeachers = filterTeachers(
             input.teachers,
             teacherQuery,
-            tSubject
+            tSubject,
+            tGrade
           );
           if (filteredTeachers.length === 0 && teacherQuery.trim()) {
             return (
@@ -357,6 +358,7 @@ export default function InputView({ input, onChange }: Props) {
               filteredTeachers,
               teacherSort,
               tSubject,
+              tGrade,
               t("grades")
             ).map(({ key, label, teachers }) => (
             <div key={key} className="teacher-group">
@@ -570,7 +572,11 @@ function TeacherCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t, tDay, tSubject } = useT();
+  const { t, tDay, tSubject, tGrade, tClassId } = useT();
+  const gradesLabel =
+    teacher.grades.length > 0
+      ? teacher.grades.map((g) => tGrade(g)).join(", ")
+      : "—";
   return (
     <div className="card teacher-card compact" id={`teacher-${teacher.id}`}>
       <div className="head">
@@ -578,12 +584,13 @@ function TeacherCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{teacher.name}</p>
           <p className="teacher-role">
-            {t("grades")} {teacher.grades.join(", ") || "—"}
+            {t("grades")} {gradesLabel}
             {homeroomOf.length > 0 && (
               <>
                 {" · "}
                 <span className="homeroom-inline">
-                  {t("homeroomLabel")}: {homeroomOf.map((c) => c.name).join(", ")}
+                  {t("homeroomLabel")}:{" "}
+                  {homeroomOf.map((c) => tClassId(c.id)).join(", ")}
                 </span>
               </>
             )}
@@ -612,7 +619,7 @@ function TeacherCard({
       <div className="row">
         {homeroomOf.map((c) => (
           <span key={c.id} className="tag homeroom-tag">
-            ★ {t("homeroomOfShort", { className: c.name })}
+            ★ {t("homeroomOfShort", { className: tClassId(c.id) })}
           </span>
         ))}
         {teacher.subjects.map((s) => (
@@ -666,17 +673,17 @@ function GradeCard({
   onDelete?: () => void;
   tSubject: (s: string) => string;
 }) {
-  const { t } = useT();
+  const { t, tGrade, tClassId } = useT();
   const total = subjects.reduce((s, x) => s + x.hoursPerWeek, 0);
-  const classList = classIds.join(", ");
+  const classList = classIds.map(tClassId).join(", ");
   const trendKey = trendName ? `${grade}:${trendName}` : `${grade}`;
   return (
     <div className="card class-card compact" id={`trend-${trendKey}`}>
       <div className="head">
-        <div className={`grade-badge grade-${grade}`}>{grade}</div>
+        <div className={`grade-badge grade-${grade}`}>{tGrade(grade)}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">
-            {t("gradeBadgePrefix")} {grade}
+            {t("gradeBadgePrefix")} {tGrade(grade)}
             {trendName ? ` · ${trendName}` : ""}
           </p>
           <p className="teacher-role">
@@ -752,16 +759,17 @@ function ClassCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t } = useT();
+  const { t, tGrade, tClassId } = useT();
   const trendLabel = cls.trendName
-    ? `${cls.grade} · ${cls.trendName}`
-    : `${cls.grade}`;
+    ? `${tGrade(cls.grade)} · ${cls.trendName}`
+    : `${tGrade(cls.grade)}`;
+  const displayId = tClassId(cls.id);
   return (
     <div className="card class-card compact" id={`class-${cls.id}`}>
       <div className="head">
-        <div className={`grade-badge grade-${cls.grade}`}>{cls.id}</div>
+        <div className={`grade-badge grade-${cls.grade}`}>{displayId}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p className="teacher-name">{cls.id}</p>
+          <p className="teacher-name">{displayId}</p>
           <p className="teacher-role">
             {t("gradeBadgePrefix")} {trendLabel}
           </p>
@@ -840,7 +848,8 @@ function sortedByName(teachers: Teacher[]): Teacher[] {
 function filterTeachers(
   teachers: Teacher[],
   query: string,
-  tSubject: (s: string) => string
+  tSubject: (s: string) => string,
+  tGrade: (g: Grade) => string
 ): Teacher[] {
   const q = query.trim().toLowerCase();
   if (!q) return teachers;
@@ -852,6 +861,7 @@ function filterTeachers(
     }
     for (const g of teacher.grades) {
       if (g.toLowerCase().includes(q)) return true;
+      if (tGrade(g).toLowerCase().includes(q)) return true;
     }
     return false;
   });
@@ -864,6 +874,7 @@ function groupTeachersBy(
   teachers: Teacher[],
   by: "subject" | "grade",
   tSubject: (s: string) => string,
+  tGrade: (g: Grade) => string,
   gradesLabel: string
 ): { key: string; label: string; teachers: Teacher[] }[] {
   const groups: Map<string, { label: string; teachers: Teacher[] }> = new Map();
@@ -871,7 +882,7 @@ function groupTeachersBy(
     const keys =
       by === "subject"
         ? teacher.subjects
-        : teacher.grades.map((g) => `${gradesLabel} ${g}`);
+        : teacher.grades.map((g) => `${gradesLabel} ${tGrade(g)}`);
     for (const key of keys) {
       const label = by === "subject" ? tSubject(key) : key;
       if (!groups.has(key)) groups.set(key, { label, teachers: [] });
