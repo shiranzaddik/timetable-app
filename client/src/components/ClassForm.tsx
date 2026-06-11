@@ -169,9 +169,11 @@ export default function ClassForm({
             autoFocus
           />
         )}
-        <small style={{ color: "var(--text-muted)" }}>
-          {t("trendSpecializationHint")}
-        </small>
+        {t("trendSpecializationHint") && (
+          <small style={{ color: "var(--text-muted)" }}>
+            {t("trendSpecializationHint")}
+          </small>
+        )}
       </div>
 
       <div className="form-row">
@@ -200,9 +202,11 @@ export default function ClassForm({
               </option>
             ))}
         </select>
-        <small style={{ color: "var(--text-muted)" }}>
-          {t("defaultTeacherNote")}
-        </small>
+        {t("defaultTeacherNote") && (
+          <small style={{ color: "var(--text-muted)" }}>
+            {t("defaultTeacherNote")}
+          </small>
+        )}
       </div>
 
       <div className="form-row">

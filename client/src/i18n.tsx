@@ -420,7 +420,7 @@ const STRINGS = {
     colFrom: "מ-",
     colTo: "עד",
     colType: "סוג",
-    classHoursLabel: "לפחות שעות לימוד ביום לכיתה זו",
+    classHoursLabel: "מינימום שעות לימוד ביום זה",
     classHoursHint:
       "כל יום בלוח יכלול לפחות את מספר השעות שנקבע כאן. תופיע אזהרה אם סך המקצועות לא ממלא את המינימום.",
     classHoursFrom: "מ-",
@@ -444,11 +444,10 @@ const STRINGS = {
     fieldSection: "מספר",
     fieldDefaultTeacher: "מחנך",
     selectDots: "בחרו…",
-    noDefaultTeacher: "(ללא ברירת מחדל — הפותר יבחר)",
+    noDefaultTeacher: "(ללא ברירת מחדל - יבחר אוטומטית)",
     fieldRoomName: "מיקום הכיתה (חדר)",
     roomPlaceholder: "שם החדר",
-    defaultTeacherNote:
-      "במקצועות שמורה זה מלמד, הוא יחויב ללמד את הכיתה הזו. השאירו ריק כדי שהפותר יבחר.",
+    defaultTeacherNote: "",
     fieldSubjectsHours: "מקצועות (שעות / שבוע)",
     addSubject: "+ הוסף מקצוע",
     subjectPlaceholder: "שם המקצוע",
@@ -485,8 +484,7 @@ const STRINGS = {
     classesInTrend: "{n} כיתות במגמה",
     fieldTrendSpecialization: "מגמה",
     trendPlaceholder: "לדוגמה: מדעים, ספורט, מחשבים",
-    trendSpecializationHint:
-      "בחרו את המגמה של הכיתה. כיתות באותה מגמה חולקות את אותם מקצועות.",
+    trendSpecializationHint: "",
     trendAddNew: "+ מגמה חדשה…",
     errTrendNameRequired: "יש להזין שם למגמה החדשה",
 
