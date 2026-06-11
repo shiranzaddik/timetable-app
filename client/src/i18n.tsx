@@ -115,11 +115,10 @@ const STRINGS = {
       "This teacher is the default teacher for one or more classes. Remove anyway?",
     deleteTeacherTitle: "Delete {name}?",
     deleteTeacherBodyOne:
-      "{name} is the homeroom teacher of class {classes}. Deleting will remove the homeroom assignment and the solver will pick a new homeroom on the next Generate.",
+      "{name} is the homeroom of class {classes}. Deleting will clear that homeroom assignment; a new one will be picked automatically when the schedule is generated.",
     deleteTeacherBodyMany:
-      "{name} is the homeroom teacher of classes {classes}. Deleting will clear those homeroom assignments and the solver will pick new ones on the next Generate.",
-    deleteTeacherFootnote:
-      "The teacher's lessons (other than homeroom) will also need to be re-scheduled.",
+      "{name} is the homeroom of classes {classes}. Deleting will clear those homeroom assignments; new ones will be picked automatically when the schedule is generated.",
+    deleteTeacherFootnote: "",
     deleteTeacherConfirm: "Delete teacher",
     homeroomLabel: "Homeroom of",
     homeroomOfShort: "Homeroom of {className}",
@@ -399,10 +398,10 @@ const STRINGS = {
       "מורה זה מוגדר כברירת מחדל באחת או יותר מהכיתות. למחוק בכל זאת?",
     deleteTeacherTitle: "למחוק את {name}?",
     deleteTeacherBodyOne:
-      "{name} משמש/ת כמחנך/ת של כיתה {classes}. מחיקה תסיר את הקצאת המחנך והפותר יבחר מחנך חדש בריצה הבאה.",
+      "{name} מחנך כיתה {classes}. מחיקה שלה תסיר את הקצאת המחנך של הכיתה שיבחר אוטומטית ביצירת מערכת השעות.",
     deleteTeacherBodyMany:
-      "{name} משמש/ת כמחנך/ת של הכיתות {classes}. מחיקה תסיר את הקצאות המחנך והפותר יבחר חדשים בריצה הבאה.",
-    deleteTeacherFootnote: "גם השיעורים האחרים של המורה ידרשו לתזמון מחדש.",
+      "{name} מחנך הכיתות {classes}. מחיקה שלו תסיר את הקצאות המחנך של הכיתות שיבחרו אוטומטית ביצירת מערכת השעות.",
+    deleteTeacherFootnote: "",
     deleteTeacherConfirm: "מחק מורה",
     homeroomLabel: "מחנך/ת של",
     homeroomOfShort: "מחנך/ת של {className}",

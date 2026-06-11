@@ -647,19 +647,16 @@ export default function InputView({ input, onChange }: Props) {
                   : "deleteTeacherBodyMany",
                 {
                   name: deleteCandidate.teacherName,
-                  classes: deleteCandidate.classes.map((c) => c.name).join(", "),
+                  classes: deleteCandidate.classes
+                    .map((c) => tClassId(c.id))
+                    .join(", "),
                 }
               )}
-              <div className="modal-classes">
-                {deleteCandidate.classes.map((c) => (
-                  <span key={c.id} className="tag dot">
-                    {c.name}
-                  </span>
-                ))}
-              </div>
-              <div className="modal-footnote">
-                {t("deleteTeacherFootnote")}
-              </div>
+              {t("deleteTeacherFootnote") && (
+                <div className="modal-footnote">
+                  {t("deleteTeacherFootnote")}
+                </div>
+              )}
             </>
           }
           confirmLabel={t("deleteTeacherConfirm")}
