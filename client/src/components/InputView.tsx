@@ -381,6 +381,82 @@ export default function InputView({ input, onChange }: Props) {
 
   return (
     <>
+      {/* SUBJECTS catalogue (school-level subject list) — comes first
+       *  so the user defines the vocabulary before referencing it in
+       *  teachers / trends. */}
+      <div className="section" id="section-subjects">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">{t("subjectsSection")}</h3>
+            <div className="section-meta">
+              {availableSubjects.length}{" "}
+              {availableSubjects.length === 1
+                ? t("countSubjectsOne")
+                : t("countSubjectsMany")}
+            </div>
+          </div>
+          {!addingSubject && !editingSubjectKey && (
+            <button className="add-btn" onClick={() => setAddingSubject(true)}>
+              {t("addSubjectSection")}
+            </button>
+          )}
+        </div>
+        {availableSubjects.length === 0 && !addingSubject && (
+          <div className="empty-state">{t("emptySubjects")}</div>
+        )}
+        <div className="card-grid">
+          {addingSubject && (
+            <SubjectForm
+              existingSubjects={availableSubjects}
+              onSave={addSubject}
+              onCancel={() => setAddingSubject(false)}
+            />
+          )}
+          {availableSubjects.map((def) => {
+            if (editingSubjectKey === def.key) {
+              return (
+                <SubjectForm
+                  key={def.key}
+                  initial={def}
+                  existingSubjects={availableSubjects}
+                  onSave={updateSubject}
+                  onCancel={() => setEditingSubjectKey(null)}
+                />
+              );
+            }
+            const inUse = subjectKeyInUse(def.key);
+            return (
+              <div key={def.key} className="card compact subject-card">
+                <div className="head">
+                  <span className={`tag subj-${def.key}`}>{tSubject(def.key)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p className="teacher-name">{tSubject(def.key)}</p>
+                  </div>
+                  <div className="card-actions">
+                    <button
+                      className="icon-btn edit-trigger"
+                      onClick={() => setEditingSubjectKey(def.key)}
+                      aria-label={t("edit")}
+                      title={t("edit")}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      className="icon-btn danger"
+                      onClick={() => removeSubject(def.key)}
+                      aria-label={t("delete")}
+                      title={inUse ? t("errCannotRemoveSubjectInUse") : t("delete")}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* TEACHERS */}
       <div className="section" id="section-teachers">
         <div className="section-header">
@@ -520,81 +596,6 @@ export default function InputView({ input, onChange }: Props) {
             ))
           );
         })()}
-      </div>
-
-      {/* SUBJECTS catalogue (school-level subject list) */}
-      <div className="section" id="section-subjects">
-        <div className="section-header">
-          <div>
-            <h3 className="section-title">{t("subjectsSection")}</h3>
-            <div className="section-meta">
-              {availableSubjects.length}{" "}
-              {availableSubjects.length === 1
-                ? t("countSubjectsOne")
-                : t("countSubjectsMany")}
-            </div>
-          </div>
-          {!addingSubject && !editingSubjectKey && (
-            <button className="add-btn" onClick={() => setAddingSubject(true)}>
-              {t("addSubjectSection")}
-            </button>
-          )}
-        </div>
-        {availableSubjects.length === 0 && !addingSubject && (
-          <div className="empty-state">{t("emptySubjects")}</div>
-        )}
-        <div className="card-grid">
-          {addingSubject && (
-            <SubjectForm
-              existingKeys={availableSubjects.map((s) => s.key)}
-              onSave={addSubject}
-              onCancel={() => setAddingSubject(false)}
-            />
-          )}
-          {availableSubjects.map((def) => {
-            if (editingSubjectKey === def.key) {
-              return (
-                <SubjectForm
-                  key={def.key}
-                  initial={def}
-                  existingKeys={availableSubjects.map((s) => s.key)}
-                  onSave={updateSubject}
-                  onCancel={() => setEditingSubjectKey(null)}
-                />
-              );
-            }
-            const inUse = subjectKeyInUse(def.key);
-            return (
-              <div key={def.key} className="card compact subject-card">
-                <div className="head">
-                  <span className={`tag subj-${def.key}`}>{tSubject(def.key)}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="teacher-name">{tSubject(def.key)}</p>
-                    <p className="teacher-role">{def.key}</p>
-                  </div>
-                  <div className="card-actions">
-                    <button
-                      className="icon-btn edit-trigger"
-                      onClick={() => setEditingSubjectKey(def.key)}
-                      aria-label={t("edit")}
-                      title={t("edit")}
-                    >
-                      ✎
-                    </button>
-                    <button
-                      className="icon-btn danger"
-                      onClick={() => removeSubject(def.key)}
-                      aria-label={t("delete")}
-                      title={inUse ? t("errCannotRemoveSubjectInUse") : t("delete")}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* TRENDS (subjects per grade + specialization) */}

@@ -4,34 +4,53 @@ import { type SubjectDef } from "../types";
 
 interface Props {
   initial?: SubjectDef;
-  existingKeys: string[];
+  /** All existing subjects — used to refuse duplicate names (case-insensitive
+   *  across both en and he fields) and to invent a unique key for new ones. */
+  existingSubjects: SubjectDef[];
   onSave: (def: SubjectDef) => void;
   onCancel: () => void;
 }
 
 export default function SubjectForm({
   initial,
-  existingKeys,
+  existingSubjects,
   onSave,
   onCancel,
 }: Props) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const isEdit = !!initial;
-  const [keyInput, setKeyInput] = useState(initial?.key ?? "");
-  const [name, setName] = useState(initial?.name ?? "");
-  const [nameHe, setNameHe] = useState(initial?.nameHe ?? "");
+  // The single input edits whichever language is currently active. The
+  // other-language name is preserved as-is on save so demo data with
+  // bilingual labels keeps working.
+  const initialDisplay =
+    lang === "he"
+      ? initial?.nameHe ?? initial?.name ?? ""
+      : initial?.name ?? initial?.nameHe ?? "";
+  const [display, setDisplay] = useState(initialDisplay);
   const [error, setError] = useState<string | null>(null);
 
   const submit = () => {
-    const cleanKey = keyInput.trim().toLowerCase();
-    if (!cleanKey) return setError(t("errSubjectKeyRequired"));
-    if (!isEdit && existingKeys.includes(cleanKey)) {
-      return setError(t("errSubjectKeyExists"));
-    }
+    const trimmed = display.trim();
+    if (!trimmed) return setError(t("errNameRequired"));
+    const candidate = trimmed.toLowerCase();
+    const duplicate = existingSubjects.some((other) => {
+      if (initial && other.key === initial.key) return false;
+      const a = other.name?.trim().toLowerCase();
+      const b = other.nameHe?.trim().toLowerCase();
+      return a === candidate || b === candidate;
+    });
+    if (duplicate) return setError(t("errSubjectNameExists", { name: trimmed }));
+
+    const key = isEdit
+      ? initial!.key
+      : makeSubjectKey(trimmed, existingSubjects.map((s) => s.key));
+
+    const nextName = lang === "he" ? initial?.name : trimmed;
+    const nextNameHe = lang === "he" ? trimmed : initial?.nameHe;
     onSave({
-      key: cleanKey,
-      name: name.trim() || undefined,
-      nameHe: nameHe.trim() || undefined,
+      key,
+      name: nextName,
+      nameHe: nextNameHe,
     });
   };
 
@@ -42,32 +61,15 @@ export default function SubjectForm({
       </strong>
 
       <div className="form-row">
-        <label>{t("fieldSubjectKey")}</label>
-        <input
-          type="text"
-          value={keyInput}
-          disabled={isEdit}
-          placeholder="e.g. drama"
-          onChange={(e) => {
-            setKeyInput(e.target.value);
-            setError(null);
-          }}
-        />
-      </div>
-      <div className="form-row">
         <label>{t("fieldSubjectName")}</label>
         <input
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-      <div className="form-row">
-        <label>{t("fieldSubjectNameHe")}</label>
-        <input
-          type="text"
-          value={nameHe}
-          onChange={(e) => setNameHe(e.target.value)}
+          value={display}
+          autoFocus
+          onChange={(e) => {
+            setDisplay(e.target.value);
+            setError(null);
+          }}
         />
       </div>
 
@@ -81,4 +83,19 @@ export default function SubjectForm({
       </div>
     </div>
   );
+}
+
+/** Slug the display name into a stable key. Falls back to "subj-N" when the
+ *  text is non-ascii (e.g. typed only in Hebrew). Always uniquifies against
+ *  the supplied list. */
+function makeSubjectKey(display: string, existing: string[]): string {
+  const slug = display
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const base = slug || "subj";
+  let key = base;
+  let n = 2;
+  while (existing.includes(key)) key = `${base}-${n++}`;
+  return key;
 }
