@@ -17,6 +17,11 @@ interface Props {
   /** Trend names (incl. "" for regular) already used by classes of each grade.
    *  Drives the trend dropdown so users pick from existing trends. */
   trendsByGrade: Record<Grade, string[]>;
+  /** teacherId → { classId, className } for teachers already locked in as
+   *  another class's homeroom. The form hides those teachers from the
+   *  default-teacher dropdown (except the one currently picked for THIS
+   *  class). */
+  homeroomTeacherToClass: Record<string, { classId: string; className: string }>;
   onSave: (result: ClassFormResult) => void;
   onCancel: () => void;
   /** When provided, edit this class instead of creating a new one. */
@@ -31,6 +36,7 @@ export default function ClassForm({
   defaultStartHour,
   defaultEndHour,
   trendsByGrade,
+  homeroomTeacherToClass,
   onSave,
   onCancel,
   initial,
@@ -59,9 +65,21 @@ export default function ClassForm({
   const defaultRoomId = `room-${id}`;
 
   const submit = () => {
-    if (idCollides) return setError(t("errClassExists", { id }));
+    if (idCollides) return setError(t("errClassExists", { id: tClassId(id) }));
     if (endHour <= startHour)
       return setError(t("errEndHourBeforeStart"));
+    // Belt-and-braces: the dropdown already hides occupied teachers, but
+    // catch the case where someone edits state out from under us.
+    if (defaultTeacherId) {
+      const occupied = homeroomTeacherToClass[defaultTeacherId];
+      if (occupied && occupied.classId !== initial?.id) {
+        return setError(
+          t("errTeacherAlreadyHomeroom", {
+            className: tClassId(occupied.classId),
+          })
+        );
+      }
+    }
     const cleanTrend = trendName.trim().toLowerCase();
     if (addingNewTrend && !cleanTrend) return setError(t("errTrendNameRequired"));
     onSave({
@@ -164,11 +182,18 @@ export default function ClassForm({
         >
           <option value="">{t("noDefaultTeacher")}</option>
           {teachers
-            .filter(
-              (teacher) =>
-                teacher.canBeDefault !== false ||
-                teacher.id === defaultTeacherId
-            )
+            .filter((teacher) => {
+              const isCurrentSelection = teacher.id === defaultTeacherId;
+              if (teacher.canBeDefault === false && !isCurrentSelection) {
+                return false;
+              }
+              // Hide teachers who are already a homeroom of a DIFFERENT class.
+              const occupied = homeroomTeacherToClass[teacher.id];
+              if (occupied && occupied.classId !== initial?.id && !isCurrentSelection) {
+                return false;
+              }
+              return true;
+            })
             .map((teacher) => (
               <option key={teacher.id} value={teacher.id}>
                 {tTeacher(teacher)}
@@ -196,7 +221,7 @@ export default function ClassForm({
               <span className="min-hours-suffix">:00</span>
             </div>
           </label>
-          <span className="min-hours-arrow">→</span>
+          <span className="min-hours-arrow">-</span>
           <label className="min-hours-field">
             <span className="min-hours-field-label">{t("classHoursTo")}</span>
             <div className="min-hours-input">
@@ -212,6 +237,9 @@ export default function ClassForm({
           </label>
           <span className="min-hours-total">
             = {Math.max(0, endHour - startHour)}h
+          </span>
+          <span className="min-hours-inline-note">
+            {t("classHoursInlineNote")}
           </span>
         </div>
         <small style={{ color: "var(--text-muted)" }}>{t("classHoursHint")}</small>

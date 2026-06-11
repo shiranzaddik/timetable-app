@@ -56,12 +56,23 @@ export const rooms: Room[] = [
   { id: "room-C2", name: "Room C2", type: RoomType.Regular },
   { id: "room-D1", name: "Room D1", type: RoomType.Regular },
   { id: "room-D2", name: "Room D2", type: RoomType.Regular },
+  { id: "room-E1", name: "Room E1", type: RoomType.Regular },
+  { id: "room-E2", name: "Room E2", type: RoomType.Regular },
+  { id: "room-F1", name: "Room F1", type: RoomType.Regular },
+  { id: "room-F2", name: "Room F2", type: RoomType.Regular },
   { id: "sport-hall", name: "Sport Hall", type: RoomType.Sport },
   { id: "computer-lab", name: "Computer Lab", type: RoomType.Computer },
   { id: "music-room", name: "Music Room", type: RoomType.Music },
 ];
 
-const allGrades: Grade[] = [Grade.A, Grade.B, Grade.C, Grade.D];
+const allGrades: Grade[] = [
+  Grade.A,
+  Grade.B,
+  Grade.C,
+  Grade.D,
+  Grade.E,
+  Grade.F,
+];
 
 // Days off are spread so each day has at most one teacher of any single
 // subject area off — that keeps the solver able to find an all-morning
@@ -258,6 +269,43 @@ export const teachers: Teacher[] = [
     dayOff: Day.Wednesday,
     unavailable: [],
   },
+  // Grade 5/6 homeroom teachers + extra core-subject coverage.
+  {
+    id: "t-noa",
+    name: "Ms. Noa",
+    nameHe: "נועה גבאי",
+    subjects: [Subject.Math, Subject.Hebrew, Subject.Science],
+    grades: allGrades,
+    dayOff: Day.Monday,
+    unavailable: [],
+  },
+  {
+    id: "t-ariel",
+    name: "Mr. Ariel",
+    nameHe: "אריאל פינטו",
+    subjects: [Subject.Math, Subject.English],
+    grades: allGrades,
+    dayOff: Day.Tuesday,
+    unavailable: [],
+  },
+  {
+    id: "t-shira",
+    name: "Ms. Shira",
+    nameHe: "שירה לוינסון",
+    subjects: [Subject.Hebrew, Subject.English, Subject.Science],
+    grades: allGrades,
+    dayOff: Day.Wednesday,
+    unavailable: [],
+  },
+  {
+    id: "t-yair",
+    name: "Mr. Yair",
+    nameHe: "יאיר אוחנה",
+    subjects: [Subject.Math, Subject.Science, Subject.Computer],
+    grades: allGrades,
+    dayOff: Day.Sunday,
+    unavailable: [],
+  },
 ];
 
 // Each trend sums to 22h. Classes set endHour=12 below — minimum school day
@@ -354,6 +402,36 @@ const grade4MusicSubjects: ClassSubject[] = [
   { subject: "bible", hoursPerWeek: 3 },
 ];
 
+// Grade 5 (E) regular — 32h.
+const grade5Subjects: ClassSubject[] = [
+  { subject: Subject.Math, hoursPerWeek: 5 },
+  { subject: Subject.Hebrew, hoursPerWeek: 5 },
+  { subject: Subject.English, hoursPerWeek: 5 },
+  { subject: Subject.Science, hoursPerWeek: 4 },
+  { subject: Subject.Sport, hoursPerWeek: 2 },
+  { subject: Subject.Music, hoursPerWeek: 1 },
+  { subject: Subject.Computer, hoursPerWeek: 1 },
+  { subject: "art", hoursPerWeek: 2 },
+  { subject: "history", hoursPerWeek: 2 },
+  { subject: "geography", hoursPerWeek: 2 },
+  { subject: "bible", hoursPerWeek: 3 },
+];
+
+// Grade 6 (F) regular — 33h, longest school day.
+const grade6Subjects: ClassSubject[] = [
+  { subject: Subject.Math, hoursPerWeek: 6 },
+  { subject: Subject.Hebrew, hoursPerWeek: 5 },
+  { subject: Subject.English, hoursPerWeek: 5 },
+  { subject: Subject.Science, hoursPerWeek: 4 },
+  { subject: Subject.Sport, hoursPerWeek: 2 },
+  { subject: Subject.Music, hoursPerWeek: 1 },
+  { subject: Subject.Computer, hoursPerWeek: 1 },
+  { subject: "art", hoursPerWeek: 2 },
+  { subject: "history", hoursPerWeek: 2 },
+  { subject: "geography", hoursPerWeek: 2 },
+  { subject: "bible", hoursPerWeek: 3 },
+];
+
 export const classes: SchoolClass[] = [
   // Grade 1
   {
@@ -441,6 +519,48 @@ export const classes: SchoolClass[] = [
     endHour: 13,
     subjects: grade4MusicSubjects,
   },
+  // Grade 5
+  {
+    id: "E1",
+    grade: Grade.E,
+    section: 1,
+    name: "E1",
+    defaultTeacherId: "t-noa",
+    defaultRoomId: "room-E1",
+    endHour: 14,
+    subjects: grade5Subjects,
+  },
+  {
+    id: "E2",
+    grade: Grade.E,
+    section: 2,
+    name: "E2",
+    defaultTeacherId: "t-ariel",
+    defaultRoomId: "room-E2",
+    endHour: 14,
+    subjects: grade5Subjects,
+  },
+  // Grade 6
+  {
+    id: "F1",
+    grade: Grade.F,
+    section: 1,
+    name: "F1",
+    defaultTeacherId: "t-shira",
+    defaultRoomId: "room-F1",
+    endHour: 14,
+    subjects: grade6Subjects,
+  },
+  {
+    id: "F2",
+    grade: Grade.F,
+    section: 2,
+    name: "F2",
+    defaultTeacherId: "t-yair",
+    defaultRoomId: "room-F2",
+    endHour: 14,
+    subjects: grade6Subjects,
+  },
 ];
 
 export const trends: Trend[] = [
@@ -450,6 +570,8 @@ export const trends: Trend[] = [
   { grade: Grade.C, trendName: "science", subjects: grade3ScienceSubjects },
   { grade: Grade.D, subjects: grade4Subjects },
   { grade: Grade.D, trendName: "music", subjects: grade4MusicSubjects },
+  { grade: Grade.E, subjects: grade5Subjects },
+  { grade: Grade.F, subjects: grade6Subjects },
 ];
 
 export const demoInput: SchoolInput = {

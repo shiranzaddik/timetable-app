@@ -106,6 +106,16 @@ export default function InputView({ input, onChange }: Props) {
     homeroomByTeacher[cls.defaultTeacherId].push({ id: cls.id, name: cls.name });
   }
 
+  /** teacherId → first class they are homeroom of. A teacher can only be the
+   *  homeroom of one class at a time, so the ClassForm uses this to hide
+   *  teachers already occupied elsewhere. */
+  const homeroomTeacherToClass: Record<string, { classId: string; className: string }> = {};
+  for (const cls of input.classes) {
+    if (!cls.defaultTeacherId) continue;
+    if (homeroomTeacherToClass[cls.defaultTeacherId]) continue;
+    homeroomTeacherToClass[cls.defaultTeacherId] = { classId: cls.id, className: cls.name };
+  }
+
   /** Class chips passed into TeacherForm so the user can toggle which classes
    *  this teacher is the homeroom of, directly from the teacher side. */
   const availableClasses = input.classes.map((c) => {
@@ -537,6 +547,7 @@ export default function InputView({ input, onChange }: Props) {
               defaultStartHour={configStartHour}
               defaultEndHour={configEndHour}
               trendsByGrade={trendsByGrade}
+              homeroomTeacherToClass={homeroomTeacherToClass}
             />
           )}
           {input.classes.map((c) =>
@@ -549,6 +560,7 @@ export default function InputView({ input, onChange }: Props) {
                 defaultStartHour={configStartHour}
                 defaultEndHour={configEndHour}
                 trendsByGrade={trendsByGrade}
+                homeroomTeacherToClass={homeroomTeacherToClass}
                 onSave={updateClass}
                 onCancel={() => setEditingClassId(null)}
               />
@@ -757,45 +769,92 @@ function GradeCard({
         </div>
       </div>
 
-      <div className="trend-subjects-bars">
-        {(() => {
-          const maxHours = Math.max(1, ...subjects.map((s) => s.hoursPerWeek));
-          return subjects.map((s) => {
-            const mandatory = s.mandatory !== false;
-            const block = subjectBlockSize(s);
-            const pct = (s.hoursPerWeek / maxHours) * 100;
-            const titleParts = [`${s.hoursPerWeek} ${t("hoursShort")}`];
-            if (!mandatory) titleParts.push(t("mandatoryLabel") + ": —");
-            titleParts.push(t("blockSizeTooltip", { size: block }));
-            return (
-              <div
-                key={s.subject}
-                className="trend-bar-row"
-                style={{ opacity: mandatory ? 1 : 0.55 }}
-                title={titleParts.join(" · ")}
-              >
-                <span className="trend-bar-label">{tSubject(s.subject)}</span>
-                <div className="trend-bar-track">
-                  <div
-                    className={`trend-bar-fill subj-${s.subject}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="trend-bar-hours">{s.hoursPerWeek}</span>
-              </div>
-            );
-          });
-        })()}
-      </div>
+      <TrendSubjectsPie subjects={subjects} tSubject={tSubject} />
     </div>
   );
 }
 
-const TREND_ONE_HOUR_SUBJECTS = new Set<string>(["sport", "music"]);
+const SUBJECT_PIE_COLORS: Record<string, string> = {
+  math: "#fef08a",
+  hebrew: "#ddd6fe",
+  english: "#bae6fd",
+  science: "#99f6e4",
+  sport: "#fecaca",
+  music: "#fbcfe8",
+  computer: "#bfdbfe",
+  art: "#f5d0fe",
+  history: "#fed7aa",
+  geography: "#bbf7d0",
+  bible: "#d9f99d",
+};
+const PIE_FALLBACK_COLORS = [
+  "#fde68a",
+  "#c7d2fe",
+  "#a7f3d0",
+  "#fbcfe8",
+  "#bae6fd",
+];
 
-function subjectBlockSize(s: ClassSubject): 1 | 2 {
-  if (s.blockSize === 1 || s.blockSize === 2) return s.blockSize;
-  return TREND_ONE_HOUR_SUBJECTS.has(s.subject) ? 1 : 2;
+function subjectPieColor(subject: string, fallbackIdx: number): string {
+  return (
+    SUBJECT_PIE_COLORS[subject] ??
+    PIE_FALLBACK_COLORS[fallbackIdx % PIE_FALLBACK_COLORS.length]
+  );
+}
+
+function TrendSubjectsPie({
+  subjects,
+  tSubject,
+}: {
+  subjects: ClassSubject[];
+  tSubject: (s: string) => string;
+}) {
+  const { t } = useT();
+  const total = subjects.reduce((sum, s) => sum + s.hoursPerWeek, 0);
+  if (total <= 0) return null;
+  // Build cumulative conic-gradient stops; rounding the last stop to 100%
+  // avoids a hair-line gap from floating-point drift.
+  const stops: string[] = [];
+  let acc = 0;
+  subjects.forEach((s, i) => {
+    const start = (acc / total) * 100;
+    acc += s.hoursPerWeek;
+    const end = i === subjects.length - 1 ? 100 : (acc / total) * 100;
+    stops.push(`${subjectPieColor(s.subject, i)} ${start}% ${end}%`);
+  });
+  const gradient = `conic-gradient(${stops.join(", ")})`;
+  return (
+    <div className="trend-pie-wrap">
+      <div
+        className="trend-pie"
+        style={{ background: gradient }}
+        aria-label={subjects
+          .map((s) => `${tSubject(s.subject)} ${s.hoursPerWeek}`)
+          .join(", ")}
+      />
+      <ul className="trend-pie-legend">
+        {subjects.map((s, i) => {
+          const mandatory = s.mandatory !== false;
+          const pct = Math.round((s.hoursPerWeek / total) * 100);
+          return (
+            <li
+              key={s.subject}
+              className="trend-pie-legend-item"
+              style={{ opacity: mandatory ? 1 : 0.55 }}
+              title={`${s.hoursPerWeek} ${t("hoursShort")} · ${pct}%`}
+            >
+              <span
+                className="trend-pie-swatch"
+                style={{ background: subjectPieColor(s.subject, i) }}
+              />
+              <span className="trend-pie-legend-name">{tSubject(s.subject)}</span>
+              <span className="trend-pie-legend-hours">{s.hoursPerWeek}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 function ClassCard({
@@ -857,7 +916,7 @@ function ClassCard({
           <span className="tag muted">{t("noDefaultTeacher")}</span>
         )}
         <span className="tag muted">
-          {`${pad2(startHour)}:00 → ${pad2(endHour)}:00`}
+          {`${pad2(startHour)}:00 - ${pad2(endHour)}:00`}
         </span>
       </div>
     </div>

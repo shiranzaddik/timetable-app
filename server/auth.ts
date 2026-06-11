@@ -7,8 +7,14 @@
 //
 // Env vars:
 //   GOOGLE_CLIENT_ID  — OAuth Client ID from Google Cloud Console
-//   ALLOWED_EMAILS    — comma-separated list of permitted Gmail addresses
-//                       (empty/unset = anyone with a Google account can sign in)
+//   ALLOWED_EMAILS    — comma-separated list of permitted email addresses.
+//                       Empty/unset disables the per-address check.
+//   ALLOWED_DOMAINS   — comma-separated list of permitted email domains
+//                       (e.g. "gmail.com"). Empty/unset disables the
+//                       per-domain check.
+//                       When BOTH ALLOWED_EMAILS and ALLOWED_DOMAINS are
+//                       empty, anyone with a verified Google account can
+//                       sign in.
 //   SESSION_SECRET    — random string used to sign session JWTs
 //   NODE_ENV          — set to "production" for secure-only cookies
 
@@ -22,6 +28,10 @@ const SESSION_SECRET =
 const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS ?? "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase().replace(/^@/, ""))
   .filter(Boolean);
 
 export const authEnabled = CLIENT_ID.length > 0;
@@ -47,7 +57,15 @@ export async function verifyGoogleIdToken(idToken: string): Promise<SessionUser>
     throw new Error("Google did not return a verified email.");
   }
   const email = payload.email.toLowerCase();
-  if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email)) {
+  const domain = email.split("@")[1] ?? "";
+  // Both lists empty → anyone with a verified Google account is admitted.
+  // Otherwise the user must satisfy at least one of the configured gates:
+  // their email matches ALLOWED_EMAILS or their domain matches
+  // ALLOWED_DOMAINS.
+  const noGates = ALLOWED_EMAILS.length === 0 && ALLOWED_DOMAINS.length === 0;
+  const emailMatches = ALLOWED_EMAILS.includes(email);
+  const domainMatches = ALLOWED_DOMAINS.includes(domain);
+  if (!noGates && !emailMatches && !domainMatches) {
     throw new Error("This Google account is not authorized to use this app.");
   }
   return { email, name: payload.name ?? email };

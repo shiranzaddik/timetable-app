@@ -22,6 +22,8 @@ export enum Grade {
   B = "B",
   C = "C",
   D = "D",
+  E = "E",
+  F = "F",
 }
 
 /** A class id is a stable string like "A1", "A2", "B3". */

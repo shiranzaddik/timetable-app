@@ -142,6 +142,7 @@ const STRINGS = {
     colTo: "To",
     colType: "Type",
     classHoursLabel: "Minimum school day for this class",
+    classHoursInlineNote: "Minimum study hours per day",
     classHoursHint:
       "Each day will be scheduled for at least this many hours. The solver warns you if the subjects below don't add up to the minimum.",
     classHoursFrom: "From",
@@ -247,6 +248,8 @@ const STRINGS = {
     errSelectTeacher: "Select a default teacher",
     errClassExists: 'Class "{id}" already exists',
     errSetHours: "Set hours/week for at least one subject",
+    errTeacherAlreadyHomeroom:
+      "This teacher is already the homeroom of class {className}. Remove them from there first.",
 
     // class name display ("Class A1")
     classWord: "Class",
@@ -296,8 +299,9 @@ const STRINGS = {
   },
   he: {
     hoursShort: "שעות",
-    appTitle: "בונה מערכת שעות בית-ספרית",
-    appSubtitle: "הגדירו מורים וכיתות וקבלו מערכת שעות מתאימה",
+    appTitle: "הדרך החכמה לבניית מערכת שעות לבית הספר",
+    appSubtitle:
+      "הגדירו מורים, כיתות ואילוצים – וקבלו מערכת שעות אופטימלית תוך דקות",
 
     generate: "צור מערכת שעות",
     solving: "מחשב…",
@@ -415,9 +419,10 @@ const STRINGS = {
     colFrom: "מ-",
     colTo: "עד",
     colType: "סוג",
-    classHoursLabel: "מינימום שעות לימוד לכיתה זו",
+    classHoursLabel: "מינימום שעות לימוד ביום לכיתה זו",
+    classHoursInlineNote: "שעות לימוד מינימליות ביום",
     classHoursHint:
-      "כל יום בלוח יתוזמן לפחות במספר השעות הזה. תופיע אזהרה אם סך המקצועות לא ממלא את המינימום.",
+      "כל יום בלוח יכלול לפחות את מספר השעות שנקבע כאן. תופיע אזהרה אם סך המקצועות לא ממלא את המינימום.",
     classHoursFrom: "מ-",
     classHoursTo: "עד",
     errEndHourBeforeStart: "שעת הסיום חייבת להיות אחרי שעת ההתחלה.",
@@ -518,6 +523,8 @@ const STRINGS = {
     errSelectTeacher: "יש לבחור מחנך",
     errClassExists: 'כיתה "{id}" כבר קיימת',
     errSetHours: "יש להגדיר שעות לפחות למקצוע אחד",
+    errTeacherAlreadyHomeroom:
+      "המורה כבר מוגדר/ת כמחנך/ת של כיתה {className}. הסירו אותו משם תחילה.",
 
     classWord: "כיתה",
 
@@ -588,12 +595,16 @@ const GRADE_LETTERS: Record<Lang, Record<Grade, string>> = {
     [Grade.B]: "B",
     [Grade.C]: "C",
     [Grade.D]: "D",
+    [Grade.E]: "E",
+    [Grade.F]: "F",
   },
   he: {
     [Grade.A]: "א",
     [Grade.B]: "ב",
     [Grade.C]: "ג",
     [Grade.D]: "ד",
+    [Grade.E]: "ה",
+    [Grade.F]: "ו",
   },
 };
 
