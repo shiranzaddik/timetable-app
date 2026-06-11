@@ -736,7 +736,7 @@ function TeacherCard({
           ))}
           {teacher.dayOff && (
             <span className="tag dayoff-tag">
-              🌴 {t("off", { day: tDay(teacher.dayOff) })}
+              {t("off", { day: tDay(teacher.dayOff) })}
             </span>
           )}
         </div>

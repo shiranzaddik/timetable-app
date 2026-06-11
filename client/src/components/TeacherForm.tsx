@@ -315,7 +315,9 @@ export default function TeacherForm({
       {/* Unified time-off / preferences */}
       <div className="form-row">
         <label>{t("fieldVacation")}</label>
-        <small style={{ color: "var(--text-muted)" }}>{t("vacationHint")}</small>
+        {t("vacationHint") && (
+          <small style={{ color: "var(--text-muted)" }}>{t("vacationHint")}</small>
+        )}
         {unavailable.map((w, i) => (
           <div key={i} className="vacation-row-flex">
             <label className="vacation-field">

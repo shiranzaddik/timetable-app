@@ -388,7 +388,7 @@ const STRINGS = {
     emptyClasses: "עדיין אין כיתות. לחצו על + הוסף כיתה ליצירת הראשונה.",
 
     grades: "שכבות",
-    off: "יום חופשי {day}",
+    off: "חופש {day}",
     preferOff: "מעדיף חופש ב{day}",
     allDay: "כל היום",
 
@@ -421,9 +421,8 @@ const STRINGS = {
     fieldDayOff: "יום חופש *",
     dayOffSoftNote:
       "* ננסה לכבד את יום החופש, אבל ייתכן שיוקצו שיעורים גם בו אם לא יימצאו זמנים אחרים.",
-    fieldVacation: "ימים/שעות חופש והעדפות",
-    vacationHint:
-      "הוסיפו ימים ושעות בהם המורה לא יכול ללמד, או מעדיף שלא. השאירו שעות ריקות ליום שלם. בחרו \"מעדיף שלא\" כאשר אפשר לחרוג מכך אם צריך.",
+    fieldVacation: "חופשים",
+    vacationHint: "",
     addVacation: "+ הוסף חופש",
     fieldHomerooms: "מחנך/ת של הכיתות",
     fieldHomeroomsHint:
