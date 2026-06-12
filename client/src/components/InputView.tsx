@@ -870,10 +870,20 @@ function TeacherCard({
         {teacher.unavailable.map((w, i) => {
           const isSoft = w.hard === false;
           const isFullDay = !w.fromTime && !w.toTime;
+          // Full-day entries render the same "חופש {day}" badge the legacy
+          // dayOff field uses, so a manually-added full-day off looks the
+          // same as a configured one. Soft full-day uses "prefers off".
           if (isFullDay && isSoft) {
             return (
               <span key={i} className="tag muted">
                 {t("preferOff", { day: tDay(w.day) })}
+              </span>
+            );
+          }
+          if (isFullDay) {
+            return (
+              <span key={i} className="tag dayoff-tag">
+                {t("off", { day: tDay(w.day) })}
               </span>
             );
           }
