@@ -896,9 +896,6 @@ function TeacherCard({
             </span>
           );
         })}
-        {teacher.canBeDefault === false && (
-          <span className="tag muted">{t("canBeDefaultLabel")}: —</span>
-        )}
       </div>
     </div>
   );
