@@ -1030,12 +1030,10 @@ function ClassCard({
       </div>
 
       <div className="row">
-        {defaultTeacherName ? (
+        {defaultTeacherName && (
           <span className="tag dot">
             {t("teacherLabel")}: {defaultTeacherName}
           </span>
-        ) : (
-          <span className="tag muted">{t("noDefaultTeacher")}</span>
         )}
         <span className="tag muted">
           {`${formatHourMinute(startHour)} - ${formatHourMinute(endHour)}`}
