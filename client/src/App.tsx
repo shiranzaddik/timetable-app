@@ -381,7 +381,24 @@ export default function App() {
         </div>
       )}
 
-      {result?.success && result.droppedBlocks && result.droppedBlocks.length > 0 && (
+      {(() => {
+        // Cross-reference each dropped block against the input's
+        // class-subject row to see if it was mandatory. We only surface the
+        // "Subjects the solver couldn't schedule" section when at least one
+        // *mandatory* block was dropped — non-mandatory drops are not
+        // actionable and just add noise to a happy-path schedule.
+        if (!result?.success || !input || !result.droppedBlocks?.length) return null;
+        const subjectMandatory = new Map<string, boolean>();
+        for (const cls of input.classes) {
+          for (const s of cls.subjects) {
+            subjectMandatory.set(`${cls.id}:${s.subject}`, s.mandatory !== false);
+          }
+        }
+        const mandatoryDrops = result.droppedBlocks.filter(
+          (d) => subjectMandatory.get(`${d.classId}:${d.subject}`) !== false
+        );
+        if (mandatoryDrops.length === 0) return null;
+        return (
         <div className="section">
           <div className="section-header">
             <div>
@@ -392,7 +409,7 @@ export default function App() {
             </div>
           </div>
           <ul style={{ margin: 0, paddingInlineStart: 22 }}>
-            {result.droppedBlocks.map((d) => (
+            {mandatoryDrops.map((d) => (
               <li key={`${d.classId}-${d.subject}`} style={{ marginBottom: 4 }}>
                 {t("droppedLine", {
                   className: tClassId(d.className),
@@ -403,7 +420,8 @@ export default function App() {
             ))}
           </ul>
         </div>
-      )}
+        );
+      })()}
 
       {result?.success && result.dayOffSuggestions && result.dayOffSuggestions.length > 0 && (
         <div className="section">
