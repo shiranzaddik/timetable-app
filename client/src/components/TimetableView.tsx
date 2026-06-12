@@ -223,14 +223,15 @@ function GridTable({
                         : tClassName(cell.classId)}
                     </div>
                     {(() => {
-                      // In by-class mode, hide the room when it's just the
-                      // class's own default room (every cell of that class
-                      // would otherwise repeat "Room A1"). Specialty rooms
-                      // (sport hall, computer lab, music room) still show.
-                      if (mode === "byClass") {
-                        const own = classById.get(cell.classId);
-                        if (own && own.defaultRoomId === cell.roomId) return null;
-                      }
+                      // Hide the room cell-meta when it's just the class's
+                      // own default room (every lesson of that class would
+                      // otherwise repeat "Room A1"). Specialty rooms (sport
+                      // hall, computer lab, music room) still show. Applies
+                      // to both by-class and by-teacher views since in
+                      // by-teacher the cell still encodes which class is
+                      // sitting there.
+                      const own = classById.get(cell.classId);
+                      if (own && own.defaultRoomId === cell.roomId) return null;
                       const room = roomById.get(cell.roomId);
                       return (
                         <div className="cell-meta">

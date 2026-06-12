@@ -681,8 +681,9 @@ table.timetable {
 table.timetable th,
 table.timetable td {
   /* Stronger vertical lines between day columns so adjacent days are
-   *  clearly delimited; horizontal row borders stay subtle. */
-  border-right: 2px solid var(--border-strong);
+   *  clearly delimited; horizontal row borders stay subtle. Logical
+   *  property so RTL (Hebrew) gets the divider on the correct side. */
+  border-inline-end: 2px solid var(--border-strong);
   border-bottom: 1px solid var(--border);
   padding: 8px 10px;
   vertical-align: top;
@@ -690,11 +691,11 @@ table.timetable td {
   text-align: left;
 }
 table.timetable th:last-child,
-table.timetable td:last-child { border-right: 0; }
-/* The slot-label column is informational, not a day — keep its right
- *  border subtle so the strong dividers really mark "day boundaries". */
+table.timetable td:last-child { border-inline-end: 0; }
+/* The slot-label column is informational, not a day — keep its inline-
+ *  end border subtle so the strong dividers really mark day boundaries. */
 table.timetable th:first-child,
-table.timetable td.slot-label { border-right: 1px solid var(--border); }
+table.timetable td.slot-label { border-inline-end: 1px solid var(--border); }
 table.timetable tr:last-child td { border-bottom: 0; }
 table.timetable th {
   background: var(--surface-2);
