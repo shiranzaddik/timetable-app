@@ -470,8 +470,6 @@ export default function InputView({ input, onChange }: Props) {
             <button
               className="add-btn"
               onClick={() => setAddingClass(true)}
-              disabled={input.teachers.length === 0}
-              title={input.teachers.length === 0 ? t("addTeacherFirst") : ""}
             >
               {t("addClass")}
             </button>
@@ -479,11 +477,7 @@ export default function InputView({ input, onChange }: Props) {
         </div>
 
         {input.classes.length === 0 && !addingClass && (
-          <div className="empty-state">
-            {input.teachers.length === 0
-              ? t("emptyClassesNoTeachers")
-              : t("emptyClasses")}
-          </div>
+          <div className="empty-state">{t("emptyClasses")}</div>
         )}
 
         <div className="card-grid">
