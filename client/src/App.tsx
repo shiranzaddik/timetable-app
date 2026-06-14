@@ -116,7 +116,19 @@ export default function App() {
     Promise.all([api<SchoolInput>("/api/demo"), api<SchoolState>("/api/school")])
       .then(([demoData, saved]) => {
         setPersisted(saved.persisted);
-        setInput(normalizeInput(saved.config ?? demoData));
+        // Default screen on first visit: blank school (no teachers / classes /
+        // rooms / trends / subjects), using the demo only as the source of
+        // sensible config (school days + hours). The user can click "Reset
+        // to demo" to load the full demo on demand.
+        const empty: SchoolInput = {
+          config: demoData.config,
+          rooms: [],
+          teachers: [],
+          classes: [],
+          trends: [],
+          subjects: [],
+        };
+        setInput(normalizeInput(saved.config ?? empty));
       })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : String(e))
