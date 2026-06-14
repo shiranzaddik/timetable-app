@@ -454,7 +454,172 @@ export default function InputView({ input, onChange }: Props) {
               );
             })}
         </div>
+      </div>      {/* CLASSES */}
+      <div className="section" id="section-classes">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">{t("classesSection")}</h3>
+            <div className="section-meta">
+              {input.classes.length}{" "}
+              {input.classes.length === 1
+                ? t("countClassesOne")
+                : t("countClassesMany")}
+            </div>
+          </div>
+          {!addingClass && !editingClassId && (
+            <button
+              className="add-btn"
+              onClick={() => setAddingClass(true)}
+              disabled={input.teachers.length === 0}
+              title={input.teachers.length === 0 ? t("addTeacherFirst") : ""}
+            >
+              {t("addClass")}
+            </button>
+          )}
+        </div>
+
+        {input.classes.length === 0 && !addingClass && (
+          <div className="empty-state">
+            {input.teachers.length === 0
+              ? t("emptyClassesNoTeachers")
+              : t("emptyClasses")}
+          </div>
+        )}
+
+        <div className="card-grid">
+          {addingClass && (
+            <ClassForm
+              onSave={addClass}
+              onCancel={() => setAddingClass(false)}
+              teachers={input.teachers}
+              existingIds={input.classes.map((c) => c.id)}
+              defaultStartHour={configStartHour}
+              defaultEndHour={configEndHour}
+              trendsByGrade={trendsByGrade}
+              homeroomTeacherToClass={homeroomTeacherToClass}
+            />
+          )}
+          {input.classes.map((c) =>
+            editingClassId === c.id ? (
+              <ClassForm
+                key={c.id}
+                initial={c}
+                teachers={input.teachers}
+                existingIds={input.classes.map((x) => x.id)}
+                defaultStartHour={configStartHour}
+                defaultEndHour={configEndHour}
+                trendsByGrade={trendsByGrade}
+                homeroomTeacherToClass={homeroomTeacherToClass}
+                onSave={updateClass}
+                onCancel={() => setEditingClassId(null)}
+              />
+            ) : (
+              <ClassCard
+                key={c.id}
+                cls={c}
+                defaultTeacherName={
+                  c.defaultTeacherId && teacherById[c.defaultTeacherId]
+                    ? tTeacher(teacherById[c.defaultTeacherId])
+                    : ""
+                }
+                startHour={c.startHour ?? configStartHour}
+                endHour={c.endHour ?? configEndHour}
+                onEdit={() => setEditingClassId(c.id)}
+                onDelete={() => removeClass(c.id)}
+              />
+            )
+          )}
+        </div>
       </div>
+
+      {/* TRENDS (subjects per grade + specialization) */}
+      <div className="section" id="section-trends">
+        <div className="section-header">
+          <div>
+            <h3 className="section-title">{t("gradesSection")}</h3>
+            <div className="section-meta">
+              {presentTrendKeys.length}{" "}
+              {presentTrendKeys.length === 1
+                ? t("countGradesOne")
+                : t("countGradesMany")}
+            </div>
+          </div>
+          {!addingTrend && (
+            <button className="add-btn" onClick={() => setAddingTrend(true)}>
+              {t("addTrend")}
+            </button>
+          )}
+        </div>
+        {presentTrendKeys.length === 0 && !addingTrend && (
+          <div className="empty-state">{t("emptyTrends")}</div>
+        )}
+        <div className="card-grid">
+          {addingTrend && (
+            <GradeForm
+              mode="new"
+              grade={Grade.A}
+              initialSubjects={[]}
+              availableSubjects={availableSubjects}
+              existingTrendKeys={presentTrendKeys}
+              onSave={(r) => {
+                const cleanName = r.trendName?.trim().toLowerCase() || undefined;
+                onChange({
+                  ...input,
+                  trends: [
+                    ...input.trends.filter(
+                      (tr) =>
+                        !(tr.grade === r.grade &&
+                          (tr.trendName ?? "") === (cleanName ?? ""))
+                    ),
+                    {
+                      grade: r.grade!,
+                      trendName: cleanName,
+                      subjects: r.subjects,
+                    },
+                  ],
+                });
+                setAddingTrend(false);
+              }}
+              onCancel={() => setAddingTrend(false)}
+            />
+          )}
+          {presentTrendKeys.map((key) => {
+            const { grade, trendName } = parseTrendKey(key);
+            const subjects = subjectsForTrend(grade, trendName);
+            const classIds = input.classes
+              .filter(
+                (c) =>
+                  c.grade === grade &&
+                  (c.trendName ?? "") === (trendName ?? "")
+              )
+              .map((c) => c.id);
+            return editingTrendKey === key ? (
+              <GradeForm
+                key={key}
+                grade={grade}
+                trendName={trendName}
+                initialSubjects={subjects}
+                availableSubjects={availableSubjects}
+                onSave={(r) => saveTrendSubjects(grade, trendName, r)}
+                onCancel={() => setEditingTrendKey(null)}
+              />
+            ) : (
+              <GradeCard
+                key={key}
+                grade={grade}
+                trendName={trendName}
+                subjects={subjects}
+                classIds={classIds}
+                onEdit={() => setEditingTrendKey(key)}
+                onDelete={() => removeTrend(grade, trendName)}
+                tSubject={tSubject}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+
 
       {/* TEACHERS */}
       <div className="section" id="section-teachers">
@@ -595,171 +760,6 @@ export default function InputView({ input, onChange }: Props) {
             ))
           );
         })()}
-      </div>
-
-      {/* TRENDS (subjects per grade + specialization) */}
-      <div className="section" id="section-trends">
-        <div className="section-header">
-          <div>
-            <h3 className="section-title">{t("gradesSection")}</h3>
-            <div className="section-meta">
-              {presentTrendKeys.length}{" "}
-              {presentTrendKeys.length === 1
-                ? t("countGradesOne")
-                : t("countGradesMany")}
-            </div>
-          </div>
-          {!addingTrend && (
-            <button className="add-btn" onClick={() => setAddingTrend(true)}>
-              {t("addTrend")}
-            </button>
-          )}
-        </div>
-        {presentTrendKeys.length === 0 && !addingTrend && (
-          <div className="empty-state">{t("emptyTrends")}</div>
-        )}
-        <div className="card-grid">
-          {addingTrend && (
-            <GradeForm
-              mode="new"
-              grade={Grade.A}
-              initialSubjects={[]}
-              availableSubjects={availableSubjects}
-              existingTrendKeys={presentTrendKeys}
-              onSave={(r) => {
-                const cleanName = r.trendName?.trim().toLowerCase() || undefined;
-                onChange({
-                  ...input,
-                  trends: [
-                    ...input.trends.filter(
-                      (tr) =>
-                        !(tr.grade === r.grade &&
-                          (tr.trendName ?? "") === (cleanName ?? ""))
-                    ),
-                    {
-                      grade: r.grade!,
-                      trendName: cleanName,
-                      subjects: r.subjects,
-                    },
-                  ],
-                });
-                setAddingTrend(false);
-              }}
-              onCancel={() => setAddingTrend(false)}
-            />
-          )}
-          {presentTrendKeys.map((key) => {
-            const { grade, trendName } = parseTrendKey(key);
-            const subjects = subjectsForTrend(grade, trendName);
-            const classIds = input.classes
-              .filter(
-                (c) =>
-                  c.grade === grade &&
-                  (c.trendName ?? "") === (trendName ?? "")
-              )
-              .map((c) => c.id);
-            return editingTrendKey === key ? (
-              <GradeForm
-                key={key}
-                grade={grade}
-                trendName={trendName}
-                initialSubjects={subjects}
-                availableSubjects={availableSubjects}
-                onSave={(r) => saveTrendSubjects(grade, trendName, r)}
-                onCancel={() => setEditingTrendKey(null)}
-              />
-            ) : (
-              <GradeCard
-                key={key}
-                grade={grade}
-                trendName={trendName}
-                subjects={subjects}
-                classIds={classIds}
-                onEdit={() => setEditingTrendKey(key)}
-                onDelete={() => removeTrend(grade, trendName)}
-                tSubject={tSubject}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {/* CLASSES */}
-      <div className="section" id="section-classes">
-        <div className="section-header">
-          <div>
-            <h3 className="section-title">{t("classesSection")}</h3>
-            <div className="section-meta">
-              {input.classes.length}{" "}
-              {input.classes.length === 1
-                ? t("countClassesOne")
-                : t("countClassesMany")}
-            </div>
-          </div>
-          {!addingClass && !editingClassId && (
-            <button
-              className="add-btn"
-              onClick={() => setAddingClass(true)}
-              disabled={input.teachers.length === 0}
-              title={input.teachers.length === 0 ? t("addTeacherFirst") : ""}
-            >
-              {t("addClass")}
-            </button>
-          )}
-        </div>
-
-        {input.classes.length === 0 && !addingClass && (
-          <div className="empty-state">
-            {input.teachers.length === 0
-              ? t("emptyClassesNoTeachers")
-              : t("emptyClasses")}
-          </div>
-        )}
-
-        <div className="card-grid">
-          {addingClass && (
-            <ClassForm
-              onSave={addClass}
-              onCancel={() => setAddingClass(false)}
-              teachers={input.teachers}
-              existingIds={input.classes.map((c) => c.id)}
-              defaultStartHour={configStartHour}
-              defaultEndHour={configEndHour}
-              trendsByGrade={trendsByGrade}
-              homeroomTeacherToClass={homeroomTeacherToClass}
-            />
-          )}
-          {input.classes.map((c) =>
-            editingClassId === c.id ? (
-              <ClassForm
-                key={c.id}
-                initial={c}
-                teachers={input.teachers}
-                existingIds={input.classes.map((x) => x.id)}
-                defaultStartHour={configStartHour}
-                defaultEndHour={configEndHour}
-                trendsByGrade={trendsByGrade}
-                homeroomTeacherToClass={homeroomTeacherToClass}
-                onSave={updateClass}
-                onCancel={() => setEditingClassId(null)}
-              />
-            ) : (
-              <ClassCard
-                key={c.id}
-                cls={c}
-                defaultTeacherName={
-                  c.defaultTeacherId && teacherById[c.defaultTeacherId]
-                    ? tTeacher(teacherById[c.defaultTeacherId])
-                    : ""
-                }
-                startHour={c.startHour ?? configStartHour}
-                endHour={c.endHour ?? configEndHour}
-                onEdit={() => setEditingClassId(c.id)}
-                onDelete={() => removeClass(c.id)}
-              />
-            )
-          )}
-        </div>
       </div>
 
       {deleteCandidate && (

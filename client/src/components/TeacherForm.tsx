@@ -66,18 +66,22 @@ export default function TeacherForm({
   existingTeachers,
   initial,
   availableSubjects,
-  availableTrends,
   availableClasses,
   initialHomeroomClassIds,
 }: Props) {
-  const { t, tDay, tSubject, lang } = useT();
+  const { t, tDay, tSubject, tGrade, lang } = useT();
   const isEdit = !!initial;
 
-  /** Trend choices come from the trends the school actually has. If the
-   *  user hasn't created any trends yet, leave the list empty — that way
-   *  we don't surface a synthetic א–ו chip row that suggests trends exist
-   *  when they don't. */
-  const trendChoices: TrendChoice[] = availableTrends ?? [];
+  /** The chip group below the subjects list lets the user say "this
+   *  teacher teaches subject X to these grades". We always show one chip
+   *  per Grade enum value (א–ו in Hebrew, A–F in English). The selected
+   *  grade keys still flow through Teacher.trendsPerSubject — a key like
+   *  "A" matches every A-grade trend (regular + any specialization). */
+  const trendChoices: TrendChoice[] = Object.values(Grade).map((g) => ({
+    key: g as string,
+    label: tGrade(g),
+    grade: g,
+  }));
   const allTrendKeys = trendChoices.map((c) => c.key);
 
   /** Expand legacy gradesPerSubject (Grade enum) into trend keys covered by
@@ -150,13 +154,9 @@ export default function TeacherForm({
   const submit = () => {
     if (!name.trim()) return setError(t("errNameRequired"));
     if (subjects.length === 0) return setError(t("errPickSubject"));
-    // Per-subject trend selection is only required when trends exist; in a
-    // fresh school with no trends yet there's nothing to select.
-    if (trendChoices.length > 0) {
-      for (const s of subjects) {
-        if ((trendsPerSubject[s]?.length ?? 0) === 0) {
-          return setError(t("errPickGrade"));
-        }
+    for (const s of subjects) {
+      if ((trendsPerSubject[s]?.length ?? 0) === 0) {
+        return setError(t("errPickGrade"));
       }
     }
     // Case-insensitive duplicate-name check across both languages. The user's
@@ -243,7 +243,7 @@ export default function TeacherForm({
           ))}
         </div>
 
-        {subjects.length > 0 && trendChoices.length > 0 && (
+        {subjects.length > 0 && (
           <div className="per-subject-grades">
             {subjects.map((s) => {
               const selected = trendsPerSubject[s] ?? [];
