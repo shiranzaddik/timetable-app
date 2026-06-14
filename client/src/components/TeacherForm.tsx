@@ -45,7 +45,6 @@ interface Props {
   initialHomeroomClassIds?: string[];
 }
 
-const ALL_GRADES: Grade[] = Object.values(Grade);
 
 function mergeLegacyDayOff(
   legacyDayOff: Day | undefined,
@@ -71,15 +70,14 @@ export default function TeacherForm({
   availableClasses,
   initialHomeroomClassIds,
 }: Props) {
-  const { t, tDay, tSubject, tGrade, lang } = useT();
+  const { t, tDay, tSubject, lang } = useT();
   const isEdit = !!initial;
 
-  /** Trend choices: prefer the school's actual trends. Fall back to the
-   *  Grade enum so the form still works before any classes exist. */
-  const trendChoices: TrendChoice[] =
-    availableTrends?.length
-      ? availableTrends
-      : ALL_GRADES.map((g) => ({ key: g as string, label: tGrade(g), grade: g }));
+  /** Trend choices come from the trends the school actually has. If the
+   *  user hasn't created any trends yet, leave the list empty — that way
+   *  we don't surface a synthetic א–ו chip row that suggests trends exist
+   *  when they don't. */
+  const trendChoices: TrendChoice[] = availableTrends ?? [];
   const allTrendKeys = trendChoices.map((c) => c.key);
 
   /** Expand legacy gradesPerSubject (Grade enum) into trend keys covered by
@@ -152,9 +150,13 @@ export default function TeacherForm({
   const submit = () => {
     if (!name.trim()) return setError(t("errNameRequired"));
     if (subjects.length === 0) return setError(t("errPickSubject"));
-    for (const s of subjects) {
-      if ((trendsPerSubject[s]?.length ?? 0) === 0) {
-        return setError(t("errPickGrade"));
+    // Per-subject trend selection is only required when trends exist; in a
+    // fresh school with no trends yet there's nothing to select.
+    if (trendChoices.length > 0) {
+      for (const s of subjects) {
+        if ((trendsPerSubject[s]?.length ?? 0) === 0) {
+          return setError(t("errPickGrade"));
+        }
       }
     }
     // Case-insensitive duplicate-name check across both languages. The user's
@@ -241,7 +243,7 @@ export default function TeacherForm({
           ))}
         </div>
 
-        {subjects.length > 0 && (
+        {subjects.length > 0 && trendChoices.length > 0 && (
           <div className="per-subject-grades">
             {subjects.map((s) => {
               const selected = trendsPerSubject[s] ?? [];
