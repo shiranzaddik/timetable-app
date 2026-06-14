@@ -234,6 +234,7 @@ const STRINGS = {
     trendPlaceholder: "e.g. science, sport, computers",
     trendSpecializationHint: "",
     trendAddNew: "+ New trend…",
+    noTrendOption: "No trend",
     errTrendNameRequired: "Enter a name for the new trend",
 
     // recommendations
@@ -534,6 +535,7 @@ const STRINGS = {
     trendPlaceholder: "לדוגמה: מדעים, ספורט, מחשבים",
     trendSpecializationHint: "",
     trendAddNew: "+ מגמה חדשה…",
+    noTrendOption: "ללא מגמה",
     errTrendNameRequired: "יש להזין שם למגמה החדשה",
 
     recommendationsHeading: "המלצות",
