@@ -989,9 +989,13 @@ function ClassCard({
   onDelete: () => void;
 }) {
   const { t, tGrade, tClassId } = useT();
+  // Only surface the "מגמה ..." line when the class actually belongs to a
+  // named trend (e.g. "ג · מדעים"). For a regular class the grade is
+  // already visible in the badge + class id, so an extra "מגמה א" row is
+  // redundant and reads like a trend exists when none does.
   const trendLabel = cls.trendName
     ? `${tGrade(cls.grade)} · ${cls.trendName}`
-    : `${tGrade(cls.grade)}`;
+    : null;
   const displayId = tClassId(cls.id);
   return (
     <div className="card class-card compact" id={`class-${cls.id}`}>
@@ -999,9 +1003,11 @@ function ClassCard({
         <div className={`grade-badge grade-${cls.grade}`}>{displayId}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="teacher-name">{displayId}</p>
-          <p className="teacher-role">
-            {t("gradeBadgePrefix")} {trendLabel}
-          </p>
+          {trendLabel && (
+            <p className="teacher-role">
+              {t("gradeBadgePrefix")} {trendLabel}
+            </p>
+          )}
         </div>
         <div className="card-actions">
           <button
