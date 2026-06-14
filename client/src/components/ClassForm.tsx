@@ -135,46 +135,60 @@ export default function ClassForm({
         </div>
       </div>
 
-      <div className="form-row">
-        <label>{t("fieldTrendSpecialization")}</label>
-        <select
-          value={addingNewTrend ? NEW_TREND_SENTINEL : trendName}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === NEW_TREND_SENTINEL) {
-              setAddingNewTrend(true);
-              setTrendName("");
-            } else {
-              setAddingNewTrend(false);
-              setTrendName(v);
-            }
-          }}
-        >
-          {(trendsByGrade[grade] ?? [""]).map((name) => (
-            <option key={name || "__regular__"} value={name}>
-              {name
-                ? `${t("gradeBadgePrefix")} ${tGrade(grade)} · ${name}`
-                : `${t("gradeBadgePrefix")} ${tGrade(grade)}`}
-            </option>
-          ))}
-          <option value={NEW_TREND_SENTINEL}>{t("trendAddNew")}</option>
-        </select>
-        {addingNewTrend && (
-          <input
-            type="text"
-            value={trendName}
-            placeholder={t("trendPlaceholder")}
-            onChange={(e) => setTrendName(e.target.value)}
-            style={{ marginTop: 6 }}
-            autoFocus
-          />
-        )}
-        {t("trendSpecializationHint") && (
-          <small style={{ color: "var(--text-muted)" }}>
-            {t("trendSpecializationHint")}
-          </small>
-        )}
-      </div>
+      {(() => {
+        // Hide the whole trend picker when the school has zero named trends
+        // — defaulting to the "regular" option in that case shows a phantom
+        // "מגמה ג" entry that suggests a trend exists when it doesn't. The
+        // form still saves trendName="" (regular) so the class lands in the
+        // auto-created regular trend of the grade. Once any trend is set
+        // up, the picker reappears.
+        const hasNamedTrend = Object.values(trendsByGrade).some((list) =>
+          list.some((n) => n !== "")
+        );
+        if (!hasNamedTrend) return null;
+        return (
+          <div className="form-row">
+            <label>{t("fieldTrendSpecialization")}</label>
+            <select
+              value={addingNewTrend ? NEW_TREND_SENTINEL : trendName}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === NEW_TREND_SENTINEL) {
+                  setAddingNewTrend(true);
+                  setTrendName("");
+                } else {
+                  setAddingNewTrend(false);
+                  setTrendName(v);
+                }
+              }}
+            >
+              {(trendsByGrade[grade] ?? [""]).map((name) => (
+                <option key={name || "__regular__"} value={name}>
+                  {name
+                    ? `${t("gradeBadgePrefix")} ${tGrade(grade)} · ${name}`
+                    : `${t("gradeBadgePrefix")} ${tGrade(grade)}`}
+                </option>
+              ))}
+              <option value={NEW_TREND_SENTINEL}>{t("trendAddNew")}</option>
+            </select>
+            {addingNewTrend && (
+              <input
+                type="text"
+                value={trendName}
+                placeholder={t("trendPlaceholder")}
+                onChange={(e) => setTrendName(e.target.value)}
+                style={{ marginTop: 6 }}
+                autoFocus
+              />
+            )}
+            {t("trendSpecializationHint") && (
+              <small style={{ color: "var(--text-muted)" }}>
+                {t("trendSpecializationHint")}
+              </small>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="form-row">
         <label>{t("fieldDefaultTeacher")}</label>
